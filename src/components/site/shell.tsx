@@ -34,8 +34,7 @@ function Logo({ compact = false }: { compact?: boolean }) {
       className="tap flex items-center gap-2.5 group"
       aria-label="American Space Oujda home"
     >
-      <div className="relative w-10 h-10 rounded-xl overflow-hidden bg-primary flex items-center justify-center shrink-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-white/8 to-transparent z-10 pointer-events-none" />
+      <div className="relative w-10 h-10 rounded-full overflow-hidden bg-primary flex items-center justify-center shrink-0 ring-1 ring-border/50">
         <Image
           src="/logo.png"
           alt="American Space Oujda logo"
@@ -47,8 +46,8 @@ function Logo({ compact = false }: { compact?: boolean }) {
       </div>
       {!compact && (
         <div className="text-left leading-tight">
-          <div className="text-[15px] font-semibold tracking-tight">American Space</div>
-          <div className="text-[11px] text-muted-foreground tracking-wider uppercase">Oujda · Morocco</div>
+          <div className="text-[15px] font-semibold tracking-tight">American Space Oujda</div>
+          <div className="text-[11px] text-muted-foreground tracking-wider uppercase">Morocco</div>
         </div>
       )}
     </button>
@@ -320,7 +319,7 @@ export function SiteHeader() {
                 <SheetContent side="right" className="w-[88vw] sm:w-[380px] p-0">
                   <SheetHeader className="p-4 border-b border-border">
                     <SheetTitle className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg overflow-hidden bg-primary flex items-center justify-center shrink-0">
+                      <div className="w-8 h-8 rounded-full overflow-hidden bg-primary flex items-center justify-center shrink-0 ring-1 ring-border/50">
                         <Image
                           src="/logo.png"
                           alt="ASO logo"
@@ -390,7 +389,7 @@ export function SiteFooter() {
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
           <div className="col-span-2">
             <div className="flex items-center gap-2.5 mb-3">
-              <div className="w-10 h-10 rounded-xl overflow-hidden bg-primary flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-full overflow-hidden bg-primary flex items-center justify-center shrink-0 ring-1 ring-border/50">
                 <Image
                   src="/logo.png"
                   alt="ASO logo"
