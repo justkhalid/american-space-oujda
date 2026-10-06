@@ -1,17 +1,12 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import bcrypt from "bcryptjs";
-import { db } from "@/lib/db";
+import { findUserByEmail, verifyPassword } from "@/lib/auth-db";
 
 export const authOptions: NextAuthOptions = {
-  // Prisma adapter omitted for credentials-only flow (sessions stored in JWT)
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
-  // We handle the sign-in page ourselves via the SPA hash router (#/login)
-  // so we don't set pages.signIn here — NextAuth will use its default which is fine
-  // because signIn() is called with redirect:false from our custom form.
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -21,41 +16,34 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         console.log("[auth] authorize called for:", credentials?.email);
-        console.log("[auth] DATABASE_URL present:", !!process.env.DATABASE_URL);
-        console.log("[auth] DATABASE_URL value (first 30 chars):", process.env.DATABASE_URL?.slice(0, 30));
-        console.log("[auth] NODE_ENV:", process.env.NODE_ENV);
-        console.log("[auth] VERCEL_ENV:", process.env.VERCEL_ENV);
 
         if (!credentials?.email || !credentials?.password) {
           console.log("[auth] missing email or password");
           return null;
         }
-        try {
-          console.log("[auth] querying database for user...");
-          const user = await db.user.findUnique({
-            where: { email: credentials.email.toLowerCase() },
-          });
-          console.log("[auth] user found:", user ? user.email : "NONE");
-          if (!user || !user.password || !user.active) {
-            console.log("[auth] no user, no password, or inactive");
-            return null;
-          }
-          console.log("[auth] comparing passwords...");
-          const ok = await bcrypt.compare(credentials.password, user.password);
-          console.log("[auth] bcrypt match:", ok);
-          if (!ok) return null;
-          console.log("[auth] login successful for:", user.email);
-          return {
-            id: user.id,
-            email: user.email,
-            name: user.name || user.email,
-            role: user.role,
-          } as unknown as { id: string; email: string; name?: string | null; role: string };
-        } catch (e) {
-          console.error("[auth] authorize error:", e instanceof Error ? e.message : e);
-          console.error("[auth] full error:", e);
+
+        const user = await findUserByEmail(credentials.email);
+        if (!user) {
+          console.log("[auth] no user found");
           return null;
         }
+
+        if (!user.active) {
+          console.log("[auth] user inactive");
+          return null;
+        }
+
+        const ok = await verifyPassword(credentials.password, user.password);
+        console.log("[auth] bcrypt match:", ok);
+        if (!ok) return null;
+
+        console.log("[auth] login successful for:", user.email);
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name || user.email,
+          role: user.role,
+        } as unknown as { id: string; email: string; name?: string | null; role: string };
       },
     }),
   ],
