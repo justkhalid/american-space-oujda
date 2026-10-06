@@ -1,31 +1,38 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { withRole } from "@/lib/permissions";
+import { getDb, row, requireRole, type InValue } from "@/lib/sql";
 import bcrypt from "bcryptjs";
-import type { Role } from "@prisma/client";
 
+// GET — admin only. Returns user list with course/report counts.
 export async function GET() {
-  const allowed = await withRole(new Request("http://x"), ["ADMIN"] as Role[]);
-  if ("error" in allowed) return allowed.error;
+  const auth = await requireRole(["ADMIN"]);
+  if (!auth.ok) return auth.response;
 
-  const users = await db.user.findMany({
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      role: true,
-      active: true,
-      createdAt: true,
-      _count: { select: { coursesTaught: true, reports: true } },
-    },
-    orderBy: { createdAt: "asc" },
+  const db = getDb();
+  const r = await db.execute({
+    sql: `SELECT u.id, u.email, u.name, u.role, u.active, u.createdAt,
+            (SELECT COUNT(*) FROM Course c WHERE c.teacherId = u.id) AS coursesTaughtCount,
+            (SELECT COUNT(*) FROM Report rp WHERE rp.teacherId = u.id) AS reportsCount
+          FROM User u
+          ORDER BY u.createdAt ASC`,
+    args: [],
+  });
+  const users = r.rows.map((raw) => {
+    const x = row<Record<string, unknown>>(raw);
+    const coursesTaughtCount = Number(x.coursesTaughtCount ?? 0);
+    const reportsCount = Number(x.reportsCount ?? 0);
+    const { coursesTaughtCount: _c, reportsCount: _r, ...rest } = x;
+    return {
+      ...rest,
+      active: !!rest.active,
+      _count: { coursesTaught: coursesTaughtCount, reports: reportsCount },
+    };
   });
   return NextResponse.json({ users });
 }
 
 export async function POST(req: Request) {
-  const allowed = await withRole(req, ["ADMIN"] as Role[]);
-  if ("error" in allowed) return allowed.error;
+  const auth = await requireRole(["ADMIN"]);
+  if (!auth.ok) return auth.response;
 
   const body = await req.json();
   const { email, name, password, role } = body;
@@ -36,55 +43,76 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid role" }, { status: 400 });
   }
 
-  const existing = await db.user.findUnique({ where: { email: email.toLowerCase() } });
-  if (existing) {
+  const db = getDb();
+  const existing = await db.execute({
+    sql: "SELECT id FROM User WHERE email = ?",
+    args: [email.toLowerCase()],
+  });
+  if (existing.rows.length > 0) {
     return NextResponse.json({ error: "Email already in use" }, { status: 409 });
   }
 
   const hash = await bcrypt.hash(password, 12);
-  const user = await db.user.create({
-    data: {
-      email: email.toLowerCase(),
-      name: name || null,
-      password: hash,
-      role: role as Role,
-    },
-    select: { id: true, email: true, name: true, role: true, active: true, createdAt: true },
+  const id = "usr_" + Math.random().toString(36).slice(2, 12);
+  const now = new Date().toISOString();
+  await db.execute({
+    sql: `INSERT INTO User (id, email, name, password, role, active, createdAt, updatedAt)
+          VALUES (?, ?, ?, ?, ?, 1, ?, ?)`,
+    args: [id, email.toLowerCase(), name || null, hash, role, now, now],
   });
-  return NextResponse.json({ user }, { status: 201 });
+  return NextResponse.json(
+    {
+      user: { id, email: email.toLowerCase(), name: name || null, role, active: true, createdAt: now },
+    },
+    { status: 201 }
+  );
 }
 
 export async function PATCH(req: Request) {
-  const allowed = await withRole(req, ["ADMIN"] as Role[]);
-  if ("error" in allowed) return allowed.error;
+  const auth = await requireRole(["ADMIN"]);
+  if (!auth.ok) return auth.response;
 
   const body = await req.json();
   const { id, name, role, active, password } = body;
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
-  const data: {
-    name?: string | null;
-    role?: Role;
-    active?: boolean;
-    password?: string;
-  } = {};
-  if (name !== undefined) data.name = name || null;
-  if (role && ["ADMIN", "TEACHER", "EDITOR"].includes(role)) data.role = role as Role;
-  if (active !== undefined) data.active = !!active;
-  if (password) data.password = await bcrypt.hash(password, 12);
+  const sets: string[] = [];
+  const args: InValue[] = [];
 
-  const user = await db.user.update({
-    where: { id },
-    data,
-    select: { id: true, email: true, name: true, role: true, active: true },
+  if (name !== undefined) { sets.push("name = ?"); args.push(name || null); }
+  if (role && ["ADMIN", "TEACHER", "EDITOR"].includes(role)) { sets.push("role = ?"); args.push(role); }
+  if (active !== undefined) { sets.push("active = ?"); args.push(active ? 1 : 0); }
+  if (password) { sets.push("password = ?"); args.push(await bcrypt.hash(password, 12)); }
+
+  if (sets.length === 0) {
+    return NextResponse.json({ error: "No fields to update" }, { status: 400 });
+  }
+  sets.push("updatedAt = ?");
+  args.push(new Date().toISOString());
+  args.push(id);
+
+  const db = getDb();
+  await db.execute({
+    sql: `UPDATE User SET ${sets.join(", ")} WHERE id = ?`,
+    args,
   });
-  return NextResponse.json({ user });
+  const r = await db.execute({
+    sql: "SELECT id, email, name, role, active FROM User WHERE id = ?",
+    args: [id],
+  });
+  if (r.rows.length === 0) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+  const u = row<{ id: string; email: string; name: string | null; role: string; active: number }>(
+    r.rows[0] as Record<string, unknown>
+  );
+  return NextResponse.json({ user: { ...u, active: !!u.active } });
 }
 
 export async function DELETE(req: Request) {
-  const allowed = await withRole(req, ["ADMIN"] as Role[]);
-  if ("error" in allowed) return allowed.error;
-  const { user: adminUser } = allowed;
+  const auth = await requireRole(["ADMIN"]);
+  if (!auth.ok) return auth.response;
+  const { user: adminUser } = auth;
 
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
@@ -93,6 +121,7 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: "Cannot delete your own account" }, { status: 400 });
   }
 
-  await db.user.delete({ where: { id } });
+  const db = getDb();
+  await db.execute({ sql: "DELETE FROM User WHERE id = ?", args: [id] });
   return NextResponse.json({ ok: true });
 }

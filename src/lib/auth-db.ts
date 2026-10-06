@@ -18,15 +18,17 @@ export async function findUserByEmail(email: string): Promise<AuthUser | null> {
   const token = process.env.DATABASE_AUTH_TOKEN;
 
   console.log("[auth-db] DATABASE_URL present:", !!url);
-  console.log("[auth-db] DATABASE_URL starts with libsql:", url?.startsWith("libsql://"));
-  console.log("[auth-db] DATABASE_AUTH_TOKEN present:", !!token);
+  console.log("[auth-db] DATABASE_URL value (first 30 chars):", url?.slice(0, 30));
 
-  if (!url || !url.startsWith("libsql://")) {
-    console.error("[auth-db] DATABASE_URL missing or invalid");
+  if (!url) {
+    console.error("[auth-db] DATABASE_URL is not set");
     return null;
   }
 
-  const client = createClient({ url, authToken: token });
+  // Support both libsql:// (production/Turso) and file: (local dev)
+  const client = url.startsWith("libsql://") || url.startsWith("https://")
+    ? createClient({ url, authToken: token })
+    : createClient({ url });
 
   try {
     console.log("[auth-db] querying for:", email.toLowerCase());

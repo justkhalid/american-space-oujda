@@ -41,6 +41,8 @@ import {
   Phone,
   MapPin,
   Clock,
+  Link2,
+  HeartHandshake,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -52,7 +54,9 @@ const TABS: DashTab[] = [
   { key: "events", label: "Events", icon: CalendarDays },
   { key: "gallery", label: "Gallery", icon: Camera },
   { key: "courses", label: "Courses", icon: GraduationCap },
-  { key: "members", label: "Members", icon: Users },
+  { key: "clubs", label: "Clubs", icon: Users },
+  { key: "links", label: "Useful Links", icon: Link2 },
+  { key: "members", label: "Members", icon: HeartHandshake },
   { key: "registrations", label: "Registrations", icon: BookOpen },
   { key: "comments", label: "Comments", icon: MessageSquare },
   { key: "settings", label: "Site Settings", icon: Settings },
@@ -106,6 +110,8 @@ export function AdminDashboard({ initialTab = "overview" }: { initialTab?: Admin
       {tab === "events" && <EventsTab />}
       {tab === "gallery" && <GalleryTab />}
       {tab === "courses" && <CoursesTab />}
+      {tab === "clubs" && <ClubsTab />}
+      {tab === "links" && <LinksTab />}
       {tab === "members" && <MembersTab />}
       {tab === "registrations" && <RegistrationsTab />}
       {tab === "comments" && <CommentsTab />}
@@ -1132,6 +1138,375 @@ function CommentsTab() {
         </div>
       )}
     </div>
+  );
+}
+
+// ============================================================
+// CLUBS (CRUD)
+// ============================================================
+interface ClubItem {
+  id: string;
+  name: string;
+  description: string;
+  schedule: string;
+  iconName: string;
+  colorClass: string;
+  active: number | boolean;
+}
+
+const ICON_OPTIONS = ["Users", "BookOpen", "MessageSquare", "Sparkles", "Star", "Award", "GraduationCap", "HeartHandshake", "Globe2", "Compass", "Camera", "Library"];
+const COLOR_OPTIONS = [
+  { label: "Sky", value: "bg-sky-500/10 text-sky-700 dark:text-sky-300" },
+  { label: "Amber", value: "bg-amber-500/10 text-amber-700 dark:text-amber-300" },
+  { label: "Rose", value: "bg-rose-500/10 text-rose-700 dark:text-rose-300" },
+  { label: "Emerald", value: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" },
+  { label: "Violet", value: "bg-violet-500/10 text-violet-700 dark:text-violet-300" },
+  { label: "Orange", value: "bg-orange-500/10 text-orange-700 dark:text-orange-300" },
+];
+
+function ClubsTab() {
+  const [clubs, setClubs] = React.useState<ClubItem[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [editing, setEditing] = React.useState<ClubItem | null>(null);
+  const [creating, setCreating] = React.useState(false);
+
+  const load = React.useCallback(() => {
+    setLoading(true);
+    fetch("/api/clubs")
+      .then((r) => r.json())
+      .then((d) => setClubs(d.clubs || []))
+      .finally(() => setLoading(false));
+  }, []);
+  React.useEffect(() => load(), [load]);
+
+  const del = async (id: string) => {
+    setClubs((c) => c.filter((x) => x.id !== id));
+    await fetch(`/api/clubs?id=${id}`, { method: "DELETE" });
+    toast.success("Club deleted.");
+  };
+
+  const toggleActive = async (c: ClubItem) => {
+    const newActive = c.active ? 0 : 1;
+    setClubs((arr) => arr.map((x) => (x.id === c.id ? { ...x, active: newActive } : x)));
+    await fetch("/api/clubs", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...c, active: !!newActive }),
+    });
+  };
+
+  if (creating || editing) {
+    return (
+      <ClubEditor
+        club={editing}
+        onClose={() => { setCreating(false); setEditing(null); }}
+        onSaved={() => { setCreating(false); setEditing(null); load(); }}
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h2 className="font-display text-xl tracking-tight">Clubs</h2>
+          <p className="text-sm text-muted-foreground">{clubs.length} clubs · {clubs.filter(c => c.active).length} active</p>
+        </div>
+        <Button onClick={() => setCreating(true)} size="sm" className="rounded-full">
+          <Plus className="w-4 h-4" /> New club
+        </Button>
+      </div>
+
+      {loading ? (
+        <div className="text-center py-16"><Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" /></div>
+      ) : clubs.length === 0 ? (
+        <MatteCard className="text-center py-12">
+          <Users className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+          <p className="text-muted-foreground">No clubs yet. Create your first club.</p>
+        </MatteCard>
+      ) : (
+        <div className="space-y-2">
+          {clubs.map((c) => (
+            <MatteCard key={c.id} className="p-4 flex items-center gap-4">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-medium">{c.name}</span>
+                  {!c.active && <Pill variant="outline">Inactive</Pill>}
+                </div>
+                <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5">
+                  <Clock className="w-3 h-3" />{c.schedule}
+                </div>
+                {c.description && <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{c.description}</p>}
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <button onClick={() => toggleActive(c)} className={`tap px-2.5 py-1 rounded-full text-xs font-medium ${c.active ? "bg-emerald-500/15 text-emerald-700" : "bg-secondary"}`}>
+                  {c.active ? "Active" : "Inactive"}
+                </button>
+                <button onClick={() => setEditing(c)} className="tap w-8 h-8 rounded-lg hover:bg-secondary flex items-center justify-center">
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => del(c.id)} className="tap w-8 h-8 rounded-lg hover:bg-rose-500/10 text-rose-600 flex items-center justify-center">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </MatteCard>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ClubEditor({ club, onClose, onSaved }: { club: ClubItem | null; onClose: () => void; onSaved: () => void }) {
+  const [form, setForm] = React.useState({
+    name: club?.name || "",
+    description: club?.description || "",
+    schedule: club?.schedule || "",
+    iconName: club?.iconName || "Users",
+    colorClass: club?.colorClass || COLOR_OPTIONS[0].value,
+    active: club ? !!club.active : true,
+  });
+  const [saving, setSaving] = React.useState(false);
+  const set = (k: keyof typeof form, v: string | boolean) => setForm((f) => ({ ...f, [k]: v }));
+
+  const save = async () => {
+    if (!form.name) { toast.error("Name is required"); return; }
+    setSaving(true);
+    try {
+      const body = { ...form, ...(club ? { id: club.id } : {}) };
+      const res = await fetch("/api/clubs", {
+        method: club ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error("Save failed");
+      toast.success(club ? "Club updated." : "Club created.");
+      onSaved();
+    } catch {
+      toast.error("Save failed.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <MatteCard>
+      <div className="flex items-center justify-between mb-5">
+        <h2 className="font-display text-xl tracking-tight">{club ? "Edit club" : "New club"}</h2>
+        <button onClick={onClose} className="tap w-8 h-8 rounded-lg hover:bg-secondary flex items-center justify-center">
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+      <div className="space-y-4">
+        <div>
+          <Label className="text-sm font-medium mb-1.5 block">Name *</Label>
+          <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Reading Club" />
+        </div>
+        <div>
+          <Label className="text-sm font-medium mb-1.5 block">Description</Label>
+          <Textarea value={form.description} onChange={(e) => set("description", e.target.value)} rows={3} />
+        </div>
+        <div>
+          <Label className="text-sm font-medium mb-1.5 block">Schedule</Label>
+          <Input value={form.schedule} onChange={(e) => set("schedule", e.target.value)} placeholder="Weekly · Wednesdays 18:00" />
+        </div>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <Label className="text-sm font-medium mb-1.5 block">Icon</Label>
+            <Select value={form.iconName} onValueChange={(v) => set("iconName", v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {ICON_OPTIONS.map((i) => <SelectItem key={i} value={i}>{i}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-sm font-medium mb-1.5 block">Color</Label>
+            <Select value={form.colorClass} onValueChange={(v) => set("colorClass", v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {COLOR_OPTIONS.map((c) => <SelectItem key={c.label} value={c.value}>{c.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <input type="checkbox" checked={form.active} onChange={(e) => set("active", e.target.checked)} className="rounded" />
+          Active (visible on the site)
+        </label>
+        <div className="flex justify-end gap-2 pt-3 border-t border-border">
+          <Button variant="outline" onClick={onClose} className="rounded-full bg-transparent">Cancel</Button>
+          <Button onClick={save} disabled={saving} className="rounded-full">
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            {club ? "Save changes" : "Create club"}
+          </Button>
+        </div>
+      </div>
+    </MatteCard>
+  );
+}
+
+// ============================================================
+// LINKS (CRUD)
+// ============================================================
+interface LinkItem {
+  id: string;
+  name: string;
+  description: string;
+  url: string;
+  iconName: string;
+  category: string;
+}
+
+function LinksTab() {
+  const [links, setLinks] = React.useState<LinkItem[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [creating, setCreating] = React.useState(false);
+
+  const load = React.useCallback(() => {
+    setLoading(true);
+    fetch("/api/links").then((r) => r.json()).then((d) => setLinks(d.links || [])).finally(() => setLoading(false));
+  }, []);
+  React.useEffect(() => load(), [load]);
+
+  const del = async (id: string) => {
+    setLinks((l) => l.filter((x) => x.id !== id));
+    await fetch(`/api/links?id=${id}`, { method: "DELETE" });
+    toast.success("Link deleted.");
+  };
+
+  if (creating) {
+    return <LinkEditor onClose={() => setCreating(false)} onSaved={() => { setCreating(false); load(); }} />;
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h2 className="font-display text-xl tracking-tight">Useful Links</h2>
+          <p className="text-sm text-muted-foreground">{links.length} links</p>
+        </div>
+        <Button onClick={() => setCreating(true)} size="sm" className="rounded-full">
+          <Plus className="w-4 h-4" /> New link
+        </Button>
+      </div>
+      {loading ? (
+        <div className="text-center py-16"><Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" /></div>
+      ) : links.length === 0 ? (
+        <MatteCard className="text-center py-12">
+          <Link2 className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+          <p className="text-muted-foreground">No links yet.</p>
+        </MatteCard>
+      ) : (
+        <div className="space-y-2">
+          {links.map((l) => (
+            <MatteCard key={l.id} className="p-4 flex items-center gap-4">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-medium">{l.name}</span>
+                  <Pill variant="muted">{l.category}</Pill>
+                </div>
+                <div className="text-xs text-muted-foreground mt-0.5 truncate">{l.url}</div>
+                {l.description && <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{l.description}</p>}
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <a href={l.url} target="_blank" rel="noopener noreferrer" className="tap w-8 h-8 rounded-lg hover:bg-secondary flex items-center justify-center">
+                  <Eye className="w-3.5 h-3.5" />
+                </a>
+                <button onClick={() => del(l.id)} className="tap w-8 h-8 rounded-lg hover:bg-rose-500/10 text-rose-600 flex items-center justify-center">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </MatteCard>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LinkEditor({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+  const [form, setForm] = React.useState({
+    name: "",
+    description: "",
+    url: "",
+    iconName: "Link2",
+    category: "partner",
+  });
+  const [saving, setSaving] = React.useState(false);
+  const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  const save = async () => {
+    if (!form.name || !form.url) { toast.error("Name and URL are required"); return; }
+    setSaving(true);
+    try {
+      const res = await fetch("/api/links", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) throw new Error("Save failed");
+      toast.success("Link added.");
+      onSaved();
+    } catch {
+      toast.error("Save failed.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <MatteCard>
+      <div className="flex items-center justify-between mb-5">
+        <h2 className="font-display text-xl tracking-tight">Add link</h2>
+        <button onClick={onClose} className="tap w-8 h-8 rounded-lg hover:bg-secondary flex items-center justify-center">
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+      <div className="space-y-4">
+        <div>
+          <Label className="text-sm font-medium mb-1.5 block">Name *</Label>
+          <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="U.S. Embassy in Morocco" />
+        </div>
+        <div>
+          <Label className="text-sm font-medium mb-1.5 block">URL *</Label>
+          <Input value={form.url} onChange={(e) => set("url", e.target.value)} placeholder="https://..." />
+        </div>
+        <div>
+          <Label className="text-sm font-medium mb-1.5 block">Description</Label>
+          <Textarea value={form.description} onChange={(e) => set("description", e.target.value)} rows={2} />
+        </div>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <Label className="text-sm font-medium mb-1.5 block">Icon</Label>
+            <Select value={form.iconName} onValueChange={(v) => set("iconName", v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {["Link2", "Building2", "GraduationCap", "Globe2", "HeartHandshake", "Library", "MessageSquare", "Compass", "Award", "Sparkles"].map((i) => <SelectItem key={i} value={i}>{i}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-sm font-medium mb-1.5 block">Category</Label>
+            <Select value={form.category} onValueChange={(v) => set("category", v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="partner">Partner</SelectItem>
+                <SelectItem value="resource">Resource</SelectItem>
+                <SelectItem value="embassy">Embassy</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div className="flex justify-end gap-2 pt-3 border-t border-border">
+          <Button variant="outline" onClick={onClose} className="rounded-full bg-transparent">Cancel</Button>
+          <Button onClick={save} disabled={saving} className="rounded-full">
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            Add link
+          </Button>
+        </div>
+      </div>
+    </MatteCard>
   );
 }
 

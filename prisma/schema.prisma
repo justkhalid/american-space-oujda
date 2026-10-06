@@ -306,3 +306,44 @@ model SiteSetting {
 
   @@index([category])
 }
+
+// ============================================================
+// EDITABLE CONTENT — Clubs, Useful Links, Page Content
+// ============================================================
+
+model Club {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  schedule    String
+  iconName    String   @default("Users") // Lucide icon name
+  colorClass  String   @default("bg-sky-500/10 text-sky-700 dark:text-sky-300")
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([active])
+}
+
+model SiteLink {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  url         String
+  iconName    String   @default("Link2")
+  category    String   @default("partner") // partner | resource | embassy
+  createdAt   DateTime @default(now())
+
+  @@index([category])
+}
+
+model PageContent {
+  id        String   @id @default(cuid())
+  pageKey   String   @unique // "home.hero.title" | "about.intro" | etc.
+  section   String   // "hero" | "intro" | "stats" | etc.
+  content   String   // text content (could be JSON for structured data)
+  updatedAt DateTime @updatedAt
+
+  @@index([pageKey])
+  @@index([section])
+}

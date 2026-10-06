@@ -40,6 +40,8 @@ export type AdminTab =
   | "events"
   | "gallery"
   | "courses"
+  | "clubs"
+  | "links"
   | "members"
   | "registrations"
   | "settings"
@@ -101,7 +103,7 @@ function parseHash(): Route {
     case "comments":
       return { name: "comments" };
     case "admin":
-      if (second && ["overview","applications","events","gallery","courses","members","registrations","settings","users","comments"].includes(second)) {
+      if (second && ["overview","applications","events","gallery","courses","clubs","links","members","registrations","settings","users","comments"].includes(second)) {
         return { name: "admin-tab", tab: second as AdminTab };
       }
       return { name: "admin" };

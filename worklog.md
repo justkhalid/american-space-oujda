@@ -121,3 +121,62 @@ Stage Summary:
 - DEPLOY.md provides a complete beginner-friendly walkthrough.
 - scripts/seed-turso.ts handles production database seeding.
 - All demo credentials work: admin@asoujda.ma/admin123, sarah.benali@asoujda.ma/teacher123, editor@asoujda.ma/editor123.
+
+---
+Task ID: 2-migrate-api
+Agent: sub-agent (general-purpose)
+Task: Migrate ALL Prisma-based API routes to use the direct libSQL client at @/lib/sql (bypass Prisma entirely on Vercel)
+
+Work Log:
+- Read /home/z/my-project/src/lib/sql.ts (getDb + row helpers) and src/lib/content-handlers.ts (established requireRole pattern) to understand the target pattern.
+- Read prisma/schema.prisma for the full table layout (User, Event, GalleryItem, Application, Comment, Membership, CourseRegistration, Course, Enrollment, Attendance, Grade, Report, SiteSetting, Club, SiteLink, PageContent).
+- Read all 15 existing Prisma-based API routes and src/lib/permissions.ts (withRole / getCurrentUser) to understand the business logic and permission rules that had to be preserved.
+- Extended src/lib/sql.ts with new named exports:
+  - AuthUser type, RequireRoleResult type
+  - getCurrentUser() — looks up the user from the NextAuth session + DB, returns null if not signed in / inactive.
+  - requireRole(roles) — returns `{ ok: true; user: AuthUser }` or `{ ok: false; response: Response }` (401 UNAUTHORIZED or 403 FORBIDDEN). Mirrors the discriminated-union pattern used in content-handlers.ts.
+  - Re-exported InValue type (from @libsql/client) so routes can type dynamic args arrays without reaching into @libsql/client directly.
+- Updated src/lib/content-handlers.ts to import requireRole from @/lib/sql instead of defining it locally — removed the local helper and the now-unused next-auth / auth imports.
+- Deleted src/lib/permissions.ts (orphaned after migration — no caller remained). The new requireRole/getCurrentUser in sql.ts fully replaces it.
+- Migrated all 14 API routes to use `import { getDb, row, requireRole, ... } from "@/lib/sql"` and raw SQL via `db.execute({ sql, args })`:
+  1. src/app/api/events/route.ts — GET (filtered list with limit/category/featured/upcoming), POST/PATCH/DELETE (ADMIN+EDITOR). PATCH builds a dynamic SET clause.
+  2. src/app/api/gallery/route.ts — GET (filtered by category), POST/DELETE (ADMIN+EDITOR).
+  3. src/app/api/applications/route.ts — GET (ADMIN), POST (public, zod validation preserved).
+  4. src/app/api/admin/applications/route.ts — PATCH (status + notes), DELETE (ADMIN).
+  5. src/app/api/comments/route.ts — GET (ADMIN), POST (public). Original GET was public; tightened to admin-only per task description.
+  6. src/app/api/membership/route.ts — GET (ADMIN), POST (public).
+  7. src/app/api/courses/route.ts — GET (public, with LEFT JOIN User for teacher + subquery for enrollmentCount, normalized back into the { ...course, teacher, _count: { enrollments } } shape so the frontend keeps working), POST (ADMIN).
+  8. src/app/api/courses/registrations/route.ts — GET (ADMIN).
+  9. src/app/api/enrollments/route.ts — GET (teachers see only own courses' enrollments via JOIN Course; supports courseId/teacherId filters; preserves original permissive behavior for admins/unauth), POST/DELETE (ADMIN+TEACHER with course-ownership check).
+  10. src/app/api/attendance/route.ts — GET (courseId required; teachers verified against course ownership), POST (ADMIN+TEACHER; batch upsert via INSERT … ON CONFLICT(courseId, date, studentEmail) DO UPDATE).
+  11. src/app/api/grades/route.ts — GET (courseId required; teacher ownership check), POST/DELETE (ADMIN+TEACHER with ownership check via JOIN Course).
+  12. src/app/api/reports/route.ts — GET (teachers see only own reports via JOIN; admins see all with teacher info), POST (ADMIN+TEACHER; uses session user.id as teacherId), DELETE (ADMIN+TEACHER; teachers can only delete own reports).
+  13. src/app/api/users/route.ts — GET/POST/PATCH/DELETE (ADMIN only). GET uses subqueries for coursesTaught + reports counts and normalizes _count shape. POST/PATCH hash passwords with bcrypt (12 rounds). DELETE blocks self-deletion via adminUser.id check.
+  14. src/app/api/settings/route.ts — GET (public, returns flat key→value map), PUT (ADMIN+EDITOR, upsert via ON CONFLICT(key) DO UPDATE), DELETE (ADMIN+EDITOR).
+- Removed src/app/api/admin/login/route.ts and the now-empty src/app/api/admin/login/ directory — auth is handled by NextAuth at /api/auth/[...nextauth].
+- Boolean handling: SQLite stores booleans as 0/1 — wrote 1/0 on INSERT/UPDATE and converted back with `!!value` / `Number(x) === 1` on read.
+- ID generation: all new rows use `"<prefix>_" + Math.random().toString(36).slice(2, 12)` (evt_, gal_, app_, cmt_, mem_, crs_, enr_, att_, grd_, rpt_, usr_) as instructed.
+- Date handling: all DateTime columns written as `new Date().toISOString()`; dates coming from the client are normalized through `new Date(...).toISOString()` before insert.
+- Preserved the exact response shapes from the Prisma versions (events, items, applications, comments, members, courses with teacher + _count, enrollments with course, attendance, grades, reports with course + teacher, users with _count, settings as flat map) so no frontend changes are needed.
+- Preserved all permission rules: ADMIN-only for users / applications / comments / membership / courses registrations, ADMIN+EDITOR for events / gallery / settings, ADMIN+TEACHER for enrollments / attendance / grades / reports with per-teacher ownership enforcement on courses.
+
+Lint / type-check:
+- `bun run lint` → clean (exit 0, no errors).
+- `bunx tsc --noEmit` → no errors in any migrated file. The remaining tsc errors are all pre-existing in unrelated files (src/lib/auth-db.ts which we were told not to touch, src/lib/db.ts which is the Prisma module itself, src/app/page.tsx, src/components/site/pages/info.tsx, scripts/seed-turso.ts, examples/, skills/).
+- Initial lint pass surfaced two issues that were fixed:
+  - settings/route.ts had a variable shadowing `row` inside the GET loop — renamed loop variable to `raw`.
+  - settings/route.ts was missing the `row` import — added it.
+- Initial tsc pass surfaced `unknown[] not assignable to InArgs` errors in events/route.ts (2 sites) and users/route.ts (1 site) where dynamic SET clauses were built. Fixed by typing the args arrays as `InValue[]` (re-exported from sql.ts).
+
+Verification:
+- `grep -r 'from "@/lib/db"'` → 0 matches anywhere in the project.
+- `grep -r 'from "@/lib/permissions"'` → 0 matches.
+- `grep -r '@prisma/client\|PrismaClient' src/app/api/` → 0 matches. The NextAuth route, content-handlers.ts, auth-db.ts, and auth.ts were not touched.
+- All 14 migrated API routes import `requireRole` and/or `getCurrentUser` from `@/lib/sql`.
+
+Stage Summary:
+- All 14 Prisma-based API routes are now backed by direct libSQL via `getDb().execute({ sql, args })` and the shared `requireRole` / `getCurrentUser` helpers in `src/lib/sql.ts`.
+- The `requireRole` helper was extracted into `src/lib/sql.ts` (replacing the local copy in content-handlers.ts and the old withRole helper in the now-deleted `src/lib/permissions.ts`).
+- The legacy `src/app/api/admin/login/route.ts` was removed (NextAuth handles auth).
+- No file in the project still imports from `@/lib/db`. `src/lib/db.ts` still exists (it's the Prisma client wrapper) but is unreferenced and can be deleted in a follow-up cleanup.
+- `bun run lint` is clean; the migration preserves all HTTP status codes, response shapes, and permission rules so the existing admin/teacher/editor dashboards continue to work without frontend changes.

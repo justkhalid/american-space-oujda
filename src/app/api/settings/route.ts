@@ -1,49 +1,48 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { withRole } from "@/lib/permissions";
-import type { Role } from "@prisma/client";
+import { getDb, row, requireRole } from "@/lib/sql";
 
+// GET — public (returns all site settings as a flat key→value map)
 export async function GET() {
-  const settings = await db.siteSetting.findMany();
-  // return as a flat key->value object for easy client consumption
+  const db = getDb();
+  const r = await db.execute("SELECT key, value FROM SiteSetting");
   const map: Record<string, string> = {};
-  for (const s of settings) map[s.key] = s.value;
+  for (const raw of r.rows) {
+    const s = row<{ key: string; value: string }>(raw as Record<string, unknown>);
+    map[s.key] = s.value;
+  }
   return NextResponse.json({ settings: map });
 }
 
 export async function PUT(req: Request) {
-  const allowed = await withRole(req, ["ADMIN", "EDITOR"] as Role[]);
-  if ("error" in allowed) return allowed.error;
+  const auth = await requireRole(["ADMIN", "EDITOR"]);
+  if (!auth.ok) return auth.response;
 
   const body = (await req.json()) as { key: string; value: string; category?: string };
   if (!body.key || body.value === undefined) {
     return NextResponse.json({ error: "key and value required" }, { status: 400 });
   }
 
-  const s = await db.siteSetting.upsert({
-    where: { key: body.key },
-    update: { value: body.value },
-    create: {
-      key: body.key,
-      value: body.value,
-      category: body.category || "general",
-    },
+  const db = getDb();
+  await db.execute({
+    sql: `INSERT INTO SiteSetting (key, value, category, updatedAt)
+          VALUES (?, ?, ?, ?)
+          ON CONFLICT(key) DO UPDATE SET value = excluded.value, updatedAt = excluded.updatedAt`,
+    args: [body.key, body.value, body.category || "general", new Date().toISOString()],
   });
-  return NextResponse.json({ setting: s });
+  return NextResponse.json({
+    setting: { key: body.key, value: body.value, category: body.category || "general" },
+  });
 }
 
 export async function DELETE(req: Request) {
-  const allowed = await withRole(req, ["ADMIN", "EDITOR"] as Role[]);
-  if ("error" in allowed) return allowed.error;
+  const auth = await requireRole(["ADMIN", "EDITOR"]);
+  if (!auth.ok) return auth.response;
 
   const { searchParams } = new URL(req.url);
   const key = searchParams.get("key");
   if (!key) return NextResponse.json({ error: "key required" }, { status: 400 });
 
-  try {
-    await db.siteSetting.delete({ where: { key } });
-  } catch {
-    // ignore — already gone
-  }
+  const db = getDb();
+  await db.execute({ sql: "DELETE FROM SiteSetting WHERE key = ?", args: [key] });
   return NextResponse.json({ ok: true });
 }

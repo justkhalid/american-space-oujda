@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { withRole } from "@/lib/permissions";
-import type { Role } from "@prisma/client";
+import { getDb, row, requireRole } from "@/lib/sql";
 import { z } from "zod";
 
 const schema = z.object({
@@ -25,14 +23,12 @@ const schema = z.object({
 
 // GET — admin only (full list)
 export async function GET() {
-  const allowed = await withRole(new Request("http://x"), ["ADMIN"] as Role[]);
-  if ("error" in allowed) return allowed.error;
+  const auth = await requireRole(["ADMIN"]);
+  if (!auth.ok) return auth.response;
 
-  const apps = await db.application.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 200,
-  });
-  return NextResponse.json({ applications: apps });
+  const db = getDb();
+  const r = await db.execute("SELECT * FROM Application ORDER BY createdAt DESC LIMIT 200");
+  return NextResponse.json({ applications: r.rows.map((x) => row(x)) });
 }
 
 // POST — public (anyone can apply)
@@ -46,8 +42,38 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-    const app = await db.application.create({ data: parsed.data });
-    return NextResponse.json({ application: app }, { status: 201 });
+    const d = parsed.data;
+    const id = "app_" + Math.random().toString(36).slice(2, 12);
+    const now = new Date().toISOString();
+    const db = getDb();
+    await db.execute({
+      sql: `INSERT INTO Application (id, role, fullName, email, phone, age, city, country, occupation, organization, languages, availability, motivation, experience, references, startDate, duration, status, notes, createdAt, updatedAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', NULL, ?, ?)`,
+      args: [
+        id,
+        d.role,
+        d.fullName,
+        d.email,
+        d.phone ?? null,
+        d.age ?? null,
+        d.city ?? null,
+        d.country ?? null,
+        d.occupation ?? null,
+        d.organization ?? null,
+        d.languages ?? null,
+        d.availability ?? null,
+        d.motivation,
+        d.experience ?? null,
+        d.references ?? null,
+        d.startDate ?? null,
+        d.duration ?? null,
+        now,
+        now,
+      ],
+    });
+    const r = await db.execute({ sql: "SELECT * FROM Application WHERE id = ?", args: [id] });
+    const application = r.rows.length > 0 ? row(r.rows[0]) : { id };
+    return NextResponse.json({ application }, { status: 201 });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Unknown error";
     return NextResponse.json({ error: msg }, { status: 500 });

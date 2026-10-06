@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useRouter, type Route } from "@/store/router";
 import { SiteHeader, SiteFooter } from "@/components/site/shell";
+import { ScrollEffects } from "@/components/site/scroll-effects";
 import { HomePage } from "@/components/site/pages/home";
 import { TVTHubPage, TVTRolePage } from "@/components/site/pages/tvt";
 import { ApplyPage } from "@/components/site/pages/apply";
@@ -118,9 +119,13 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <ScrollEffects />
       <SiteHeader />
       <main className="flex-1">
-        <PageRouter route={route} />
+        {/* key forces remount + page-enter animation on route change */}
+        <div key={route.name + ("tab" in route ? route.tab : "") + ("role" in route ? route.role : "") + ("q" in route ? route.q : "")} className="page-enter">
+          <PageRouter route={route} />
+        </div>
       </main>
       <SiteFooter />
     </div>

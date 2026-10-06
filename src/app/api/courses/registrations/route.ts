@@ -1,15 +1,14 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { withRole } from "@/lib/permissions";
-import type { Role } from "@prisma/client";
+import { getDb, row, requireRole } from "@/lib/sql";
 
+// GET — admin only (full list of public course registrations)
 export async function GET() {
-  const allowed = await withRole(new Request("http://x"), ["ADMIN"] as Role[]);
-  if ("error" in allowed) return allowed.error;
+  const auth = await requireRole(["ADMIN"]);
+  if (!auth.ok) return auth.response;
 
-  const registrations = await db.courseRegistration.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 200,
-  });
-  return NextResponse.json({ registrations });
+  const db = getDb();
+  const r = await db.execute(
+    "SELECT * FROM CourseRegistration ORDER BY createdAt DESC LIMIT 200"
+  );
+  return NextResponse.json({ registrations: r.rows.map((x) => row(x)) });
 }

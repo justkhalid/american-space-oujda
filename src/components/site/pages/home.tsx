@@ -98,7 +98,7 @@ export function HomePage() {
                 </Button>
               </div>
 
-              <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-6 max-w-2xl">
+              <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-6 max-w-2xl stagger">
                 <Stat value={SITE.stats.members.toLocaleString() + "+"} label="Members" />
                 <Stat value={SITE.stats.events.toLocaleString() + "+"} label="Events hosted" />
                 <Stat value={SITE.stats.books.toLocaleString() + "+"} label="Library books" />
@@ -108,7 +108,7 @@ export function HomePage() {
 
             {/* Hero side card — symmetric, calm */}
             <div className="lg:col-span-5 fade-up" style={{ animationDelay: "120ms" }}>
-              <div className="relative">
+              <div className="relative float">
                 <div className="absolute -inset-6 rounded-[2rem] bg-gradient-to-br from-accent/10 via-transparent to-primary/8 -z-10 blur-2xl" />
                 <div className="rounded-[1.75rem] bg-card border border-border/70 p-6 elevated-lg">
                   <div className="aspect-[4/3] rounded-[1.25rem] overflow-hidden bg-secondary mb-5">
@@ -166,7 +166,7 @@ export function HomePage() {
             </Button>
           }
         />
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger">
           {[
             {
               icon: GraduationCap,
@@ -214,7 +214,7 @@ export function HomePage() {
             <button
               key={i}
               onClick={p.action}
-              className="tap group text-left rounded-2xl bg-card border border-border/70 p-6 elevated hover:-translate-y-0.5 transition-transform"
+              className="lift tap group text-left rounded-2xl bg-card border border-border/70 p-6 elevated"
             >
               <div className="w-11 h-11 rounded-xl bg-primary/8 flex items-center justify-center mb-4">
                 <p.icon className="w-5 h-5 text-primary" strokeWidth={2} />
@@ -247,7 +247,7 @@ export function HomePage() {
             </Button>
           }
         />
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid md:grid-cols-3 gap-4 stagger">
           {loadingEv ? (
             [0, 1, 2].map((i) => (
               <div

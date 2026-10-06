@@ -30,14 +30,16 @@ import {
   Link2,
   MessageSquare,
   MapPin,
+  Compass,
+  Camera,
+  Building2,
+  ExternalLink,
+  Star,
   Clock,
   Mail,
   Phone,
   CheckCircle2,
   Loader2,
-  Star,
-  ExternalLink,
-  Building2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -371,7 +373,32 @@ export function ActivitiesPage() {
 // ============================================================
 // CLUBS
 // ============================================================
+interface ClubItem {
+  id: string;
+  name: string;
+  description: string;
+  schedule: string;
+  iconName: string;
+  colorClass: string;
+}
+
+const ICON_MAP: Record<string, React.ElementType> = {
+  BookOpen, MessageSquare, Users, Sparkles, Star, Award,
+  GraduationCap, HeartHandshake, Globe2, Compass, Camera, BookOpen,
+  Library: LibraryIcon, LibraryIcon: LibraryIcon,
+};
+
 export function ClubsPage() {
+  const [clubs, setClubs] = React.useState<ClubItem[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    fetch("/api/clubs")
+      .then((r) => r.json())
+      .then((d) => setClubs(d.clubs || []))
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <>
       <Section className="!pt-12 md:!pt-16 !pb-8">
@@ -383,73 +410,51 @@ export function ClubsPage() {
       </Section>
 
       <Section className="!pt-4">
-        <div className="grid md:grid-cols-2 gap-4">
-          {[
-            {
-              icon: BookOpen,
-              name: "Reading Club",
-              schedule: "Monthly · Last Saturday",
-              body: "We read and discuss one contemporary American novel each month. Free copies available at the front desk for the first 15 members.",
-              color: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
-            },
-            {
-              icon: MessageSquare,
-              name: "Debate Club",
-              schedule: "Bi-weekly · Sundays 15:00",
-              body: "British Parliamentary format debates on current affairs. Develop your argumentation, rhetoric, and impromptu speaking skills.",
-              color: "bg-rose-500/10 text-rose-700 dark:text-rose-300",
-            },
-            {
-              icon: Users,
-              name: "Conversation Circle",
-              schedule: "Weekly · Wednesdays 18:00",
-              body: "Informal English conversation practice with fluent and native speakers. All levels welcome — coffee and tea on us.",
-              color: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-            },
-            {
-              icon: Sparkles,
-              name: "Coding Club",
-              schedule: "Weekly · Saturdays 14:00",
-              body: "Beginner-friendly Python and web development. Bring a laptop (or borrow one of ours) and a project you want to build.",
-              color: "bg-sky-500/10 text-sky-700 dark:text-sky-300",
-            },
-            {
-              icon: Star,
-              name: "Cinema Club",
-              schedule: "Monthly · First Friday",
-              body: "Screening of an American film followed by moderated discussion. Popcorn provided. Free for all members.",
-              color: "bg-violet-500/10 text-violet-700 dark:text-violet-300",
-            },
-            {
-              icon: Award,
-              name: "TOEFL Prep Circle",
-              schedule: "Weekly · Mondays 17:00",
-              body: "Self-study group for the TOEFL exam, with shared resources, peer feedback, and weekly mock tests.",
-              color: "bg-orange-500/10 text-orange-700 dark:text-orange-300",
-            },
-          ].map((c) => (
-            <div
-              key={c.name}
-              className="rounded-2xl bg-card border border-border/70 p-6 elevated"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className={`w-12 h-12 rounded-xl ${c.color} flex items-center justify-center`}>
-                  <c.icon className="w-5 h-5" strokeWidth={2} />
+        {loading ? (
+          <div className="grid md:grid-cols-2 gap-4">
+            {[0,1,2,3].map((i) => (
+              <div key={i} className="rounded-2xl bg-card border border-border/70 p-6 elevated animate-pulse h-48" />
+            ))}
+          </div>
+        ) : clubs.length === 0 ? (
+          <MatteCard className="text-center py-12">
+            <Users className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+            <p className="text-muted-foreground">No clubs are running right now. Check back soon.</p>
+          </MatteCard>
+        ) : (
+          <div className="grid md:grid-cols-2 gap-4">
+            {clubs.map((c) => {
+              const Icon = ICON_MAP[c.iconName] || Users;
+              return (
+                <div
+                  key={c.id}
+                  className="rounded-2xl bg-card border border-border/70 p-6 elevated"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className={`w-12 h-12 rounded-xl ${c.colorClass} flex items-center justify-center`}>
+                      <Icon className="w-5 h-5" strokeWidth={2} />
+                    </div>
+                    <Pill variant="muted">
+                      <Clock className="w-3 h-3" />
+                      {c.schedule}
+                    </Pill>
+                  </div>
+                  <h3 className="font-display text-2xl tracking-tight mb-2">{c.name}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed pretty">{c.description}</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-4 rounded-full bg-transparent"
+                    onClick={() => (window.location.href = `mailto:${SITE.email}?subject=Joining ${c.name}`)}
+                  >
+                    Join this club
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Button>
                 </div>
-                <Pill variant="muted">
-                  <Clock className="w-3 h-3" />
-                  {c.schedule}
-                </Pill>
-              </div>
-              <h3 className="font-display text-2xl tracking-tight mb-2">{c.name}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed pretty">{c.body}</p>
-              <Button variant="outline" size="sm" className="mt-4 rounded-full bg-transparent">
-                Join this club
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Button>
-            </div>
-          ))}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </Section>
     </>
   );
@@ -1091,7 +1096,30 @@ export function MembershipPage() {
 // ============================================================
 // LINKS
 // ============================================================
+interface LinkItem {
+  id: string;
+  name: string;
+  description: string;
+  url: string;
+  iconName: string;
+  category: string;
+}
+
+const LINK_ICON_MAP: Record<string, React.ElementType> = {
+  Building2, GraduationCap, Globe2, HeartHandshake, Library: LibraryIcon, LibraryIcon: LibraryIcon, MessageSquare, Link2, ExternalLink, Compass, Award, Sparkles,
+};
+
 export function LinksPage() {
+  const [links, setLinks] = React.useState<LinkItem[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    fetch("/api/links")
+      .then((r) => r.json())
+      .then((d) => setLinks(d.links || []))
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <>
       <Section className="!pt-12 md:!pt-16 !pb-8">
@@ -1103,33 +1131,42 @@ export function LinksPage() {
       </Section>
 
       <Section className="!pt-4">
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[
-            { name: "U.S. Embassy in Morocco", body: "Official website of the U.S. Embassy in Rabat.", url: "https://ma.usembassy.gov/", icon: Building2 },
-            { name: "EducationUSA Morocco", body: "Free advising for Moroccan students applying to U.S. universities.", url: "https://educationusa.state.gov/", icon: GraduationCap },
-            { name: "Fulbright Morocco", body: "Exchange programs for Moroccan students, scholars, and professionals.", url: "https://ma.usembassy.gov/education-culture/fulbright/", icon: Globe2 },
-            { name: "MACECE — Moroccan American Commission", body: "Bilateral commission for educational and cultural exchange.", url: "https://macece.org/", icon: HeartHandshake },
-            { name: "American Library Association", body: "Resources, book lists, and literacy programs.", url: "https://www.ala.org/", icon: LibraryIcon },
-            { name: "U.S. Mission to Morocco — Facebook", body: "Daily updates from the U.S. diplomatic mission in Morocco.", url: "https://www.facebook.com/USEmbassyMorocco/", icon: MessageSquare },
-          ].map((l) => (
-            <a
-              key={l.name}
-              href={l.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="tap group rounded-2xl bg-card border border-border/70 p-6 elevated hover:-translate-y-0.5 transition-transform block"
-            >
-              <div className="w-11 h-11 rounded-xl bg-primary/8 flex items-center justify-center mb-4">
-                <l.icon className="w-5 h-5 text-primary" strokeWidth={2} />
-              </div>
-              <h3 className="font-display text-lg tracking-tight mb-2 flex items-center gap-1.5">
-                {l.name}
-                <ExternalLink className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-              </h3>
-              <p className="text-sm text-muted-foreground leading-relaxed pretty">{l.body}</p>
-            </a>
-          ))}
-        </div>
+        {loading ? (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[0,1,2,3,4,5].map((i) => (
+              <div key={i} className="rounded-2xl bg-card border border-border/70 p-6 elevated animate-pulse h-40" />
+            ))}
+          </div>
+        ) : links.length === 0 ? (
+          <MatteCard className="text-center py-12">
+            <Link2 className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+            <p className="text-muted-foreground">No links yet.</p>
+          </MatteCard>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {links.map((l) => {
+              const Icon = LINK_ICON_MAP[l.iconName] || Link2;
+              return (
+                <a
+                  key={l.id}
+                  href={l.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="tap group rounded-2xl bg-card border border-border/70 p-6 elevated hover:-translate-y-0.5 transition-transform block"
+                >
+                  <div className="w-11 h-11 rounded-xl bg-primary/8 flex items-center justify-center mb-4">
+                    <Icon className="w-5 h-5 text-primary" strokeWidth={2} />
+                  </div>
+                  <h3 className="font-display text-lg tracking-tight mb-2 flex items-center gap-1.5">
+                    {l.name}
+                    <ExternalLink className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed pretty">{l.description}</p>
+                </a>
+              );
+            })}
+          </div>
+        )}
       </Section>
     </>
   );
