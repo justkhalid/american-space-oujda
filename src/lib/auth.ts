@@ -21,6 +21,11 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         console.log("[auth] authorize called for:", credentials?.email);
+        console.log("[auth] DATABASE_URL present:", !!process.env.DATABASE_URL);
+        console.log("[auth] DATABASE_URL value (first 30 chars):", process.env.DATABASE_URL?.slice(0, 30));
+        console.log("[auth] NODE_ENV:", process.env.NODE_ENV);
+        console.log("[auth] VERCEL_ENV:", process.env.VERCEL_ENV);
+
         if (!credentials?.email || !credentials?.password) {
           console.log("[auth] missing email or password");
           return null;
