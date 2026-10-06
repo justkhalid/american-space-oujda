@@ -3,19 +3,21 @@ import { PrismaLibSql } from "@prisma/adapter-libsql";
 import { createClient } from "@libsql/client";
 
 // Vercel-friendly Prisma client.
-// Vercel supports full Node.js runtime, so no edge runtime hacks needed.
-// We just create one client per environment based on DATABASE_URL.
+// Creates the client lazily on first query to avoid evaluating env vars at build time.
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
+let _client: PrismaClient | null = null;
+
 function createPrismaClient(): PrismaClient {
-  const url = process.env.DATABASE_URL || "";
+  const url = process.env.DATABASE_URL;
 
   if (!url) {
-    console.error("[db] No DATABASE_URL set!");
-    throw new Error("DATABASE_URL is not set");
+    console.error("[db] DATABASE_URL is not set!");
+    console.error("[db] Available env vars:", Object.keys(process.env).filter(k => !k.startsWith("NEXT_")).sort());
+    throw new Error("DATABASE_URL is not set. Check Vercel Environment Variables.");
   }
 
   // If it's a libsql:// URL (production / Turso), use the libSQL adapter
@@ -36,6 +38,22 @@ function createPrismaClient(): PrismaClient {
   });
 }
 
-export const db = globalForPrisma.prisma ?? createPrismaClient();
+// Lazy getter — only creates the client on first access
+function getClient(): PrismaClient {
+  if (!_client) {
+    _client = createPrismaClient();
+    if (process.env.NODE_ENV !== "production") {
+      globalForPrisma.prisma = _client;
+    }
+  }
+  return _client;
+}
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = db;
+// Export a proxy so the client is created lazily on first query
+export const db = new Proxy({} as PrismaClient, {
+  get(_target, prop, receiver) {
+    const client = getClient();
+    const value = Reflect.get(client, prop, receiver);
+    return typeof value === "function" ? value.bind(client) : value;
+  },
+});
