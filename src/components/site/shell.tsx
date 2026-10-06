@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "@/store/router";
 import { NAV_ITEMS, SITE } from "@/lib/site/content";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Menu, Search, Sparkles, Moon, Sun, ChevronRight, LogIn, LayoutDashboard, LogOut } from "lucide-react";
+import { Menu, Search, Sparkles, Moon, Sun, ChevronRight, LogIn, LayoutDashboard, LogOut, Facebook, Instagram, Youtube } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useSession, signOut } from "next-auth/react";
 import {
@@ -33,9 +34,16 @@ function Logo({ compact = false }: { compact?: boolean }) {
       className="tap flex items-center gap-2.5 group"
       aria-label="American Space Oujda home"
     >
-      <div className="relative w-9 h-9 rounded-xl bg-primary flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-white/8 to-transparent" />
-        <Sparkles className="w-4 h-4 text-primary-foreground relative z-10" strokeWidth={2.4} />
+      <div className="relative w-10 h-10 rounded-xl overflow-hidden bg-primary flex items-center justify-center shrink-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-white/8 to-transparent z-10 pointer-events-none" />
+        <Image
+          src="/logo.png"
+          alt="American Space Oujda logo"
+          width={40}
+          height={40}
+          className="w-full h-full object-cover"
+          priority
+        />
       </div>
       {!compact && (
         <div className="text-left leading-tight">
@@ -312,8 +320,14 @@ export function SiteHeader() {
                 <SheetContent side="right" className="w-[88vw] sm:w-[380px] p-0">
                   <SheetHeader className="p-4 border-b border-border">
                     <SheetTitle className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                        <Sparkles className="w-4 h-4 text-primary-foreground" />
+                      <div className="w-8 h-8 rounded-lg overflow-hidden bg-primary flex items-center justify-center shrink-0">
+                        <Image
+                          src="/logo.png"
+                          alt="ASO logo"
+                          width={32}
+                          height={32}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
                       <div className="text-left leading-tight">
                         <div className="text-sm font-semibold">American Space</div>
@@ -376,8 +390,14 @@ export function SiteFooter() {
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
           <div className="col-span-2">
             <div className="flex items-center gap-2.5 mb-3">
-              <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-primary-foreground" strokeWidth={2.4} />
+              <div className="w-10 h-10 rounded-xl overflow-hidden bg-primary flex items-center justify-center shrink-0">
+                <Image
+                  src="/logo.png"
+                  alt="ASO logo"
+                  width={40}
+                  height={40}
+                  className="w-full h-full object-cover"
+                />
               </div>
               <div className="leading-tight">
                 <div className="text-[15px] font-semibold">American Space Oujda</div>
@@ -397,6 +417,38 @@ export function SiteFooter() {
               </a>
               <div className="text-muted-foreground">{SITE.address}</div>
               <div className="text-muted-foreground">{SITE.phone}</div>
+            </div>
+            <div className="mt-4 flex items-center gap-2">
+              <a
+                href={SITE.social.facebook}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="tap w-9 h-9 rounded-full bg-secondary hover:bg-secondary/70 flex items-center justify-center text-muted-foreground hover:text-foreground"
+                aria-label="Facebook"
+                title="Follow us on Facebook"
+              >
+                <Facebook className="w-4 h-4" />
+              </a>
+              <a
+                href={SITE.social.instagram}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="tap w-9 h-9 rounded-full bg-secondary hover:bg-secondary/70 flex items-center justify-center text-muted-foreground hover:text-foreground"
+                aria-label="Instagram"
+                title="Follow us on Instagram"
+              >
+                <Instagram className="w-4 h-4" />
+              </a>
+              <a
+                href={SITE.social.youtube}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="tap w-9 h-9 rounded-full bg-secondary hover:bg-secondary/70 flex items-center justify-center text-muted-foreground hover:text-foreground"
+                aria-label="YouTube"
+                title="Subscribe on YouTube"
+              >
+                <Youtube className="w-4 h-4" />
+              </a>
             </div>
           </div>
 

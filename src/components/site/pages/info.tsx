@@ -87,21 +87,26 @@ export function AboutPage() {
               </h2>
               <div className="space-y-4 text-muted-foreground leading-relaxed pretty">
                 <p>
-                  American Space Oujda was inaugurated in 2014 as part of the U.S. Embassy's
-                  network of American Spaces across Morocco. We provide a free, open, and
-                  inclusive environment where members of the eastern Morocco community can
-                  learn English, access information about the United States, and engage in
-                  cultural exchange.
+                  American Space Oujda (ASO) was inaugurated in 2014 as part of the U.S. Embassy
+                  in Morocco&apos;s network of American Spaces — a sister to Dar America in
+                  Casablanca. We provide a free, open, and inclusive environment where members of
+                  the eastern Morocco community can learn English, access information about
+                  studying in the United States, and engage in cultural exchange.
                 </p>
                 <p>
                   Our mission is to strengthen the long-standing friendship between Morocco and
                   the United States by offering educational and cultural programming that
-                  supports personal growth, mutual understanding, and opportunity.
+                  supports personal growth, mutual understanding, and opportunity. As an
+                  EducationUSA advising center, we help Moroccan students navigate the U.S.
+                  university application process and prepare for standardized tests including
+                  TOEFL, SAT, GRE, and GMAT.
                 </p>
                 <p>
                   We host more than 200 events each year — including English courses, lectures,
                   film screenings, workshops, and cultural celebrations — and serve a community
-                  of over 1,200 active members from across the Oriental region.
+                  of over 1,200 active members from across the Oriental region. Find us on Rue
+                  Dakhla in Oujda, and follow us on Instagram and Facebook at{" "}
+                  <span className="text-foreground font-medium">@americanspaceoujda</span>.
                 </p>
               </div>
             </div>

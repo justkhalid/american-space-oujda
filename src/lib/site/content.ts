@@ -48,11 +48,11 @@ export const NAV_ITEMS: NavItem[] = [
 
 export const SITE = {
   name: "American Space Oujda",
-  shortName: "AS Oujda",
+  shortName: "ASO",
   tagline: "A cultural and learning space in eastern Morocco",
   email: "espaceamericainoujda@gmail.com",
-  address: "Boulevard Mohammed VI, Oujda, Morocco",
-  phone: "+212 5 36 68 32 71",
+  address: "Rue Dakhla, Oujda, Oriental, Morocco",
+  phone: "+212 536 50 67 57",
   established: 2014,
   hours: [
     { day: "Monday – Friday", time: "09:00 – 19:00" },

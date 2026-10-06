@@ -27,12 +27,15 @@ const mono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "American Space Oujda — A Cultural & Learning Space",
   description:
-    "American Space Oujda is a cultural and educational center in Oujda, Morocco, offering English courses, libraries, clubs, events, and opportunities for teachers, volunteers, interns, and trainers.",
+    "American Space Oujda (ASO) is a cultural and educational center in Oujda, Morocco, run by the U.S. Embassy. Offering free English courses, TOEFL/SAT/GRE prep, EducationUSA advising, a public library, cultural events, and clubs.",
   keywords: [
     "American Space Oujda",
+    "ASO Oujda",
     "Oujda",
     "Morocco",
-    "English courses",
+    "English courses Oujda",
+    "TOEFL Oujda",
+    "EducationUSA Morocco",
     "cultural center",
     "library",
     "events",
@@ -40,20 +43,27 @@ export const metadata: Metadata = {
     "intern",
     "teacher",
     "trainer",
+    "U.S. Embassy Morocco",
   ],
   authors: [{ name: "American Space Oujda" }],
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
   openGraph: {
     title: "American Space Oujda",
     description:
-      "A cultural and educational center in Oujda, Morocco — English courses, libraries, clubs, events, and opportunities for teachers, volunteers, interns, and trainers.",
+      "A cultural and educational center in Oujda, Morocco — free English courses, TOEFL/SAT/GRE prep, EducationUSA advising, library, events, and clubs. Run by the U.S. Embassy in Morocco.",
     type: "website",
     locale: "en_US",
+    images: [{ url: "/logo.png", width: 500, height: 500, alt: "American Space Oujda" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "American Space Oujda",
     description:
       "A cultural and educational center in Oujda, Morocco.",
+    images: ["/logo.png"],
   },
 };
 
