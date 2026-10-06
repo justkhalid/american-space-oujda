@@ -2,27 +2,27 @@ import { PrismaClient } from "@prisma/client";
 import { PrismaLibSql } from "@prisma/adapter-libsql";
 import { createClient } from "@libsql/client";
 
-// Vercel-friendly Prisma client.
-// Creates the client lazily on first query to avoid evaluating env vars at build time.
+// Standard Vercel pattern: create PrismaClient at module load time.
+// Vercel reuses warm function instances, so we cache on globalThis to avoid
+// creating new clients on every request.
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-let _client: PrismaClient | null = null;
-
 function createPrismaClient(): PrismaClient {
   const url = process.env.DATABASE_URL;
 
   if (!url) {
-    console.error("[db] DATABASE_URL is not set!");
-    console.error("[db] Available env vars:", Object.keys(process.env).filter(k => !k.startsWith("NEXT_")).sort());
-    throw new Error("DATABASE_URL is not set. Check Vercel Environment Variables.");
+    // During build time, DATABASE_URL might not be available yet.
+    // Return a stub PrismaClient — it won't actually be called at build time.
+    console.warn("[db] No DATABASE_URL — returning stub client (build-time)");
+    return new PrismaClient();
   }
 
-  // If it's a libsql:// URL (production / Turso), use the libSQL adapter
+  // Production: libSQL adapter (Turso)
   if (url.startsWith("libsql://") || url.startsWith("https://")) {
-    console.log("[db] Connecting to Turso:", url);
+    console.log("[db] Connecting to Turso libSQL");
     const libsql = createClient({
       url,
       authToken: process.env.DATABASE_AUTH_TOKEN,
@@ -31,29 +31,16 @@ function createPrismaClient(): PrismaClient {
     return new PrismaClient({ adapter });
   }
 
-  // Otherwise: local SQLite file (dev)
+  // Local dev: SQLite file
   console.log("[db] Using local SQLite:", url);
   return new PrismaClient({
     log: process.env.NODE_ENV !== "production" ? ["query", "error", "warn"] : ["error"],
   });
 }
 
-// Lazy getter — only creates the client on first access
-function getClient(): PrismaClient {
-  if (!_client) {
-    _client = createPrismaClient();
-    if (process.env.NODE_ENV !== "production") {
-      globalForPrisma.prisma = _client;
-    }
-  }
-  return _client;
-}
+export const db = globalForPrisma.prisma ?? createPrismaClient();
 
-// Export a proxy so the client is created lazily on first query
-export const db = new Proxy({} as PrismaClient, {
-  get(_target, prop, receiver) {
-    const client = getClient();
-    const value = Reflect.get(client, prop, receiver);
-    return typeof value === "function" ? value.bind(client) : value;
-  },
-});
+// Cache the client on globalThis in dev to prevent multiple instances on hot reload
+if (process.env.NODE_ENV !== "production") {
+  globalForPrisma.prisma = db;
+}
