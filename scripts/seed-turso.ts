@@ -13,7 +13,7 @@
 // 4. Optionally creates sample events and gallery items (uncomment below)
 
 import { PrismaClient } from "@prisma/client";
-import { PrismaLibSQL } from "@prisma/adapter-libsql";
+import { PrismaLibSql } from "@prisma/adapter-libsql";
 import { createClient } from "@libsql/client";
 import bcrypt from "bcryptjs";
 
@@ -29,7 +29,7 @@ async function main() {
 
   console.log(`Connecting to Turso: ${url}`);
   const libsql = createClient({ url, authToken: token });
-  const adapter = new PrismaLibSQL(libsql);
+  const adapter = new PrismaLibSql(libsql);
   const db = new PrismaClient({ adapter });
 
   console.log("Pushing schema to Turso (this can take a minute)...");
