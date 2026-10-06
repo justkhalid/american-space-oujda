@@ -2,12 +2,9 @@ import { PrismaClient } from "@prisma/client";
 import { PrismaLibSql } from "@prisma/adapter-libsql";
 import { createClient } from "@libsql/client";
 
-// Detect environment:
-// - Local dev: DATABASE_URL=file:./db/custom.db → use plain PrismaClient
-// - Production (Cloudflare Pages): DATABASE_URL=libsql://... → use libSQL adapter
-//
-// During build time, DATABASE_URL may be undefined — we return a no-op client
-// in that case so the build doesn't crash trying to connect.
+// Lazy Prisma client — only connects to the database when actually queried,
+// not when the module is imported. This prevents build-time crashes when
+// DATABASE_URL isn't available during static page generation.
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
@@ -16,14 +13,10 @@ const globalForPrisma = globalThis as unknown as {
 function createPrismaClient(): PrismaClient {
   const url = process.env.DATABASE_URL || "";
 
-  // During build time, DATABASE_URL might not be set yet — return a placeholder
-  if (!url && process.env.NEXT_PHASE === "phase-production-build") {
-    console.warn("[db] No DATABASE_URL during build — returning stub client");
-    return new PrismaClient();
-  }
-
-  // If no URL at all (shouldn't happen at runtime), return stub
+  // If no URL (e.g. during build), return a stub that won't actually connect
+  // until someone calls a method on it
   if (!url) {
+    console.warn("[db] No DATABASE_URL — returning stub PrismaClient");
     return new PrismaClient();
   }
 
@@ -43,6 +36,23 @@ function createPrismaClient(): PrismaClient {
   });
 }
 
-export const db = globalForPrisma.prisma ?? createPrismaClient();
+// Use a Proxy that lazily creates the client on first access
+// This prevents the URL_INVALID error during build static page generation
+let _client: PrismaClient | null = null;
+function getClient(): PrismaClient {
+  if (!_client) {
+    _client = createPrismaClient();
+  }
+  return _client;
+}
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = db;
+// Export a proxy that lazily initializes on first property access
+export const db = new Proxy({} as PrismaClient, {
+  get(_target, prop) {
+    const client = getClient();
+    const value = (client as never as Record<string | symbol, unknown>)[prop];
+    return typeof value === "function" ? (value as (...args: unknown[]) => unknown).bind(client) : value;
+  },
+});
+
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = getClient();
