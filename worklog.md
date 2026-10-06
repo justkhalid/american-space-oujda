@@ -180,3 +180,83 @@ Stage Summary:
 - The legacy `src/app/api/admin/login/route.ts` was removed (NextAuth handles auth).
 - No file in the project still imports from `@/lib/db`. `src/lib/db.ts` still exists (it's the Prisma client wrapper) but is unreferenced and can be deleted in a follow-up cleanup.
 - `bun run lint` is clean; the migration preserves all HTTP status codes, response shapes, and permission rules so the existing admin/teacher/editor dashboards continue to work without frontend changes.
+
+---
+Task ID: 3-companion
+Agent: sub-agent (general-purpose)
+Task: Build the ELTASO Companion integration (curriculum management tool for coordinators and teachers)
+
+Work Log:
+- Read worklog.md, src/lib/sql.ts (getDb/row/requireRole/getCurrentUser), src/store/router.ts, src/lib/auth.ts, src/components/dashboard/{layout,admin,teacher}.tsx, src/components/site/{primitives,shell}.tsx, src/app/page.tsx, and existing API routes (settings, courses, events) to understand the established patterns.
+- Inspected the local SQLite DB (file:db/custom.db) via @libsql/client to confirm the 7 Companion tables exist (CompanionSetting, CompanionLevel, CompanionWeek, CompanionClass, CompanionTeamMember, CompanionLibraryItem, CompanionNote) and inspected their schemas and seeded data (4 levels, 30 weeks/level, 8 classes, 10 team members, 13 library items, settings with s1Start=2026-10-05, s2Start=2027-02-08, s1Weeks=15, coordinator=Khalid, tpl WhatsApp template).
+
+- Created 7 API route files under src/app/api/companion/:
+  1. overview/route.ts — GET (any auth user). Returns settings flat map, counts (levels/classes/team/library), and current term+week computed from s1Start + s1Weeks + s2Start. Logic: today < s1Start → "before" with "Starts in N days" label; today in [s1Start, s1Start+s1Weeks weeks) → "S1" + week N; today in [s1End, s2Start) → "break" with "Winter break"; today in [s2Start, s2Start+30 weeks) → "S2" + week N; else "complete".
+  2. levels/route.ts — GET (any auth) returns levels with weekCount subquery. POST/PATCH/DELETE (ADMIN only). POST generates lvl_ prefix IDs. DELETE cascades weeks first.
+  3. weeks/route.ts — GET (any auth; ?levelId=X filter). POST/PATCH/DELETE (ADMIN+TEACHER). Parses JSON urls string into array on read; serializes back on write. Catches UNIQUE(levelId, weekNumber) constraint and returns 409.
+  4. classes/route.ts — GET (any auth; TEACHER sees only classes where teacherId = user.id OR teacherId = user.name). POST/PATCH/DELETE (ADMIN only). Generates cls_ prefix IDs.
+  5. team/route.ts — GET (any auth). POST/PATCH/DELETE (ADMIN only). Parses JSON levels string into array on read; serializes on write. Generates tm_ prefix IDs.
+  6. library/route.ts — GET (any auth). POST/DELETE (ADMIN+EDITOR). Generates lib_ prefix IDs.
+  7. settings/route.ts — GET (any auth) returns flat key→value map. PUT (ADMIN only) accepts a partial {key: value} object and upserts each key via ON CONFLICT(key) DO UPDATE.
+  - All routes use the discriminated-union requireRole pattern (returns 401 UNAUTHORIZED for no session, 403 FORBIDDEN for wrong role) from @/lib/sql. No 500s for unauthenticated requests.
+
+- Extended src/store/router.ts: added `CompanionTab = "overview" | "levels" | "classes" | "team" | "library"` type, `{ name: "companion" }` and `{ name: "companion-tab"; tab: CompanionTab }` route variants, parser case for "companion" and "companion/<tab>", and routeToHash case for "companion-tab".
+
+- Created src/components/dashboard/companion.tsx exporting `CompanionDashboard({ initialTab })`. Uses DashboardLayout with 5 tabs:
+  - Overview: greeting with coordinator name from settings, "Now" chip showing current week label (e.g. "S1 · Week 1"), 4 stat cards (levels, classes, team, library) that navigate on click, and a quick-links card.
+  - Levels: list of levels (MatteCard) with label, CEFR pill, week count pill. Click to expand → fetches weeks for that level via /api/companion/weeks?levelId=X and /api/companion/settings (for tpl template). Renders each week as a card with theme, objectives, language, resources, links (external), activities, homework. Each week has Copy/Pencil/Trash buttons. "Copy WhatsApp plan" uses date-fns addWeeks + format to compute the week date, fills in the {teacher}/{level}/{week}/{date}/{theme}/{obj}/{lang}/{act}/{hw}/{links}/{coordinator} placeholders in the tpl string, and writes to clipboard. Admin+teacher can edit via the WeekEditor (multi-field form with urls as newline-separated text). New week form auto-suggests weekNumber = existingCount + 1.
+  - Classes: grid of class cards. Admin sees New class button + edit/delete icons. Teachers see only their own classes (enforced by API). ClassEditor form has name, level (Select from levels), teacher (Select from team), schedule, room, students, active checkbox.
+  - Team: grid of team member cards with avatar, name, role pill, levels, phone (with WhatsApp wa.me link), email (mailto). Admin can add/edit/delete via TeamEditor.
+  - Library: items grouped by category, rendered as a grid. Each item links out (target=_blank). Admin+editor see New item + delete buttons. LibraryEditor form for name, category, url, notes.
+  - Auth guard: unauthenticated users are redirected to login. Role gating: teachers can edit weeks but not classes/team/library; admins can edit everything; editors can add/delete library items only.
+
+- Wired CompanionDashboard into src/app/page.tsx PageRouter: imported CompanionDashboard, added "companion"/"companion-tab" cases (initialTab = route.tab when companion-tab, else "overview"), added "companion" entry to the title map.
+
+- Added Companion to site navigation in src/components/site/shell.tsx:
+  - Imported BookOpen icon.
+  - Added `{ label: "Companion", route: { name: "companion" }, authOnly: true }` to PRIMARY_NAV (between "Courses" and "Join Us").
+  - Desktop nav filters out authOnly items when there is no session (signed-out users don't see Companion).
+  - Mobile drawer: added a Companion entry (also gated by `session`) below the NAV_ITEMS list, with the BookOpen icon in accent color.
+  - Note: the footer Explore/Programs sections use the static NAV_ITEMS list, so Companion is intentionally not added there (it's a staff-only tool, not a public page).
+
+- Added a "companion" tab to the Teacher dashboard (src/components/dashboard/teacher.tsx): added BookOpen + ArrowRight icons, added the tab to TABS, changed the onTabChange handler to intercept "companion" clicks and navigate to { name: "companion" } instead of going to teacher-tab. Added a CompanionLinkTab component that renders a MatteCard CTA button. Changed the `tab` state type to `TeacherTab | "companion"` so the JSX `{tab === "companion" && ...}` check type-checks.
+
+- Added a "companion" tab to the Admin dashboard (src/components/dashboard/admin.tsx): added the tab to TABS, refactored onTabChange into a function that intercepts "companion" and navigates to { name: "companion" } (otherwise navigates to admin-tab). Added a CompanionLinkTab component. Changed the `tab` state type to `AdminTab | "companion"`.
+
+- Quality: all UI uses shadcn/ui components (Button, Input, Textarea, Label, Select, Dialog) from @/components/ui/, MatteCard + Pill from @/components/site/primitives, lucide-react icons, sonner toast, date-fns for date math. iOS-inspired styling (rounded cards, hairline borders, accent-tinted icons, frosted sections). Mobile responsive via the existing DashboardLayout grid.
+
+Lint / type-check:
+- `bun run lint` → clean (exit 0, no errors).
+- `bunx tsc --noEmit` → no errors in any new or modified file. The only remaining tsc errors are pre-existing and unrelated (src/app/page.tsx line 70 ApplyPage presetRole type mismatch — exists on HEAD; src/lib/auth-db.ts, src/lib/db.ts, etc.).
+
+Verification:
+- `curl http://localhost:3000/api/companion/overview` (no auth) → 401 ✓
+- `curl http://localhost:3000/api/companion/levels` (no auth) → 401 ✓
+- All 7 Companion endpoints return 401 when unauthenticated (no 500s).
+- Logged in as admin (admin@asoujda.ma): all 7 GET endpoints return 200 with correct seeded data. Overview correctly computes current = { term: "S1", weekNumber: 1, label: "S1 · Week 1" } given today is Oct 6 2026 and s1Start is Oct 5 2026. POST library → 201, PUT settings → 200, DELETE library → 200.
+- Logged in as teacher (sarah.benali@asoujda.ma): GET classes returns 0 (Sarah doesn't match any CompanionClass.teacherId in the seed data — expected). POST class → 403 FORBIDDEN ✓. GET weeks → 200 ✓ (admin+teacher allowed). POST library → 403 FORBIDDEN ✓ (admin+editor only).
+- Home page loads 200, /api/events still 200 (no regressions).
+- `bun run lint` clean after all changes.
+
+Files created:
+- src/app/api/companion/overview/route.ts
+- src/app/api/companion/levels/route.ts
+- src/app/api/companion/weeks/route.ts
+- src/app/api/companion/classes/route.ts
+- src/app/api/companion/team/route.ts
+- src/app/api/companion/library/route.ts
+- src/app/api/companion/settings/route.ts
+- src/components/dashboard/companion.tsx
+
+Files modified:
+- src/store/router.ts (added CompanionTab + companion routes + parser + routeToHash)
+- src/app/page.tsx (imported CompanionDashboard, added PageRouter cases, added title entry)
+- src/components/site/shell.tsx (added BookOpen icon, added Companion to PRIMARY_NAV with authOnly flag, filter authOnly for desktop nav, added Companion entry to mobile drawer when signed in)
+- src/components/dashboard/teacher.tsx (added BookOpen + ArrowRight icons, added companion tab, refactored onTabChange to navigate to companion route, added CompanionLinkTab, widened tab state type)
+- src/components/dashboard/admin.tsx (added companion tab, refactored onTabChange to navigate to companion route, added CompanionLinkTab, widened tab state type)
+
+Stage Summary:
+- ELTASO Companion is fully integrated: 7 authenticated API routes, a 5-tab dashboard (Overview/Levels/Classes/Team/Library), hash routing at /#/companion and /#/companion/<tab>, role-aware navigation (signed-out users don't see the link; signed-in users see it in header + mobile drawer + as a tab inside both the admin and teacher dashboards).
+- Curriculum data (4 levels, 30 weeks each, 8 classes, 10 team members, 13 library items) renders correctly. The "Copy WhatsApp plan" button generates a formatted message using the configured tpl template and the week's date (computed from s1Start + week number via date-fns).
+- Permissions are enforced server-side: admins can edit everything; teachers can edit weeks (POST/PATCH/DELETE on /api/companion/weeks) and see only their own classes; editors can add/delete library items; everyone else (including signed-out) gets 401/403.
+- `bun run lint` is clean. All Companion endpoints return 401 (not 500) when unauthenticated, satisfying the verification requirements.

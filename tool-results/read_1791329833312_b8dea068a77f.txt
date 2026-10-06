@@ -1,0 +1,859 @@
+     1→"use client";
+     2→
+     3→import * as React from "react";
+     4→import { useSession } from "next-auth/react";
+     5→import { useRouter, type TeacherTab } from "@/store/router";
+     6→import { DashboardLayout, type DashTab } from "@/components/dashboard/layout";
+     7→import { Button } from "@/components/ui/button";
+     8→import { Input } from "@/components/ui/input";
+     9→import { Textarea } from "@/components/ui/textarea";
+    10→import { Label } from "@/components/ui/label";
+    11→import {
+    12→  Select,
+    13→  SelectContent,
+    14→  SelectItem,
+    15→  SelectTrigger,
+    16→  SelectValue,
+    17→} from "@/components/ui/select";
+    18→import { MatteCard, Pill } from "@/components/site/primitives";
+    19→import {
+    20→  GraduationCap,
+    21→  Users,
+    22→  ClipboardCheck,
+    23→  Award,
+    24→  FileBarChart,
+    25→  Plus,
+    26→  Trash2,
+    27→  Save,
+    28→  X,
+    29→  Loader2,
+    30→  CheckCircle2,
+    31→  Clock,
+    32→  CalendarDays,
+    33→} from "lucide-react";
+    34→import { toast } from "sonner";
+    35→import { format } from "date-fns";
+    36→
+    37→const TABS: DashTab[] = [
+    38→  { key: "courses", label: "My Courses", icon: GraduationCap },
+    39→  { key: "attendance", label: "Attendance", icon: ClipboardCheck },
+    40→  { key: "grades", label: "Marks", icon: Award },
+    41→  { key: "reports", label: "Reports", icon: FileBarChart },
+    42→];
+    43→
+    44→interface Course {
+    45→  id: string;
+    46→  title: string;
+    47→  description: string;
+    48→  level: string;
+    49→  schedule: string;
+    50→  startDate: string;
+    51→  capacity: number;
+    52→  _count: { enrollments: number };
+    53→}
+    54→
+    55→interface Enrollment {
+    56→  id: string;
+    57→  courseId: string;
+    58→  studentName: string;
+    59→  studentEmail: string;
+    60→  studentPhone: string | null;
+    61→  level: string;
+    62→  status: string;
+    63→  enrolledAt: string;
+    64→  course: { id: string; title: string };
+    65→}
+    66→
+    67→export function TeacherDashboard({ initialTab = "courses" }: { initialTab?: TeacherTab }) {
+    68→  const { data: session, status } = useSession();
+    69→  const navigate = useRouter((s) => s.navigate);
+    70→  const [tab, setTab] = React.useState<TeacherTab>(initialTab);
+    71→
+    72→  React.useEffect(() => setTab(initialTab), [initialTab]);
+    73→
+    74→  React.useEffect(() => {
+    75→    if (status === "loading") return;
+    76→    if (!session) {
+    77→      navigate({ name: "login" });
+    78→      return;
+    79→    }
+    80→    const role = (session.user as { role?: string })?.role;
+    81→    if (role === "ADMIN") navigate({ name: "admin" });
+    82→    else if (role === "EDITOR") navigate({ name: "editor" });
+    83→  }, [session, status, navigate]);
+    84→
+    85→  if (status === "loading" || !session) {
+    86→    return (
+    87→      <div className="flex items-center justify-center py-32">
+    88→        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+    89→      </div>
+    90→    );
+    91→  }
+    92→
+    93→  return (
+    94→    <DashboardLayout
+    95→      title="Teacher Dashboard"
+    96→      pillLabel="Teacher"
+    97→      pillIcon={GraduationCap}
+    98→      tabs={TABS}
+    99→      activeTab={tab}
+   100→      onTabChange={(t) => navigate({ name: "teacher-tab", tab: t as TeacherTab })}
+   101→      baseRoute={{ name: "teacher" }}
+   102→    >
+   103→      {tab === "courses" && <CoursesTab />}
+   104→      {tab === "attendance" && <AttendanceTab />}
+   105→      {tab === "grades" && <GradesTab />}
+   106→      {tab === "reports" && <ReportsTab />}
+   107→    </DashboardLayout>
+   108→  );
+   109→}
+   110→
+   111→// ============================================================
+   112→// COURSES — list courses assigned to this teacher + their students
+   113→// ============================================================
+   114→function CoursesTab() {
+   115→  const [courses, setCourses] = React.useState<Course[]>([]);
+   116→  const [selectedCourse, setSelectedCourse] = React.useState<string | null>(null);
+   117→  const [enrollments, setEnrollments] = React.useState<Enrollment[]>([]);
+   118→  const [loading, setLoading] = React.useState(true);
+   119→
+   120→  React.useEffect(() => {
+   121→    fetch("/api/courses")
+   122→      .then((r) => r.json())
+   123→      .then((d) => setCourses(d.courses || []))
+   124→      .finally(() => setLoading(false));
+   125→  }, []);
+   126→
+   127→  React.useEffect(() => {
+   128→    if (!selectedCourse) return;
+   129→    fetch(`/api/enrollments?courseId=${selectedCourse}`)
+   130→      .then((r) => r.json())
+   131→      .then((d) => setEnrollments(d.enrollments || []));
+   132→  }, [selectedCourse]);
+   133→
+   134→  if (loading) {
+   135→    return <div className="text-center py-16"><Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" /></div>;
+   136→  }
+   137→
+   138→  if (courses.length === 0) {
+   139→    return (
+   140→      <MatteCard className="text-center py-12">
+   141→        <GraduationCap className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+   142→        <h3 className="font-display text-xl mb-1">No courses assigned yet</h3>
+   143→        <p className="text-sm text-muted-foreground">An admin needs to assign you as a teacher for a course.</p>
+   144→      </MatteCard>
+   145→    );
+   146→  }
+   147→
+   148→  if (selectedCourse) {
+   149→    const course = courses.find((c) => c.id === selectedCourse);
+   150→    return (
+   151→      <div className="space-y-4">
+   152→        <button
+   153→          onClick={() => setSelectedCourse(null)}
+   154→          className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5"
+   155→        >
+   156→          ← Back to courses
+   157→        </button>
+   158→        <div>
+   159→          <h2 className="font-display text-2xl tracking-tight">{course?.title}</h2>
+   160→          <p className="text-sm text-muted-foreground mt-1">
+   161→            {course?.schedule} · {enrollments.length}/{course?.capacity} students · {course?.level}
+   162→          </p>
+   163→        </div>
+   164→        {enrollments.length === 0 ? (
+   165→          <MatteCard className="text-center py-12">
+   166→            <Users className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+   167→            <p className="text-muted-foreground">No students enrolled yet.</p>
+   168→          </MatteCard>
+   169→        ) : (
+   170→          <div className="space-y-2">
+   171→            {enrollments.map((e) => (
+   172→              <MatteCard key={e.id} className="p-4 flex items-center gap-3">
+   173→                <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center text-xs font-bold shrink-0">
+   174→                  {e.studentName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+   175→                </div>
+   176→                <div className="flex-1 min-w-0">
+   177→                  <div className="flex items-center gap-2 flex-wrap">
+   178→                    <span className="font-medium">{e.studentName}</span>
+   179→                    <Pill variant="muted">{e.status}</Pill>
+   180→                  </div>
+   181→                  <div className="text-xs text-muted-foreground mt-0.5">
+   182→                    {e.studentEmail} · {e.studentPhone || "no phone"} · Enrolled {format(new Date(e.enrolledAt), "MMM d, yyyy")}
+   183→                  </div>
+   184→                </div>
+   185→              </MatteCard>
+   186→            ))}
+   187→          </div>
+   188→        )}
+   189→      </div>
+   190→    );
+   191→  }
+   192→
+   193→  return (
+   194→    <div className="space-y-4">
+   195→      <div>
+   196→        <h2 className="font-display text-xl tracking-tight">My courses</h2>
+   197→        <p className="text-sm text-muted-foreground">{courses.length} active course{courses.length !== 1 ? "s" : ""}</p>
+   198→      </div>
+   199→      <div className="space-y-2">
+   200→        {courses.map((c) => (
+   201→          <button
+   202→            key={c.id}
+   203→            onClick={() => setSelectedCourse(c.id)}
+   204→            className="tap w-full text-left rounded-2xl bg-card border border-border/70 p-5 elevated hover:-translate-y-0.5 transition-transform"
+   205→          >
+   206→            <div className="flex items-start justify-between gap-3 mb-2">
+   207→              <h3 className="font-display text-lg tracking-tight">{c.title}</h3>
+   208→              <Pill variant="muted">{c.level}</Pill>
+   209→            </div>
+   210→            <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{c.description}</p>
+   211→            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+   212→              <span className="flex items-center gap-1.5"><CalendarDays className="w-3.5 h-3.5" />{c.schedule}</span>
+   213→              <span className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5" />{c._count.enrollments}/{c.capacity}</span>
+   214→            </div>
+   215→          </button>
+   216→        ))}
+   217→      </div>
+   218→    </div>
+   219→  );
+   220→}
+   221→
+   222→// ============================================================
+   223→// ATTENDANCE — mark present/absent for a date
+   224→// ============================================================
+   225→interface AttendanceRecord {
+   226→  id: string;
+   227→  date: string;
+   228→  studentEmail: string;
+   229→  studentName: string;
+   230→  status: string;
+   231→  notes: string | null;
+   232→}
+   233→
+   234→function AttendanceTab() {
+   235→  const [courses, setCourses] = React.useState<Course[]>([]);
+   236→  const [selectedCourse, setSelectedCourse] = React.useState<string>("");
+   237→  const [date, setDate] = React.useState(format(new Date(), "yyyy-MM-dd"));
+   238→  const [enrollments, setEnrollments] = React.useState<Enrollment[]>([]);
+   239→  const [attendance, setAttendance] = React.useState<Record<string, { status: string; notes: string }>>({});
+   240→  const [loading, setLoading] = React.useState(true);
+   241→  const [saving, setSaving] = React.useState(false);
+   242→
+   243→  React.useEffect(() => {
+   244→    fetch("/api/courses")
+   245→      .then((r) => r.json())
+   246→      .then((d) => {
+   247→        setCourses(d.courses || []);
+   248→        if (d.courses?.length > 0) setSelectedCourse(d.courses[0].id);
+   249→      })
+   250→      .finally(() => setLoading(false));
+   251→  }, []);
+   252→
+   253→  React.useEffect(() => {
+   254→    if (!selectedCourse) return;
+   255→    Promise.all([
+   256→      fetch(`/api/enrollments?courseId=${selectedCourse}`).then((r) => r.json()),
+   257→      fetch(`/api/attendance?courseId=${selectedCourse}`).then((r) => r.json()),
+   258→    ]).then(([enr, att]) => {
+   259→      setEnrollments(enr.enrollments || []);
+   260→      const today = format(new Date(date), "yyyy-MM-dd");
+   261→      const map: Record<string, { status: string; notes: string }> = {};
+   262→      (att.attendance || []).forEach((a: AttendanceRecord) => {
+   263→        if (format(new Date(a.date), "yyyy-MM-dd") === today) {
+   264→          map[a.studentEmail] = { status: a.status, notes: a.notes || "" };
+   265→        }
+   266→      });
+   267→      // Default everyone to PRESENT if not yet marked
+   268→      (enr.enrollments || []).forEach((e: Enrollment) => {
+   269→        if (!map[e.studentEmail]) {
+   270→          map[e.studentEmail] = { status: "PRESENT", notes: "" };
+   271→        }
+   272→      });
+   273→      setAttendance(map);
+   274→    });
+   275→  }, [selectedCourse, date]);
+   276→
+   277→  const setStatus = (email: string, status: string) => {
+   278→    setAttendance((a) => ({ ...a, [email]: { ...a[email], status } }));
+   279→  };
+   280→  const setNotes = (email: string, notes: string) => {
+   281→    setAttendance((a) => ({ ...a, [email]: { ...a[email], notes } }));
+   282→  };
+   283→
+   284→  const save = async () => {
+   285→    if (!selectedCourse) return;
+   286→    setSaving(true);
+   287→    try {
+   288→      const records = enrollments.map((e) => ({
+   289→        studentEmail: e.studentEmail,
+   290→        studentName: e.studentName,
+   291→        status: attendance[e.studentEmail]?.status || "PRESENT",
+   292→        notes: attendance[e.studentEmail]?.notes || "",
+   293→      }));
+   294→      const res = await fetch("/api/attendance", {
+   295→        method: "POST",
+   296→        headers: { "Content-Type": "application/json" },
+   297→        body: JSON.stringify({ courseId: selectedCourse, date, records }),
+   298→      });
+   299→      if (!res.ok) throw new Error("Save failed");
+   300→      toast.success(`Attendance saved for ${records.length} students.`);
+   301→    } catch {
+   302→      toast.error("Save failed.");
+   303→    } finally {
+   304→      setSaving(false);
+   305→    }
+   306→  };
+   307→
+   308→  if (loading) return <div className="text-center py-16"><Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" /></div>;
+   309→
+   310→  const STATUSES = ["PRESENT", "ABSENT", "LATE", "EXCUSED"];
+   311→  const STATUS_COLORS: Record<string, string> = {
+   312→    PRESENT: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+   313→    ABSENT: "bg-rose-500/15 text-rose-700 dark:text-rose-300",
+   314→    LATE: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+   315→    EXCUSED: "bg-sky-500/15 text-sky-700 dark:text-sky-300",
+   316→  };
+   317→
+   318→  return (
+   319→    <div className="space-y-4">
+   320→      <div className="flex flex-wrap items-end justify-between gap-3">
+   321→        <div>
+   322→          <h2 className="font-display text-xl tracking-tight">Mark attendance</h2>
+   323→          <p className="text-sm text-muted-foreground">Take attendance for a class session.</p>
+   324→        </div>
+   325→        <Button onClick={save} disabled={saving || !selectedCourse} className="rounded-full">
+   326→          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+   327→          Save attendance
+   328→        </Button>
+   329→      </div>
+   330→
+   331→      <div className="grid sm:grid-cols-2 gap-3">
+   332→        <div>
+   333→          <Label className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 block">Course</Label>
+   334→          <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+   335→            <SelectTrigger><SelectValue placeholder="Select course" /></SelectTrigger>
+   336→            <SelectContent>
+   337→              {courses.map((c) => (
+   338→                <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+   339→              ))}
+   340→            </SelectContent>
+   341→          </Select>
+   342→        </div>
+   343→        <div>
+   344→          <Label className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 block">Date</Label>
+   345→          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+   346→        </div>
+   347→      </div>
+   348→
+   349→      {!selectedCourse ? (
+   350→        <MatteCard className="text-center py-12">
+   351→          <ClipboardCheck className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+   352→          <p className="text-muted-foreground">Select a course to mark attendance.</p>
+   353→        </MatteCard>
+   354→      ) : enrollments.length === 0 ? (
+   355→        <MatteCard className="text-center py-12">
+   356→          <Users className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+   357→          <p className="text-muted-foreground">No students enrolled in this course.</p>
+   358→        </MatteCard>
+   359→      ) : (
+   360→        <div className="space-y-2">
+   361→          {enrollments.map((e) => {
+   362→            const a = attendance[e.studentEmail] || { status: "PRESENT", notes: "" };
+   363→            return (
+   364→              <MatteCard key={e.id} className="p-4">
+   365→                <div className="flex items-center gap-3 mb-3">
+   366→                  <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center text-xs font-bold shrink-0">
+   367→                    {e.studentName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+   368→                  </div>
+   369→                  <div className="flex-1 min-w-0">
+   370→                    <div className="font-medium text-sm">{e.studentName}</div>
+   371→                    <div className="text-xs text-muted-foreground truncate">{e.studentEmail}</div>
+   372→                  </div>
+   373→                </div>
+   374→                <div className="flex flex-wrap items-center gap-2">
+   375→                  {STATUSES.map((s) => (
+   376→                    <button
+   377→                      key={s}
+   378→                      onClick={() => setStatus(e.studentEmail, s)}
+   379→                      className={`tap px-2.5 py-1 rounded-full text-xs font-medium ${
+   380→                        a.status === s ? STATUS_COLORS[s] : "bg-secondary hover:bg-secondary/70"
+   381→                      }`}
+   382→                    >
+   383→                      {s.charAt(0) + s.slice(1).toLowerCase()}
+   384→                    </button>
+   385→                  ))}
+   386→                  <Input
+   387→                    value={a.notes}
+   388→                    onChange={(ev) => setNotes(e.studentEmail, ev.target.value)}
+   389→                    placeholder="Notes (optional)"
+   390→                    className="flex-1 min-w-[120px] h-7 text-xs"
+   391→                  />
+   392→                </div>
+   393→              </MatteCard>
+   394→            );
+   395→          })}
+   396→        </div>
+   397→      )}
+   398→    </div>
+   399→  );
+   400→}
+   401→
+   402→// ============================================================
+   403→// GRADES — add marks for assignments/exams
+   404→// ============================================================
+   405→interface Grade {
+   406→  id: string;
+   407→  studentEmail: string;
+   408→  studentName: string;
+   409→  title: string;
+   410→  score: number;
+   411→  maxScore: number;
+   412→  weight: number;
+   413→  notes: string | null;
+   414→  createdAt: string;
+   415→}
+   416→
+   417→function GradesTab() {
+   418→  const [courses, setCourses] = React.useState<Course[]>([]);
+   419→  const [selectedCourse, setSelectedCourse] = React.useState<string>("");
+   420→  const [enrollments, setEnrollments] = React.useState<Enrollment[]>([]);
+   421→  const [grades, setGrades] = React.useState<Grade[]>([]);
+   422→  const [loading, setLoading] = React.useState(true);
+   423→  const [creating, setCreating] = React.useState(false);
+   424→
+   425→  React.useEffect(() => {
+   426→    fetch("/api/courses")
+   427→      .then((r) => r.json())
+   428→      .then((d) => {
+   429→        setCourses(d.courses || []);
+   430→        if (d.courses?.length > 0) setSelectedCourse(d.courses[0].id);
+   431→      })
+   432→      .finally(() => setLoading(false));
+   433→  }, []);
+   434→
+   435→  const loadGrades = React.useCallback(() => {
+   436→    if (!selectedCourse) return;
+   437→    Promise.all([
+   438→      fetch(`/api/enrollments?courseId=${selectedCourse}`).then((r) => r.json()),
+   439→      fetch(`/api/grades?courseId=${selectedCourse}`).then((r) => r.json()),
+   440→    ]).then(([enr, gr]) => {
+   441→      setEnrollments(enr.enrollments || []);
+   442→      setGrades(gr.grades || []);
+   443→    });
+   444→  }, [selectedCourse]);
+   445→
+   446→  React.useEffect(() => loadGrades(), [loadGrades]);
+   447→
+   448→  const del = async (id: string) => {
+   449→    setGrades((g) => g.filter((x) => x.id !== id));
+   450→    await fetch(`/api/grades?id=${id}`, { method: "DELETE" });
+   451→    toast.success("Mark deleted.");
+   452→  };
+   453→
+   454→  if (loading) return <div className="text-center py-16"><Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" /></div>;
+   455→
+   456→  // Group grades by student
+   457→  const byStudent: Record<string, Grade[]> = {};
+   458→  grades.forEach((g) => {
+   459→    if (!byStudent[g.studentEmail]) byStudent[g.studentEmail] = [];
+   460→    byStudent[g.studentEmail].push(g);
+   461→  });
+   462→
+   463→  return (
+   464→    <div className="space-y-4">
+   465→      <div className="flex flex-wrap items-end justify-between gap-3">
+   466→        <div className="flex-1 min-w-[200px]">
+   467→          <h2 className="font-display text-xl tracking-tight">Marks</h2>
+   468→          <p className="text-sm text-muted-foreground">Record assignment and exam scores.</p>
+   469→        </div>
+   470→        <Button onClick={() => setCreating(true)} disabled={!selectedCourse} className="rounded-full" size="sm">
+   471→          <Plus className="w-4 h-4" /> Add mark
+   472→        </Button>
+   473→      </div>
+   474→
+   475→      <div>
+   476→        <Label className="text-xs uppercase tracking-wider text-muted-foreground mb-1.5 block">Course</Label>
+   477→        <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+   478→          <SelectTrigger><SelectValue /></SelectTrigger>
+   479→          <SelectContent>
+   480→            {courses.map((c) => (
+   481→              <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+   482→            ))}
+   483→          </SelectContent>
+   484→        </Select>
+   485→      </div>
+   486→
+   487→      {creating && (
+   488→        <GradeEditor
+   489→          enrollments={enrollments}
+   490→          onClose={() => setCreating(false)}
+   491→          onSaved={() => { setCreating(false); loadGrades(); }}
+   492→          courseId={selectedCourse}
+   493→        />
+   494→      )}
+   495→
+   496→      {!selectedCourse ? (
+   497→        <MatteCard className="text-center py-12">
+   498→          <Award className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+   499→          <p className="text-muted-foreground">Select a course.</p>
+   500→        </MatteCard>
+   501→      ) : Object.keys(byStudent).length === 0 ? (
+   502→        <MatteCard className="text-center py-12">
+   503→          <Award className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+   504→          <p className="text-muted-foreground">No marks recorded yet.</p>
+   505→        </MatteCard>
+   506→      ) : (
+   507→        <div className="space-y-4">
+   508→          {Object.entries(byStudent).map(([email, gs]) => {
+   509→            const totalWeighted = gs.reduce((sum, g) => sum + (g.score / g.maxScore) * g.weight * 100, 0);
+   510→            const totalWeight = gs.reduce((sum, g) => sum + g.weight, 0);
+   511→            const avg = totalWeight > 0 ? (totalWeighted / totalWeight).toFixed(1) : "—";
+   512→            return (
+   513→              <MatteCard key={email} className="p-4">
+   514→                <div className="flex items-center justify-between mb-3">
+   515→                  <div>
+   516→                    <div className="font-medium">{gs[0].studentName}</div>
+   517→                    <div className="text-xs text-muted-foreground">{email}</div>
+   518→                  </div>
+   519→                  <Pill variant="accent">Avg: {avg}%</Pill>
+   520→                </div>
+   521→                <div className="space-y-1.5">
+   522→                  {gs.map((g) => (
+   523→                    <div key={g.id} className="flex items-center gap-3 text-sm py-1.5 border-b border-border last:border-0">
+   524→                      <div className="flex-1 min-w-0">
+   525→                        <div className="font-medium">{g.title}</div>
+   526→                        {g.notes && <div className="text-xs text-muted-foreground italic">{g.notes}</div>}
+   527→                      </div>
+   528→                      <div className="text-xs text-muted-foreground tnum">
+   529→                        {g.score}/{g.maxScore} · {((g.score / g.maxScore) * 100).toFixed(0)}%
+   530→                      </div>
+   531→                      <div className="text-xs text-muted-foreground">
+   532→                        weight ×{g.weight}
+   533→                      </div>
+   534→                      <button
+   535→                        onClick={() => del(g.id)}
+   536→                        className="tap w-7 h-7 rounded-lg hover:bg-rose-500/10 text-rose-600 flex items-center justify-center shrink-0"
+   537→                      >
+   538→                        <Trash2 className="w-3 h-3" />
+   539→                      </button>
+   540→                    </div>
+   541→                  ))}
+   542→                </div>
+   543→              </MatteCard>
+   544→            );
+   545→          })}
+   546→        </div>
+   547→      )}
+   548→    </div>
+   549→  );
+   550→}
+   551→
+   552→function GradeEditor({
+   553→  enrollments,
+   554→  courseId,
+   555→  onClose,
+   556→  onSaved,
+   557→}: {
+   558→  enrollments: Enrollment[];
+   559→  courseId: string;
+   560→  onClose: () => void;
+   561→  onSaved: () => void;
+   562→}) {
+   563→  const [form, setForm] = React.useState({
+   564→    studentEmail: "",
+   565→    title: "",
+   566→    score: "",
+   567→    maxScore: "100",
+   568→    weight: "1",
+   569→    notes: "",
+   570→  });
+   571→  const [saving, setSaving] = React.useState(false);
+   572→  const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
+   573→
+   574→  const save = async () => {
+   575→    if (!form.studentEmail || !form.title || !form.score) {
+   576→      toast.error("Student, title, and score are required.");
+   577→      return;
+   578→    }
+   579→    setSaving(true);
+   580→    try {
+   581→      const enr = enrollments.find((e) => e.studentEmail === form.studentEmail);
+   582→      const res = await fetch("/api/grades", {
+   583→        method: "POST",
+   584→        headers: { "Content-Type": "application/json" },
+   585→        body: JSON.stringify({
+   586→          courseId,
+   587→          studentEmail: form.studentEmail,
+   588→          studentName: enr?.studentName || form.studentEmail,
+   589→          title: form.title,
+   590→          score: form.score,
+   591→          maxScore: form.maxScore,
+   592→          weight: form.weight,
+   593→          notes: form.notes || null,
+   594→        }),
+   595→      });
+   596→      if (!res.ok) throw new Error("Save failed");
+   597→      toast.success("Mark added.");
+   598→      onSaved();
+   599→    } catch {
+   600→      toast.error("Save failed.");
+   601→    } finally {
+   602→      setSaving(false);
+   603→    }
+   604→  };
+   605→
+   606→  return (
+   607→    <MatteCard>
+   608→      <div className="flex items-center justify-between mb-5">
+   609→        <h3 className="font-display text-lg tracking-tight">Add mark</h3>
+   610→        <button onClick={onClose} className="tap w-8 h-8 rounded-lg hover:bg-secondary flex items-center justify-center">
+   611→          <X className="w-4 h-4" />
+   612→        </button>
+   613→      </div>
+   614→      <div className="space-y-3">
+   615→        <div>
+   616→          <Label className="text-sm font-medium mb-1.5 block">Student *</Label>
+   617→          <Select value={form.studentEmail} onValueChange={(v) => set("studentEmail", v)}>
+   618→            <SelectTrigger><SelectValue placeholder="Select student" /></SelectTrigger>
+   619→            <SelectContent>
+   620→              {enrollments.map((e) => (
+   621→                <SelectItem key={e.id} value={e.studentEmail}>{e.studentName}</SelectItem>
+   622→              ))}
+   623→            </SelectContent>
+   624→          </Select>
+   625→        </div>
+   626→        <div>
+   627→          <Label className="text-sm font-medium mb-1.5 block">Title *</Label>
+   628→          <Input value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="Midterm Exam" />
+   629→        </div>
+   630→        <div className="grid grid-cols-3 gap-3">
+   631→          <div>
+   632→            <Label className="text-sm font-medium mb-1.5 block">Score *</Label>
+   633→            <Input type="number" step="0.5" value={form.score} onChange={(e) => set("score", e.target.value)} placeholder="85" />
+   634→          </div>
+   635→          <div>
+   636→            <Label className="text-sm font-medium mb-1.5 block">Max</Label>
+   637→            <Input type="number" step="0.5" value={form.maxScore} onChange={(e) => set("maxScore", e.target.value)} />
+   638→          </div>
+   639→          <div>
+   640→            <Label className="text-sm font-medium mb-1.5 block">Weight</Label>
+   641→            <Input type="number" step="0.1" value={form.weight} onChange={(e) => set("weight", e.target.value)} />
+   642→          </div>
+   643→        </div>
+   644→        <div>
+   645→          <Label className="text-sm font-medium mb-1.5 block">Notes</Label>
+   646→          <Input value={form.notes} onChange={(e) => set("notes", e.target.value)} placeholder="Optional" />
+   647→        </div>
+   648→        <div className="flex justify-end gap-2 pt-2 border-t border-border">
+   649→          <Button variant="outline" onClick={onClose} className="rounded-full bg-transparent">Cancel</Button>
+   650→          <Button onClick={save} disabled={saving} className="rounded-full">
+   651→            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+   652→            Add mark
+   653→          </Button>
+   654→        </div>
+   655→      </div>
+   656→    </MatteCard>
+   657→  );
+   658→}
+   659→
+   660→// ============================================================
+   661→// REPORTS — submit periodic reports per course
+   662→// ============================================================
+   663→interface Report {
+   664→  id: string;
+   665→  courseId: string;
+   666→  period: string;
+   667→  summary: string;
+   668→  challenges: string | null;
+   669→  recommendations: string | null;
+   670→  submittedAt: string;
+   671→  course: { id: string; title: string };
+   672→}
+   673→
+   674→function ReportsTab() {
+   675→  const [reports, setReports] = React.useState<Report[]>([]);
+   676→  const [courses, setCourses] = React.useState<Course[]>([]);
+   677→  const [loading, setLoading] = React.useState(true);
+   678→  const [creating, setCreating] = React.useState(false);
+   679→
+   680→  const load = React.useCallback(() => {
+   681→    setLoading(true);
+   682→    Promise.all([
+   683→      fetch("/api/reports").then((r) => r.json()),
+   684→      fetch("/api/courses").then((r) => r.json()),
+   685→    ]).then(([rep, crs]) => {
+   686→      setReports(rep.reports || []);
+   687→      setCourses(crs.courses || []);
+   688→    }).finally(() => setLoading(false));
+   689→  }, []);
+   690→  React.useEffect(() => load(), [load]);
+   691→
+   692→  const del = async (id: string) => {
+   693→    setReports((r) => r.filter((x) => x.id !== id));
+   694→    await fetch(`/api/reports?id=${id}`, { method: "DELETE" });
+   695→    toast.success("Report deleted.");
+   696→  };
+   697→
+   698→  if (loading) return <div className="text-center py-16"><Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" /></div>;
+   699→
+   700→  return (
+   701→    <div className="space-y-4">
+   702→      <div className="flex items-center justify-between gap-3">
+   703→        <div>
+   704→          <h2 className="font-display text-xl tracking-tight">Reports</h2>
+   705→          <p className="text-sm text-muted-foreground">{reports.length} submitted</p>
+   706→        </div>
+   707→        <Button onClick={() => setCreating(true)} size="sm" className="rounded-full">
+   708→          <Plus className="w-4 h-4" /> New report
+   709→        </Button>
+   710→      </div>
+   711→
+   712→      {creating && (
+   713→        <ReportEditor
+   714→          courses={courses}
+   715→          onClose={() => setCreating(false)}
+   716→          onSaved={() => { setCreating(false); load(); }}
+   717→        />
+   718→      )}
+   719→
+   720→      {reports.length === 0 ? (
+   721→        <MatteCard className="text-center py-12">
+   722→          <FileBarChart className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+   723→          <p className="text-muted-foreground">No reports submitted yet.</p>
+   724→        </MatteCard>
+   725→      ) : (
+   726→        <div className="space-y-2">
+   727→          {reports.map((r) => (
+   728→            <MatteCard key={r.id} className="p-4">
+   729→              <div className="flex items-start justify-between gap-3 mb-2">
+   730→                <div>
+   731→                  <div className="flex items-center gap-2 flex-wrap">
+   732→                    <span className="font-medium">{r.course.title}</span>
+   733→                    <Pill variant="muted">{r.period}</Pill>
+   734→                  </div>
+   735→                  <div className="text-xs text-muted-foreground mt-0.5">
+   736→                    Submitted {format(new Date(r.submittedAt), "MMM d, yyyy 'at' HH:mm")}
+   737→                  </div>
+   738→                </div>
+   739→                <button onClick={() => del(r.id)} className="tap w-8 h-8 rounded-lg hover:bg-rose-500/10 text-rose-600 flex items-center justify-center">
+   740→                  <Trash2 className="w-3.5 h-3.5" />
+   741→                </button>
+   742→              </div>
+   743→              <div className="space-y-2 mt-3">
+   744→                <div>
+   745→                  <div className="text-xs uppercase tracking-wider text-muted-foreground mb-0.5">Summary</div>
+   746→                  <p className="text-sm pretty">{r.summary}</p>
+   747→                </div>
+   748→                {r.challenges && (
+   749→                  <div>
+   750→                    <div className="text-xs uppercase tracking-wider text-muted-foreground mb-0.5">Challenges</div>
+   751→                    <p className="text-sm pretty text-muted-foreground">{r.challenges}</p>
+   752→                  </div>
+   753→                )}
+   754→                {r.recommendations && (
+   755→                  <div>
+   756→                    <div className="text-xs uppercase tracking-wider text-muted-foreground mb-0.5">Recommendations</div>
+   757→                    <p className="text-sm pretty text-muted-foreground">{r.recommendations}</p>
+   758→                  </div>
+   759→                )}
+   760→              </div>
+   761→            </MatteCard>
+   762→          ))}
+   763→        </div>
+   764→      )}
+   765→    </div>
+   766→  );
+   767→}
+   768→
+   769→function ReportEditor({
+   770→  courses,
+   771→  onClose,
+   772→  onSaved,
+   773→}: {
+   774→  courses: Course[];
+   775→  onClose: () => void;
+   776→  onSaved: () => void;
+   777→}) {
+   778→  const [form, setForm] = React.useState({
+   779→    courseId: courses[0]?.id || "",
+   780→    period: format(new Date(), "MMMM yyyy"),
+   781→    summary: "",
+   782→    challenges: "",
+   783→    recommendations: "",
+   784→  });
+   785→  const [saving, setSaving] = React.useState(false);
+   786→  const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
+   787→
+   788→  const save = async () => {
+   789→    if (!form.courseId || !form.summary || form.summary.length < 20) {
+   790→      toast.error("Course and a summary (min 20 characters) are required.");
+   791→      return;
+   792→    }
+   793→    setSaving(true);
+   794→    try {
+   795→      const res = await fetch("/api/reports", {
+   796→        method: "POST",
+   797→        headers: { "Content-Type": "application/json" },
+   798→        body: JSON.stringify(form),
+   799→      });
+   800→      if (!res.ok) throw new Error("Save failed");
+   801→      toast.success("Report submitted.");
+   802→      onSaved();
+   803→    } catch {
+   804→      toast.error("Save failed.");
+   805→    } finally {
+   806→      setSaving(false);
+   807→    }
+   808→  };
+   809→
+   810→  return (
+   811→    <MatteCard>
+   812→      <div className="flex items-center justify-between mb-5">
+   813→        <h3 className="font-display text-lg tracking-tight">New report</h3>
+   814→        <button onClick={onClose} className="tap w-8 h-8 rounded-lg hover:bg-secondary flex items-center justify-center">
+   815→          <X className="w-4 h-4" />
+   816→        </button>
+   817→      </div>
+   818→      <div className="space-y-3">
+   819→        <div className="grid sm:grid-cols-2 gap-3">
+   820→          <div>
+   821→            <Label className="text-sm font-medium mb-1.5 block">Course *</Label>
+   822→            <Select value={form.courseId} onValueChange={(v) => set("courseId", v)}>
+   823→              <SelectTrigger><SelectValue /></SelectTrigger>
+   824→              <SelectContent>
+   825→                {courses.map((c) => (
+   826→                  <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+   827→                ))}
+   828→              </SelectContent>
+   829→            </Select>
+   830→          </div>
+   831→          <div>
+   832→            <Label className="text-sm font-medium mb-1.5 block">Period</Label>
+   833→            <Input value={form.period} onChange={(e) => set("period", e.target.value)} placeholder="October 2026" />
+   834→          </div>
+   835→        </div>
+   836→        <div>
+   837→          <Label className="text-sm font-medium mb-1.5 block">Summary * (min 20 characters)</Label>
+   838→          <Textarea value={form.summary} onChange={(e) => set("summary", e.target.value)} rows={4} placeholder="What happened in this course during this period? Topics covered, attendance trends, student progress…" />
+   839→        </div>
+   840→        <div>
+   841→          <Label className="text-sm font-medium mb-1.5 block">Challenges</Label>
+   842→          <Textarea value={form.challenges} onChange={(e) => set("challenges", e.target.value)} rows={2} placeholder="Optional — difficulties encountered" />
+   843→        </div>
+   844→        <div>
+   845→          <Label className="text-sm font-medium mb-1.5 block">Recommendations</Label>
+   846→          <Textarea value={form.recommendations} onChange={(e) => set("recommendations", e.target.value)} rows={2} placeholder="Optional — what should change next period" />
+   847→        </div>
+   848→        <div className="flex justify-end gap-2 pt-2 border-t border-border">
+   849→          <Button variant="outline" onClick={onClose} className="rounded-full bg-transparent">Cancel</Button>
+   850→          <Button onClick={save} disabled={saving} className="rounded-full">
+   851→            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+   852→            Submit report
+   853→          </Button>
+   854→        </div>
+   855→      </div>
+   856→    </MatteCard>
+   857→  );
+   858→}
+   859→

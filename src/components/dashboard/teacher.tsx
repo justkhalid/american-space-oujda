@@ -22,6 +22,7 @@ import {
   ClipboardCheck,
   Award,
   FileBarChart,
+  BookOpen,
   Plus,
   Trash2,
   Save,
@@ -30,6 +31,7 @@ import {
   CheckCircle2,
   Clock,
   CalendarDays,
+  ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -39,6 +41,7 @@ const TABS: DashTab[] = [
   { key: "attendance", label: "Attendance", icon: ClipboardCheck },
   { key: "grades", label: "Marks", icon: Award },
   { key: "reports", label: "Reports", icon: FileBarChart },
+  { key: "companion", label: "Companion", icon: BookOpen },
 ];
 
 interface Course {
@@ -67,7 +70,7 @@ interface Enrollment {
 export function TeacherDashboard({ initialTab = "courses" }: { initialTab?: TeacherTab }) {
   const { data: session, status } = useSession();
   const navigate = useRouter((s) => s.navigate);
-  const [tab, setTab] = React.useState<TeacherTab>(initialTab);
+  const [tab, setTab] = React.useState<TeacherTab | "companion">(initialTab);
 
   React.useEffect(() => setTab(initialTab), [initialTab]);
 
@@ -97,14 +100,48 @@ export function TeacherDashboard({ initialTab = "courses" }: { initialTab?: Teac
       pillIcon={GraduationCap}
       tabs={TABS}
       activeTab={tab}
-      onTabChange={(t) => navigate({ name: "teacher-tab", tab: t as TeacherTab })}
+      onTabChange={(t) => {
+        if (t === "companion") {
+          navigate({ name: "companion" });
+          return;
+        }
+        navigate({ name: "teacher-tab", tab: t as TeacherTab });
+      }}
       baseRoute={{ name: "teacher" }}
     >
       {tab === "courses" && <CoursesTab />}
       {tab === "attendance" && <AttendanceTab />}
       {tab === "grades" && <GradesTab />}
       {tab === "reports" && <ReportsTab />}
+      {tab === "companion" && <CompanionLinkTab onOpen={() => navigate({ name: "companion" })} />}
     </DashboardLayout>
+  );
+}
+
+// ============================================================
+// COMPANION — link to the full ELTASO Companion dashboard
+// ============================================================
+function CompanionLinkTab({ onOpen }: { onOpen: () => void }) {
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="font-display text-xl tracking-tight">ELTASO Companion</h2>
+        <p className="text-sm text-muted-foreground">
+          A curriculum management tool with weekly plans, class lists, the teaching team, and a
+          shared resource library.
+        </p>
+      </div>
+      <MatteCard className="text-center py-12">
+        <BookOpen className="w-10 h-10 text-accent mx-auto mb-3" />
+        <h3 className="font-display text-lg tracking-tight mb-1">Open the Companion</h3>
+        <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
+          Browse the 30-week curriculum, copy WhatsApp lesson plans, and view your classes.
+        </p>
+        <Button onClick={onOpen} className="rounded-full">
+          Open Companion <ArrowRight className="w-4 h-4" />
+        </Button>
+      </MatteCard>
+    </div>
   );
 }
 

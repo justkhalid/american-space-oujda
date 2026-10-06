@@ -15,7 +15,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Menu, Search, Sparkles, Moon, Sun, ChevronRight, LogIn, LayoutDashboard, LogOut, Facebook, Instagram, Youtube } from "lucide-react";
+import { Menu, Search, Sparkles, Moon, Sun, ChevronRight, LogIn, LayoutDashboard, LogOut, Facebook, Instagram, Youtube, BookOpen } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useSession, signOut } from "next-auth/react";
 import {
@@ -34,16 +34,14 @@ function Logo({ compact = false }: { compact?: boolean }) {
       className="tap flex items-center gap-2.5 group"
       aria-label="American Space Oujda home"
     >
-      <div className="relative w-10 h-10 rounded-full overflow-hidden bg-primary flex items-center justify-center shrink-0 ring-1 ring-border/50">
-        <Image
-          src="/logo.png"
-          alt="American Space Oujda logo"
-          width={40}
-          height={40}
-          className="w-full h-full object-cover"
-          priority
-        />
-      </div>
+      <Image
+        src="/logo.png"
+        alt="American Space Oujda logo"
+        width={40}
+        height={40}
+        className="w-10 h-10 object-contain shrink-0"
+        priority
+      />
       {!compact && (
         <div className="text-left leading-tight">
           <div className="text-[15px] font-semibold tracking-tight">American Space Oujda</div>
@@ -55,17 +53,20 @@ function Logo({ compact = false }: { compact?: boolean }) {
 }
 
 function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => setMounted(true), []);
-  if (!mounted) return <div className="w-9 h-9" />;
   return (
     <button
-      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+      onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
       className="tap w-9 h-9 rounded-full hover:bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground"
       aria-label="Toggle theme"
+      suppressHydrationWarning
     >
-      {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+      {/* Render both icons; CSS shows the right one based on .dark on <html> */}
+      <Sun className="w-4 h-4 hidden dark:block" suppressHydrationWarning />
+      <Moon className="w-4 h-4 block dark:hidden" suppressHydrationWarning />
+      {!mounted && <span className="w-4 h-4" />}
     </button>
   );
 }
@@ -188,7 +189,8 @@ function SearchDialog({
   );
 }
 
-// Desktop nav: top-level groups
+// Desktop nav: top-level groups. "Companion" is gated by authentication
+// at render time — it is filtered out for signed-out users below.
 const PRIMARY_NAV = [
   { label: "About", route: { name: "about" as const } },
   { label: "Activities", route: { name: "activities" as const } },
@@ -197,6 +199,7 @@ const PRIMARY_NAV = [
   { label: "Album", route: { name: "album" as const } },
   { label: "Library", route: { name: "library" as const } },
   { label: "Courses", route: { name: "registration" as const } },
+  { label: "Companion", route: { name: "companion" as const }, authOnly: true },
   { label: "Join Us", route: { name: "tvt" as const }, highlight: true },
 ];
 
@@ -247,7 +250,7 @@ export function SiteHeader() {
             <Logo />
 
             <nav className="hidden lg:flex items-center gap-0.5">
-              {PRIMARY_NAV.map((n) => (
+              {PRIMARY_NAV.filter((n) => !n.authOnly || session).map((n) => (
                 <button
                   key={n.label}
                   onClick={() => navigate(n.route)}
@@ -319,19 +322,17 @@ export function SiteHeader() {
                 <SheetContent side="right" className="w-[88vw] sm:w-[380px] p-0">
                   <SheetHeader className="p-4 border-b border-border">
                     <SheetTitle className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full overflow-hidden bg-primary flex items-center justify-center shrink-0 ring-1 ring-border/50">
-                        <Image
-                          src="/logo.png"
-                          alt="ASO logo"
-                          width={32}
-                          height={32}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
+                      <Image
+                        src="/logo.png"
+                        alt="ASO logo"
+                        width={32}
+                        height={32}
+                        className="w-8 h-8 object-contain shrink-0"
+                      />
                       <div className="text-left leading-tight">
-                        <div className="text-sm font-semibold">American Space</div>
+                        <div className="text-sm font-semibold">American Space Oujda</div>
                         <div className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                          Oujda
+                          Morocco
                         </div>
                       </div>
                     </SheetTitle>
@@ -356,6 +357,25 @@ export function SiteHeader() {
                           </button>
                         </SheetClose>
                       ))}
+
+                      {session && (
+                        <SheetClose asChild>
+                          <button
+                            onClick={() => navigate({ name: "companion" })}
+                            className="tap w-full flex items-start gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary text-left"
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-accent/15 flex items-center justify-center shrink-0">
+                              <BookOpen className="w-4 h-4 text-accent" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="text-sm font-medium">Companion</div>
+                              <div className="text-xs text-muted-foreground truncate">
+                                ELTASO curriculum for coordinators & teachers
+                              </div>
+                            </div>
+                          </button>
+                        </SheetClose>
+                      )}
                     </div>
                     <div className="mt-4 p-3 rounded-xl bg-secondary/60">
                       <div className="text-xs text-muted-foreground mb-1">Contact</div>
@@ -389,15 +409,13 @@ export function SiteFooter() {
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
           <div className="col-span-2">
             <div className="flex items-center gap-2.5 mb-3">
-              <div className="w-10 h-10 rounded-full overflow-hidden bg-primary flex items-center justify-center shrink-0 ring-1 ring-border/50">
-                <Image
-                  src="/logo.png"
-                  alt="ASO logo"
-                  width={40}
-                  height={40}
-                  className="w-full h-full object-cover"
-                />
-              </div>
+              <Image
+                src="/logo.png"
+                alt="ASO logo"
+                width={40}
+                height={40}
+                className="w-10 h-10 object-contain shrink-0"
+              />
               <div className="leading-tight">
                 <div className="text-[15px] font-semibold">American Space Oujda</div>
                 <div className="text-[11px] text-muted-foreground tracking-wider uppercase">

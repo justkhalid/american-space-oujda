@@ -14,6 +14,7 @@ import { LoginPage } from "@/components/auth/login-form";
 import { AdminDashboard } from "@/components/dashboard/admin";
 import { TeacherDashboard } from "@/components/dashboard/teacher";
 import { EditorDashboard } from "@/components/dashboard/editor";
+import { CompanionDashboard } from "@/components/dashboard/companion";
 import {
   AboutPage,
   RelationsPage,
@@ -78,6 +79,9 @@ function PageRouter({ route }: { route: Route }) {
     case "editor":
     case "editor-tab":
       return <EditorDashboard initialTab={route.name === "editor-tab" ? route.tab : "events"} />;
+    case "companion":
+    case "companion-tab":
+      return <CompanionDashboard initialTab={route.name === "companion-tab" ? route.tab : "overview"} />;
     case "search":
       return <SearchPage initialQuery={route.q} />;
     default:
@@ -112,6 +116,7 @@ export default function Home() {
       admin: "Admin · American Space Oujda",
       teacher: "Teacher · American Space Oujda",
       editor: "Editor · American Space Oujda",
+      companion: "ELTASO Companion · American Space Oujda",
       search: "Search · American Space Oujda",
     };
     document.title = titles[route.name] || "American Space Oujda";

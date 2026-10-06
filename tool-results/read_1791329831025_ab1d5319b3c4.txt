@@ -1,0 +1,1782 @@
+     1→"use client";
+     2→
+     3→import * as React from "react";
+     4→import { useSession } from "next-auth/react";
+     5→import { useRouter, type AdminTab } from "@/store/router";
+     6→import { DashboardLayout, type DashTab } from "@/components/dashboard/layout";
+     7→import { Button } from "@/components/ui/button";
+     8→import { Input } from "@/components/ui/input";
+     9→import { Textarea } from "@/components/ui/textarea";
+    10→import { Label } from "@/components/ui/label";
+    11→import {
+    12→  Select,
+    13→  SelectContent,
+    14→  SelectItem,
+    15→  SelectTrigger,
+    16→  SelectValue,
+    17→} from "@/components/ui/select";
+    18→import { MatteCard, Pill } from "@/components/site/primitives";
+    19→import {
+    20→  ShieldCheck,
+    21→  LayoutGrid,
+    22→  FileText,
+    23→  CalendarDays,
+    24→  Camera,
+    25→  GraduationCap,
+    26→  Users,
+    27→  BookOpen,
+    28→  Settings,
+    29→  UserCog,
+    30→  MessageSquare,
+    31→  Plus,
+    32→  Trash2,
+    33→  Eye,
+    34→  EyeOff,
+    35→  Pencil,
+    36→  X,
+    37→  Save,
+    38→  CheckCircle2,
+    39→  Loader2,
+    40→  Mail,
+    41→  Phone,
+    42→  MapPin,
+    43→  Clock,
+    44→  Link2,
+    45→  HeartHandshake,
+    46→} from "lucide-react";
+    47→import { toast } from "sonner";
+    48→import { format } from "date-fns";
+    49→import type { Role } from "@prisma/client";
+    50→
+    51→const TABS: DashTab[] = [
+    52→  { key: "overview", label: "Overview", icon: LayoutGrid },
+    53→  { key: "applications", label: "Applications", icon: FileText },
+    54→  { key: "events", label: "Events", icon: CalendarDays },
+    55→  { key: "gallery", label: "Gallery", icon: Camera },
+    56→  { key: "courses", label: "Courses", icon: GraduationCap },
+    57→  { key: "clubs", label: "Clubs", icon: Users },
+    58→  { key: "links", label: "Useful Links", icon: Link2 },
+    59→  { key: "members", label: "Members", icon: HeartHandshake },
+    60→  { key: "registrations", label: "Registrations", icon: BookOpen },
+    61→  { key: "comments", label: "Comments", icon: MessageSquare },
+    62→  { key: "settings", label: "Site Settings", icon: Settings },
+    63→  { key: "users", label: "Users", icon: UserCog },
+    64→];
+    65→
+    66→export function AdminDashboard({ initialTab = "overview" }: { initialTab?: AdminTab }) {
+    67→  const { data: session, status } = useSession();
+    68→  const navigate = useRouter((s) => s.navigate);
+    69→  const [tab, setTab] = React.useState<AdminTab>(initialTab);
+    70→
+    71→  React.useEffect(() => setTab(initialTab), [initialTab]);
+    72→
+    73→  // Auth guard
+    74→  React.useEffect(() => {
+    75→    if (status === "loading") return;
+    76→    if (!session) {
+    77→      navigate({ name: "login" });
+    78→      return;
+    79→    }
+    80→    const role = (session.user as { role?: string })?.role;
+    81→    if (role === "TEACHER") {
+    82→      navigate({ name: "teacher" });
+    83→    } else if (role === "EDITOR") {
+    84→      navigate({ name: "editor" });
+    85→    }
+    86→  }, [session, status, navigate]);
+    87→
+    88→  if (status === "loading" || !session) {
+    89→    return (
+    90→      <div className="flex items-center justify-center py-32">
+    91→        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+    92→      </div>
+    93→    );
+    94→  }
+    95→
+    96→  const onTabChange = (t: string) => navigate({ name: "admin-tab", tab: t as AdminTab });
+    97→
+    98→  return (
+    99→    <DashboardLayout
+   100→      title="Admin Dashboard"
+   101→      pillLabel="Admin"
+   102→      pillIcon={ShieldCheck}
+   103→      tabs={TABS}
+   104→      activeTab={tab}
+   105→      onTabChange={onTabChange}
+   106→      baseRoute={{ name: "admin" }}
+   107→    >
+   108→      {tab === "overview" && <OverviewTab />}
+   109→      {tab === "applications" && <ApplicationsTab />}
+   110→      {tab === "events" && <EventsTab />}
+   111→      {tab === "gallery" && <GalleryTab />}
+   112→      {tab === "courses" && <CoursesTab />}
+   113→      {tab === "clubs" && <ClubsTab />}
+   114→      {tab === "links" && <LinksTab />}
+   115→      {tab === "members" && <MembersTab />}
+   116→      {tab === "registrations" && <RegistrationsTab />}
+   117→      {tab === "comments" && <CommentsTab />}
+   118→      {tab === "settings" && <SettingsTab />}
+   119→      {tab === "users" && <UsersTab />}
+   120→    </DashboardLayout>
+   121→  );
+   122→}
+   123→
+   124→// ============================================================
+   125→// OVERVIEW
+   126→// ============================================================
+   127→function OverviewTab() {
+   128→  const [stats, setStats] = React.useState({
+   129→    applications: 0,
+   130→    events: 0,
+   131→    gallery: 0,
+   132→    members: 0,
+   133→    registrations: 0,
+   134→    users: 0,
+   135→    courses: 0,
+   136→  });
+   137→
+   138→  React.useEffect(() => {
+   139→    Promise.all([
+   140→      fetch("/api/applications").then((r) => r.ok ? r.json() : { applications: [] }),
+   141→      fetch("/api/events?upcoming=0&limit=1").then((r) => r.json()),
+   142→      fetch("/api/gallery").then((r) => r.json()),
+   143→      fetch("/api/courses").then((r) => r.json()),
+   144→    ]).then(([apps, evs, gal, courses]) => {
+   145→      setStats((s) => ({
+   146→        ...s,
+   147→        applications: apps.applications?.length || 0,
+   148→        events: evs.events?.length || 0,
+   149→        gallery: gal.items?.length || 0,
+   150→        courses: courses.courses?.length || 0,
+   151→      }));
+   152→    });
+   153→  }, []);
+   154→
+   155→  const cards = [
+   156→    { label: "Applications", value: stats.applications, icon: FileText, color: "text-amber-600" },
+   157→    { label: "Events", value: stats.events, icon: CalendarDays, color: "text-sky-600" },
+   158→    { label: "Gallery items", value: stats.gallery, icon: Camera, color: "text-violet-600" },
+   159→    { label: "Active courses", value: stats.courses, icon: GraduationCap, color: "text-emerald-600" },
+   160→  ];
+   161→
+   162→  return (
+   163→    <div className="space-y-6">
+   164→      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+   165→        {cards.map((c) => (
+   166→          <MatteCard key={c.label} className="p-4">
+   167→            <c.icon className={`w-5 h-5 mb-3 ${c.color}`} />
+   168→            <div className="font-display text-3xl tracking-tight tnum">{c.value}</div>
+   169→            <div className="text-xs uppercase tracking-wider text-muted-foreground mt-1">
+   170→              {c.label}
+   171→            </div>
+   172→          </MatteCard>
+   173→        ))}
+   174→      </div>
+   175→
+   176→      <MatteCard>
+   177→        <h3 className="font-display text-xl tracking-tight mb-2">Welcome back</h3>
+   178→        <p className="text-sm text-muted-foreground leading-relaxed pretty">
+   179→          From here you can manage applications, events, the photo gallery, courses, members,
+   180→          on-site text content, and staff user accounts. Use the sidebar to navigate between
+   181→          sections. Recent activity appears in each tab.
+   182→        </p>
+   183→      </MatteCard>
+   184→    </div>
+   185→  );
+   186→}
+   187→
+   188→// ============================================================
+   189→// APPLICATIONS
+   190→// ============================================================
+   191→type Status = "PENDING" | "REVIEWING" | "ACCEPTED" | "REJECTED";
+   192→interface Application {
+   193→  id: string;
+   194→  role: string;
+   195→  fullName: string;
+   196→  email: string;
+   197→  phone: string | null;
+   198→  city: string | null;
+   199→  country: string | null;
+   200→  age: number | null;
+   201→  occupation: string | null;
+   202→  organization: string | null;
+   203→  languages: string | null;
+   204→  motivation: string;
+   205→  experience: string | null;
+   206→  status: Status;
+   207→  createdAt: string;
+   208→}
+   209→
+   210→const STATUS_COLORS: Record<Status, string> = {
+   211→  PENDING: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+   212→  REVIEWING: "bg-sky-500/15 text-sky-700 dark:text-sky-300",
+   213→  ACCEPTED: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+   214→  REJECTED: "bg-rose-500/15 text-rose-700 dark:text-rose-300",
+   215→};
+   216→
+   217→function ApplicationsTab() {
+   218→  const [apps, setApps] = React.useState<Application[]>([]);
+   219→  const [loading, setLoading] = React.useState(true);
+   220→  const [filter, setFilter] = React.useState<"ALL" | string>("ALL");
+   221→  const [statusFilter, setStatusFilter] = React.useState<"ALL" | Status>("ALL");
+   222→
+   223→  const load = React.useCallback(() => {
+   224→    setLoading(true);
+   225→    fetch("/api/applications")
+   226→      .then((r) => r.json())
+   227→      .then((d) => setApps(d.applications || []))
+   228→      .finally(() => setLoading(false));
+   229→  }, []);
+   230→  React.useEffect(() => load(), [load]);
+   231→
+   232→  const updateStatus = async (id: string, status: Status) => {
+   233→    setApps((a) => a.map((x) => (x.id === id ? { ...x, status } : x)));
+   234→    await fetch(`/api/admin/applications?id=${id}`, {
+   235→      method: "PATCH",
+   236→      headers: { "Content-Type": "application/json" },
+   237→      body: JSON.stringify({ status }),
+   238→    });
+   239→    toast.success(`Marked as ${status.toLowerCase()}.`);
+   240→  };
+   241→
+   242→  const del = async (id: string) => {
+   243→    setApps((a) => a.filter((x) => x.id !== id));
+   244→    await fetch(`/api/admin/applications?id=${id}`, { method: "DELETE" });
+   245→    toast.success("Application deleted.");
+   246→  };
+   247→
+   248→  const filtered = apps
+   249→    .filter((a) => filter === "ALL" || a.role === filter)
+   250→    .filter((a) => statusFilter === "ALL" || a.status === statusFilter);
+   251→
+   252→  return (
+   253→    <div className="space-y-4">
+   254→      <div className="flex flex-wrap items-center gap-3">
+   255→        <div className="flex items-center gap-2 flex-wrap">
+   256→          <span className="text-xs uppercase tracking-wider text-muted-foreground">Role:</span>
+   257→          {["ALL", "TEACHER", "VOLUNTEER", "INTERN", "TRAINER"].map((r) => (
+   258→            <button
+   259→              key={r}
+   260→              onClick={() => setFilter(r)}
+   261→              className={`tap px-2.5 py-1 rounded-full text-xs font-medium ${
+   262→                filter === r ? "bg-primary text-primary-foreground" : "bg-secondary hover:bg-secondary/70"
+   263→              }`}
+   264→            >
+   265→              {r === "ALL" ? "All" : r.charAt(0) + r.slice(1).toLowerCase()}
+   266→            </button>
+   267→          ))}
+   268→        </div>
+   269→        <div className="flex items-center gap-2 ml-auto">
+   270→          <span className="text-xs uppercase tracking-wider text-muted-foreground">Status:</span>
+   271→          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as never)}>
+   272→            <SelectTrigger className="w-36 h-8 text-xs">
+   273→              <SelectValue />
+   274→            </SelectTrigger>
+   275→            <SelectContent>
+   276→              <SelectItem value="ALL">All</SelectItem>
+   277→              <SelectItem value="PENDING">Pending</SelectItem>
+   278→              <SelectItem value="REVIEWING">Reviewing</SelectItem>
+   279→              <SelectItem value="ACCEPTED">Accepted</SelectItem>
+   280→              <SelectItem value="REJECTED">Rejected</SelectItem>
+   281→            </SelectContent>
+   282→          </Select>
+   283→        </div>
+   284→      </div>
+   285→
+   286→      {loading ? (
+   287→        <div className="text-center py-16">
+   288→          <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
+   289→        </div>
+   290→      ) : filtered.length === 0 ? (
+   291→        <MatteCard className="text-center py-12">
+   292→          <FileText className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+   293→          <p className="text-muted-foreground">No applications match these filters.</p>
+   294→        </MatteCard>
+   295→      ) : (
+   296→        <div className="space-y-3">
+   297→          {filtered.map((app) => (
+   298→            <AppRow
+   299→              key={app.id}
+   300→              app={app}
+   301→              onStatus={(s) => updateStatus(app.id, s)}
+   302→              onDelete={() => del(app.id)}
+   303→            />
+   304→          ))}
+   305→        </div>
+   306→      )}
+   307→    </div>
+   308→  );
+   309→}
+   310→
+   311→function AppRow({
+   312→  app,
+   313→  onStatus,
+   314→  onDelete,
+   315→}: {
+   316→  app: Application;
+   317→  onStatus: (s: Status) => void;
+   318→  onDelete: () => void;
+   319→}) {
+   320→  const [expanded, setExpanded] = React.useState(false);
+   321→  return (
+   322→    <MatteCard className="p-0 overflow-hidden">
+   323→      <button
+   324→        onClick={() => setExpanded((e) => !e)}
+   325→        className="tap w-full text-left p-5 flex items-center gap-4 hover:bg-secondary/40"
+   326→      >
+   327→        <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center text-xs font-bold shrink-0">
+   328→          {app.fullName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+   329→        </div>
+   330→        <div className="flex-1 min-w-0">
+   331→          <div className="flex items-center gap-2 flex-wrap">
+   332→            <span className="font-medium">{app.fullName}</span>
+   333→            <Pill variant="muted">{app.role.charAt(0) + app.role.slice(1).toLowerCase()}</Pill>
+   334→            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[app.status]}`}>
+   335→              {app.status}
+   336→            </span>
+   337→          </div>
+   338→          <div className="text-xs text-muted-foreground mt-1">
+   339→            {app.email} · {app.city || "—"} · {format(new Date(app.createdAt), "MMM d, yyyy")}
+   340→          </div>
+   341→        </div>
+   342→        {expanded ? <EyeOff className="w-4 h-4 text-muted-foreground" /> : <Eye className="w-4 h-4 text-muted-foreground" />}
+   343→      </button>
+   344→      {expanded && (
+   345→        <div className="px-5 pb-5 pt-1 border-t border-border space-y-4">
+   346→          <div className="grid sm:grid-cols-2 gap-4 text-sm">
+   347→            <div>
+   348→              <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Contact</div>
+   349→              <div className="space-y-1">
+   350→                <div className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5 text-muted-foreground" />{app.email}</div>
+   351→                {app.phone && <div className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 text-muted-foreground" />{app.phone}</div>}
+   352→                {app.city && <div className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-muted-foreground" />{app.city}{app.country ? `, ${app.country}` : ""}</div>}
+   353→              </div>
+   354→            </div>
+   355→            <div>
+   356→              <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Background</div>
+   357→              <div className="space-y-1">
+   358→                {app.age && <div>Age: {app.age}</div>}
+   359→                {app.occupation && <div>Occupation: {app.occupation}</div>}
+   360→                {app.organization && <div>Organization: {app.organization}</div>}
+   361→                {app.languages && <div>Languages: {app.languages}</div>}
+   362→              </div>
+   363→            </div>
+   364→          </div>
+   365→          <div>
+   366→            <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Motivation</div>
+   367→            <p className="text-sm leading-relaxed pretty">{app.motivation}</p>
+   368→          </div>
+   369→          {app.experience && (
+   370→            <div>
+   371→              <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Experience</div>
+   372→              <p className="text-sm leading-relaxed pretty">{app.experience}</p>
+   373→            </div>
+   374→          )}
+   375→          <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-border">
+   376→            <span className="text-xs uppercase tracking-wider text-muted-foreground mr-2">Update:</span>
+   377→            {(["PENDING", "REVIEWING", "ACCEPTED", "REJECTED"] as const).map((s) => (
+   378→              <button
+   379→                key={s}
+   380→                onClick={() => onStatus(s)}
+   381→                className={`tap px-2.5 py-1 rounded-full text-xs font-medium ${app.status === s ? STATUS_COLORS[s] : "bg-secondary hover:bg-secondary/70"}`}
+   382→              >
+   383→                {s.charAt(0) + s.slice(1).toLowerCase()}
+   384→              </button>
+   385→            ))}
+   386→            <button onClick={onDelete} className="tap ml-auto px-2.5 py-1 rounded-full text-xs font-medium text-rose-600 hover:bg-rose-500/10 flex items-center gap-1">
+   387→              <Trash2 className="w-3 h-3" /> Delete
+   388→            </button>
+   389→          </div>
+   390→        </div>
+   391→      )}
+   392→    </MatteCard>
+   393→  );
+   394→}
+   395→
+   396→// ============================================================
+   397→// EVENTS (CRUD)
+   398→// ============================================================
+   399→interface EventItem {
+   400→  id: string;
+   401→  title: string;
+   402→  description: string;
+   403→  category: string;
+   404→  startDate: string;
+   405→  endDate: string | null;
+   406→  location: string | null;
+   407→  capacity: number | null;
+   408→  registered: number;
+   409→  featured: boolean;
+   410→}
+   411→
+   412→export function EventsTab() {
+   413→  const [events, setEvents] = React.useState<EventItem[]>([]);
+   414→  const [loading, setLoading] = React.useState(true);
+   415→  const [editing, setEditing] = React.useState<EventItem | null>(null);
+   416→  const [creating, setCreating] = React.useState(false);
+   417→
+   418→  const load = React.useCallback(() => {
+   419→    setLoading(true);
+   420→    fetch("/api/events?upcoming=0&limit=200")
+   421→      .then((r) => r.json())
+   422→      .then((d) => setEvents(d.events || []))
+   423→      .finally(() => setLoading(false));
+   424→  }, []);
+   425→  React.useEffect(() => load(), [load]);
+   426→
+   427→  const del = async (id: string) => {
+   428→    setEvents((e) => e.filter((x) => x.id !== id));
+   429→    await fetch(`/api/events?id=${id}`, { method: "DELETE" });
+   430→    toast.success("Event deleted.");
+   431→  };
+   432→
+   433→  if (creating || editing) {
+   434→    return (
+   435→      <EventEditor
+   436→        event={editing}
+   437→        onClose={() => {
+   438→          setCreating(false);
+   439→          setEditing(null);
+   440→        }}
+   441→        onSaved={() => {
+   442→          setCreating(false);
+   443→          setEditing(null);
+   444→          load();
+   445→        }}
+   446→      />
+   447→    );
+   448→  }
+   449→
+   450→  return (
+   451→    <div className="space-y-4">
+   452→      <div className="flex items-center justify-between gap-3">
+   453→        <div>
+   454→          <h2 className="font-display text-xl tracking-tight">Events</h2>
+   455→          <p className="text-sm text-muted-foreground">{events.length} events total</p>
+   456→        </div>
+   457→        <Button onClick={() => setCreating(true)} size="sm" className="rounded-full">
+   458→          <Plus className="w-4 h-4" /> New event
+   459→        </Button>
+   460→      </div>
+   461→
+   462→      {loading ? (
+   463→        <div className="text-center py-16">
+   464→          <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
+   465→        </div>
+   466→      ) : events.length === 0 ? (
+   467→        <MatteCard className="text-center py-12">
+   468→          <CalendarDays className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+   469→          <p className="text-muted-foreground">No events yet. Create your first event.</p>
+   470→        </MatteCard>
+   471→      ) : (
+   472→        <div className="space-y-2">
+   473→          {events.map((ev) => (
+   474→            <MatteCard key={ev.id} className="p-4 flex items-center gap-4">
+   475→              <div className="w-12 h-12 rounded-xl bg-primary/8 flex flex-col items-center justify-center shrink-0 text-primary">
+   476→                <div className="text-[10px] uppercase font-semibold tracking-wider">{format(new Date(ev.startDate), "MMM")}</div>
+   477→                <div className="font-display text-lg tnum leading-tight">{format(new Date(ev.startDate), "d")}</div>
+   478→              </div>
+   479→              <div className="flex-1 min-w-0">
+   480→                <div className="flex items-center gap-2 flex-wrap">
+   481→                  <span className="font-medium truncate">{ev.title}</span>
+   482→                  <Pill variant="muted">{ev.category}</Pill>
+   483→                  {ev.featured && <Pill variant="accent">Featured</Pill>}
+   484→                </div>
+   485→                <div className="text-xs text-muted-foreground mt-0.5">
+   486→                  {format(new Date(ev.startDate), "EEE, MMM d · HH:mm")} · {ev.location || "TBA"} · {ev.registered}/{ev.capacity || "∞"}
+   487→                </div>
+   488→              </div>
+   489→              <div className="flex items-center gap-1">
+   490→                <button onClick={() => setEditing(ev)} className="tap w-8 h-8 rounded-lg hover:bg-secondary flex items-center justify-center">
+   491→                  <Pencil className="w-3.5 h-3.5" />
+   492→                </button>
+   493→                <button onClick={() => del(ev.id)} className="tap w-8 h-8 rounded-lg hover:bg-rose-500/10 text-rose-600 flex items-center justify-center">
+   494→                  <Trash2 className="w-3.5 h-3.5" />
+   495→                </button>
+   496→              </div>
+   497→            </MatteCard>
+   498→          ))}
+   499→        </div>
+   500→      )}
+   501→    </div>
+   502→  );
+   503→}
+   504→
+   505→function EventEditor({
+   506→  event,
+   507→  onClose,
+   508→  onSaved,
+   509→}: {
+   510→  event: EventItem | null;
+   511→  onClose: () => void;
+   512→  onSaved: () => void;
+   513→}) {
+   514→  const [form, setForm] = React.useState({
+   515→    title: event?.title || "",
+   516→    description: event?.description || "",
+   517→    category: event?.category || "WORKSHOP",
+   518→    startDate: event ? format(new Date(event.startDate), "yyyy-MM-dd'T'HH:mm") : "",
+   519→    endDate: event?.endDate ? format(new Date(event.endDate), "yyyy-MM-dd'T'HH:mm") : "",
+   520→    location: event?.location || "",
+   521→    capacity: event?.capacity?.toString() || "",
+   522→    featured: event?.featured || false,
+   523→  });
+   524→  const [saving, setSaving] = React.useState(false);
+   525→  const set = (k: keyof typeof form, v: string | boolean) => setForm((f) => ({ ...f, [k]: v }));
+   526→
+   527→  const save = async () => {
+   528→    setSaving(true);
+   529→    try {
+   530→      const body = {
+   531→        ...(event ? { id: event.id } : {}),
+   532→        title: form.title,
+   533→        description: form.description,
+   534→        category: form.category,
+   535→        startDate: form.startDate ? new Date(form.startDate).toISOString() : new Date().toISOString(),
+   536→        endDate: form.endDate ? new Date(form.endDate).toISOString() : null,
+   537→        location: form.location || null,
+   538→        capacity: form.capacity || null,
+   539→        featured: form.featured,
+   540→      };
+   541→      const res = await fetch("/api/events", {
+   542→        method: event ? "PATCH" : "POST",
+   543→        headers: { "Content-Type": "application/json" },
+   544→        body: JSON.stringify(body),
+   545→      });
+   546→      if (!res.ok) throw new Error("Save failed");
+   547→      toast.success(event ? "Event updated." : "Event created.");
+   548→      onSaved();
+   549→    } catch {
+   550→      toast.error("Save failed.");
+   551→    } finally {
+   552→      setSaving(false);
+   553→    }
+   554→  };
+   555→
+   556→  return (
+   557→    <MatteCard>
+   558→      <div className="flex items-center justify-between mb-5">
+   559→        <h2 className="font-display text-xl tracking-tight">{event ? "Edit event" : "New event"}</h2>
+   560→        <button onClick={onClose} className="tap w-8 h-8 rounded-lg hover:bg-secondary flex items-center justify-center">
+   561→          <X className="w-4 h-4" />
+   562→        </button>
+   563→      </div>
+   564→      <div className="space-y-4">
+   565→        <div>
+   566→          <Label className="text-sm font-medium mb-1.5 block">Title *</Label>
+   567→          <Input value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="Event title" />
+   568→        </div>
+   569→        <div>
+   570→          <Label className="text-sm font-medium mb-1.5 block">Description</Label>
+   571→          <Textarea value={form.description} onChange={(e) => set("description", e.target.value)} rows={3} />
+   572→        </div>
+   573→        <div className="grid sm:grid-cols-2 gap-4">
+   574→          <div>
+   575→            <Label className="text-sm font-medium mb-1.5 block">Category</Label>
+   576→            <Select value={form.category} onValueChange={(v) => set("category", v)}>
+   577→              <SelectTrigger><SelectValue /></SelectTrigger>
+   578→              <SelectContent>
+   579→                {["WORKSHOP", "LECTURE", "CLUB", "CULTURAL", "COURSE", "OTHER"].map((c) => (
+   580→                  <SelectItem key={c} value={c}>{c.charAt(0) + c.slice(1).toLowerCase()}</SelectItem>
+   581→                ))}
+   582→              </SelectContent>
+   583→            </Select>
+   584→          </div>
+   585→          <div>
+   586→            <Label className="text-sm font-medium mb-1.5 block">Capacity</Label>
+   587→            <Input type="number" min={1} value={form.capacity} onChange={(e) => set("capacity", e.target.value)} placeholder="30" />
+   588→          </div>
+   589→          <div>
+   590→            <Label className="text-sm font-medium mb-1.5 block">Start date *</Label>
+   591→            <Input type="datetime-local" value={form.startDate} onChange={(e) => set("startDate", e.target.value)} />
+   592→          </div>
+   593→          <div>
+   594→            <Label className="text-sm font-medium mb-1.5 block">End date (optional)</Label>
+   595→            <Input type="datetime-local" value={form.endDate} onChange={(e) => set("endDate", e.target.value)} />
+   596→          </div>
+   597→        </div>
+   598→        <div>
+   599→          <Label className="text-sm font-medium mb-1.5 block">Location</Label>
+   600→          <Input value={form.location} onChange={(e) => set("location", e.target.value)} placeholder="American Space Oujda — Main Hall" />
+   601→        </div>
+   602→        <label className="flex items-center gap-2 text-sm cursor-pointer">
+   603→          <input
+   604→            type="checkbox"
+   605→            checked={form.featured}
+   606→            onChange={(e) => set("featured", e.target.checked)}
+   607→            className="rounded"
+   608→          />
+   609→          Feature on home page
+   610→        </label>
+   611→        <div className="flex justify-end gap-2 pt-3 border-t border-border">
+   612→          <Button variant="outline" onClick={onClose} className="rounded-full bg-transparent">Cancel</Button>
+   613→          <Button onClick={save} disabled={saving || !form.title || !form.startDate} className="rounded-full">
+   614→            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+   615→            {event ? "Save changes" : "Create event"}
+   616→          </Button>
+   617→        </div>
+   618→      </div>
+   619→    </MatteCard>
+   620→  );
+   621→}
+   622→
+   623→// ============================================================
+   624→// GALLERY (CRUD)
+   625→// ============================================================
+   626→interface GalleryItem {
+   627→  id: string;
+   628→  title: string;
+   629→  description: string | null;
+   630→  imageUrl: string;
+   631→  category: string;
+   632→}
+   633→
+   634→export function GalleryTab() {
+   635→  const [items, setItems] = React.useState<GalleryItem[]>([]);
+   636→  const [loading, setLoading] = React.useState(true);
+   637→  const [creating, setCreating] = React.useState(false);
+   638→
+   639→  const load = React.useCallback(() => {
+   640→    setLoading(true);
+   641→    fetch("/api/gallery")
+   642→      .then((r) => r.json())
+   643→      .then((d) => setItems(d.items || []))
+   644→      .finally(() => setLoading(false));
+   645→  }, []);
+   646→  React.useEffect(() => load(), [load]);
+   647→
+   648→  const del = async (id: string) => {
+   649→    setItems((a) => a.filter((x) => x.id !== id));
+   650→    await fetch(`/api/gallery?id=${id}`, { method: "DELETE" });
+   651→    toast.success("Photo deleted.");
+   652→  };
+   653→
+   654→  if (creating) {
+   655→    return <GalleryEditor onClose={() => setCreating(false)} onSaved={() => { setCreating(false); load(); }} />;
+   656→  }
+   657→
+   658→  return (
+   659→    <div className="space-y-4">
+   660→      <div className="flex items-center justify-between gap-3">
+   661→        <div>
+   662→          <h2 className="font-display text-xl tracking-tight">Gallery</h2>
+   663→          <p className="text-sm text-muted-foreground">{items.length} photos</p>
+   664→        </div>
+   665→        <Button onClick={() => setCreating(true)} size="sm" className="rounded-full">
+   666→          <Plus className="w-4 h-4" /> Add photo
+   667→        </Button>
+   668→      </div>
+   669→      {loading ? (
+   670→        <div className="text-center py-16"><Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" /></div>
+   671→      ) : items.length === 0 ? (
+   672→        <MatteCard className="text-center py-12">
+   673→          <Camera className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+   674→          <p className="text-muted-foreground">No photos yet.</p>
+   675→        </MatteCard>
+   676→      ) : (
+   677→        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+   678→          {items.map((g) => (
+   679→            <div key={g.id} className="relative group rounded-xl overflow-hidden bg-secondary aspect-square">
+   680→              <img src={g.imageUrl} alt={g.title} className="w-full h-full object-cover" loading="lazy" />
+   681→              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+   682→              <div className="absolute bottom-0 left-0 right-0 p-2 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+   683→                <div className="text-xs font-medium line-clamp-1">{g.title}</div>
+   684→              </div>
+   685→              <button
+   686→                onClick={() => del(g.id)}
+   687→                className="absolute top-2 right-2 w-7 h-7 rounded-full bg-rose-600 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+   688→              >
+   689→                <Trash2 className="w-3.5 h-3.5" />
+   690→              </button>
+   691→            </div>
+   692→          ))}
+   693→        </div>
+   694→      )}
+   695→    </div>
+   696→  );
+   697→}
+   698→
+   699→function GalleryEditor({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+   700→  const [form, setForm] = React.useState({
+   701→    title: "",
+   702→    description: "",
+   703→    imageUrl: "",
+   704→    category: "general",
+   705→  });
+   706→  const [saving, setSaving] = React.useState(false);
+   707→  const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
+   708→
+   709→  const save = async () => {
+   710→    if (!form.title || !form.imageUrl) {
+   711→      toast.error("Title and image URL are required.");
+   712→      return;
+   713→    }
+   714→    setSaving(true);
+   715→    try {
+   716→      const res = await fetch("/api/gallery", {
+   717→        method: "POST",
+   718→        headers: { "Content-Type": "application/json" },
+   719→        body: JSON.stringify(form),
+   720→      });
+   721→      if (!res.ok) throw new Error("Save failed");
+   722→      toast.success("Photo added.");
+   723→      onSaved();
+   724→    } catch {
+   725→      toast.error("Save failed.");
+   726→    } finally {
+   727→      setSaving(false);
+   728→    }
+   729→  };
+   730→
+   731→  return (
+   732→    <MatteCard>
+   733→      <div className="flex items-center justify-between mb-5">
+   734→        <h2 className="font-display text-xl tracking-tight">Add photo</h2>
+   735→        <button onClick={onClose} className="tap w-8 h-8 rounded-lg hover:bg-secondary flex items-center justify-center">
+   736→          <X className="w-4 h-4" />
+   737→        </button>
+   738→      </div>
+   739→      <div className="space-y-4">
+   740→        <div>
+   741→          <Label className="text-sm font-medium mb-1.5 block">Title *</Label>
+   742→          <Input value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="English Conversation Circle" />
+   743→        </div>
+   744→        <div>
+   745→          <Label className="text-sm font-medium mb-1.5 block">Image URL *</Label>
+   746→          <Input value={form.imageUrl} onChange={(e) => set("imageUrl", e.target.value)} placeholder="https://images.unsplash.com/…" />
+   747→          <p className="text-xs text-muted-foreground mt-1">
+   748→            Paste a direct image URL. For production, use Cloudinary or Cloudflare R2.
+   749→          </p>
+   750→        </div>
+   751→        <div>
+   752→          <Label className="text-sm font-medium mb-1.5 block">Description</Label>
+   753→          <Input value={form.description} onChange={(e) => set("description", e.target.value)} placeholder="Optional caption" />
+   754→        </div>
+   755→        <div>
+   756→          <Label className="text-sm font-medium mb-1.5 block">Category</Label>
+   757→          <Select value={form.category} onValueChange={(v) => set("category", v)}>
+   758→            <SelectTrigger><SelectValue /></SelectTrigger>
+   759→            <SelectContent>
+   760→              <SelectItem value="general">Space</SelectItem>
+   761→              <SelectItem value="event">Events</SelectItem>
+   762→              <SelectItem value="club">Clubs</SelectItem>
+   763→              <SelectItem value="workshop">Workshops</SelectItem>
+   764→            </SelectContent>
+   765→          </Select>
+   766→        </div>
+   767→        {form.imageUrl && (
+   768→          <div className="rounded-xl overflow-hidden bg-secondary aspect-video">
+   769→            <img src={form.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+   770→          </div>
+   771→        )}
+   772→        <div className="flex justify-end gap-2 pt-3 border-t border-border">
+   773→          <Button variant="outline" onClick={onClose} className="rounded-full bg-transparent">Cancel</Button>
+   774→          <Button onClick={save} disabled={saving} className="rounded-full">
+   775→            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+   776→            Add photo
+   777→          </Button>
+   778→        </div>
+   779→      </div>
+   780→    </MatteCard>
+   781→  );
+   782→}
+   783→
+   784→// ============================================================
+   785→// COURSES (CRUD)
+   786→// ============================================================
+   787→interface CourseItem {
+   788→  id: string;
+   789→  title: string;
+   790→  description: string;
+   791→  level: string;
+   792→  schedule: string;
+   793→  startDate: string;
+   794→  endDate: string | null;
+   795→  capacity: number;
+   796→  active: boolean;
+   797→  teacher: { id: string; name: string | null; email: string } | null;
+   798→  _count: { enrollments: number };
+   799→}
+   800→
+   801→interface UserItem {
+   802→  id: string;
+   803→  email: string;
+   804→  name: string | null;
+   805→  role: string;
+   806→  active: boolean;
+   807→}
+   808→
+   809→function CoursesTab() {
+   810→  const [courses, setCourses] = React.useState<CourseItem[]>([]);
+   811→  const [users, setUsers] = React.useState<UserItem[]>([]);
+   812→  const [loading, setLoading] = React.useState(true);
+   813→  const [creating, setCreating] = React.useState(false);
+   814→
+   815→  const load = React.useCallback(() => {
+   816→    setLoading(true);
+   817→    Promise.all([
+   818→      fetch("/api/courses").then((r) => r.json()),
+   819→      fetch("/api/users").then((r) => r.ok ? r.json() : { users: [] }),
+   820→    ]).then(([c, u]) => {
+   821→      setCourses(c.courses || []);
+   822→      setUsers(u.users || []);
+   823→    }).finally(() => setLoading(false));
+   824→  }, []);
+   825→  React.useEffect(() => load(), [load]);
+   826→
+   827→  const teachers = users.filter((u) => u.role === "TEACHER" && u.active);
+   828→
+   829→  if (creating) {
+   830→    return <CourseEditor teachers={teachers} onClose={() => setCreating(false)} onSaved={() => { setCreating(false); load(); }} />;
+   831→  }
+   832→
+   833→  return (
+   834→    <div className="space-y-4">
+   835→      <div className="flex items-center justify-between gap-3">
+   836→        <div>
+   837→          <h2 className="font-display text-xl tracking-tight">Courses</h2>
+   838→          <p className="text-sm text-muted-foreground">{courses.length} courses</p>
+   839→        </div>
+   840→        <Button onClick={() => setCreating(true)} size="sm" className="rounded-full">
+   841→          <Plus className="w-4 h-4" /> New course
+   842→        </Button>
+   843→      </div>
+   844→      {loading ? (
+   845→        <div className="text-center py-16"><Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" /></div>
+   846→      ) : courses.length === 0 ? (
+   847→        <MatteCard className="text-center py-12">
+   848→          <GraduationCap className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+   849→          <p className="text-muted-foreground">No courses yet.</p>
+   850→        </MatteCard>
+   851→      ) : (
+   852→        <div className="space-y-2">
+   853→          {courses.map((c) => (
+   854→            <MatteCard key={c.id} className="p-4">
+   855→              <div className="flex items-start justify-between gap-3">
+   856→                <div className="flex-1 min-w-0">
+   857→                  <div className="flex items-center gap-2 flex-wrap">
+   858→                    <span className="font-medium">{c.title}</span>
+   859→                    <Pill variant="muted">{c.level}</Pill>
+   860→                    {!c.active && <Pill variant="outline">Inactive</Pill>}
+   861→                  </div>
+   862→                  <div className="text-xs text-muted-foreground mt-1">
+   863→                    {c.schedule} · {c._count.enrollments}/{c.capacity} students · Teacher: {c.teacher?.name || c.teacher?.email || "—"}
+   864→                  </div>
+   865→                  {c.description && <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{c.description}</p>}
+   866→                </div>
+   867→              </div>
+   868→            </MatteCard>
+   869→          ))}
+   870→        </div>
+   871→      )}
+   872→    </div>
+   873→  );
+   874→}
+   875→
+   876→function CourseEditor({
+   877→  teachers,
+   878→  onClose,
+   879→  onSaved,
+   880→}: {
+   881→  teachers: UserItem[];
+   882→  onClose: () => void;
+   883→  onSaved: () => void;
+   884→}) {
+   885→  const [form, setForm] = React.useState({
+   886→    title: "",
+   887→    description: "",
+   888→    level: "BEGINNER",
+   889→    schedule: "",
+   890→    startDate: "",
+   891→    endDate: "",
+   892→    capacity: "20",
+   893→    teacherId: "",
+   894→  });
+   895→  const [saving, setSaving] = React.useState(false);
+   896→  const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
+   897→
+   898→  const save = async () => {
+   899→    setSaving(true);
+   900→    try {
+   901→      const res = await fetch("/api/courses", {
+   902→        method: "POST",
+   903→        headers: { "Content-Type": "application/json" },
+   904→        body: JSON.stringify({
+   905→          ...form,
+   906→          startDate: form.startDate ? new Date(form.startDate).toISOString() : new Date().toISOString(),
+   907→          endDate: form.endDate ? new Date(form.endDate).toISOString() : null,
+   908→          teacherId: form.teacherId || null,
+   909→        }),
+   910→      });
+   911→      if (!res.ok) throw new Error("Save failed");
+   912→      toast.success("Course created.");
+   913→      onSaved();
+   914→    } catch {
+   915→      toast.error("Save failed.");
+   916→    } finally {
+   917→      setSaving(false);
+   918→    }
+   919→  };
+   920→
+   921→  return (
+   922→    <MatteCard>
+   923→      <div className="flex items-center justify-between mb-5">
+   924→        <h2 className="font-display text-xl tracking-tight">New course</h2>
+   925→        <button onClick={onClose} className="tap w-8 h-8 rounded-lg hover:bg-secondary flex items-center justify-center">
+   926→          <X className="w-4 h-4" />
+   927→        </button>
+   928→      </div>
+   929→      <div className="space-y-4">
+   930→        <div>
+   931→          <Label className="text-sm font-medium mb-1.5 block">Title *</Label>
+   932→          <Input value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="General English A2" />
+   933→        </div>
+   934→        <div>
+   935→          <Label className="text-sm font-medium mb-1.5 block">Description</Label>
+   936→          <Textarea value={form.description} onChange={(e) => set("description", e.target.value)} rows={3} />
+   937→        </div>
+   938→        <div className="grid sm:grid-cols-2 gap-4">
+   939→          <div>
+   940→            <Label className="text-sm font-medium mb-1.5 block">Level</Label>
+   941→            <Select value={form.level} onValueChange={(v) => set("level", v)}>
+   942→              <SelectTrigger><SelectValue /></SelectTrigger>
+   943→              <SelectContent>
+   944→                {["BEGINNER", "ELEMENTARY", "INTERMEDIATE", "ADVANCED", "CONVERSATION", "TOEFL", "IELTS"].map((l) => (
+   945→                  <SelectItem key={l} value={l}>{l.charAt(0) + l.slice(1).toLowerCase()}</SelectItem>
+   946→                ))}
+   947→              </SelectContent>
+   948→            </Select>
+   949→          </div>
+   950→          <div>
+   951→            <Label className="text-sm font-medium mb-1.5 block">Capacity</Label>
+   952→            <Input type="number" min={1} value={form.capacity} onChange={(e) => set("capacity", e.target.value)} />
+   953→          </div>
+   954→          <div>
+   955→            <Label className="text-sm font-medium mb-1.5 block">Schedule</Label>
+   956→            <Input value={form.schedule} onChange={(e) => set("schedule", e.target.value)} placeholder="Mon & Wed · 18:00–20:00" />
+   957→          </div>
+   958→          <div>
+   959→            <Label className="text-sm font-medium mb-1.5 block">Teacher</Label>
+   960→            <Select value={form.teacherId} onValueChange={(v) => set("teacherId", v)}>
+   961→              <SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger>
+   962→              <SelectContent>
+   963→                {teachers.map((t) => (
+   964→                  <SelectItem key={t.id} value={t.id}>{t.name || t.email}</SelectItem>
+   965→                ))}
+   966→              </SelectContent>
+   967→            </Select>
+   968→          </div>
+   969→          <div>
+   970→            <Label className="text-sm font-medium mb-1.5 block">Start date *</Label>
+   971→            <Input type="date" value={form.startDate} onChange={(e) => set("startDate", e.target.value)} />
+   972→          </div>
+   973→          <div>
+   974→            <Label className="text-sm font-medium mb-1.5 block">End date (optional)</Label>
+   975→            <Input type="date" value={form.endDate} onChange={(e) => set("endDate", e.target.value)} />
+   976→          </div>
+   977→        </div>
+   978→        <div className="flex justify-end gap-2 pt-3 border-t border-border">
+   979→          <Button variant="outline" onClick={onClose} className="rounded-full bg-transparent">Cancel</Button>
+   980→          <Button onClick={save} disabled={saving || !form.title} className="rounded-full">
+   981→            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+   982→            Create course
+   983→          </Button>
+   984→        </div>
+   985→      </div>
+   986→    </MatteCard>
+   987→  );
+   988→}
+   989→
+   990→// ============================================================
+   991→// MEMBERS
+   992→// ============================================================
+   993→function MembersTab() {
+   994→  const [members, setMembers] = React.useState<unknown[]>([]);
+   995→  const [loading, setLoading] = React.useState(true);
+   996→
+   997→  React.useEffect(() => {
+   998→    fetch("/api/membership")
+   999→      .then((r) => r.json())
+  1000→      .then((d) => setMembers(d.members || []))
+  1001→      .finally(() => setLoading(false));
+  1002→  }, []);
+  1003→
+  1004→  if (loading) return <div className="text-center py-16"><Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" /></div>;
+  1005→
+  1006→  return (
+  1007→    <div className="space-y-4">
+  1008→      <div>
+  1009→        <h2 className="font-display text-xl tracking-tight">Membership requests</h2>
+  1010→        <p className="text-sm text-muted-foreground">{(members as {length: number}).length} requests</p>
+  1011→      </div>
+  1012→      {(members as {length: number}).length === 0 ? (
+  1013→        <MatteCard className="text-center py-12">
+  1014→          <Users className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+  1015→          <p className="text-muted-foreground">No membership requests yet.</p>
+  1016→        </MatteCard>
+  1017→      ) : (
+  1018→        <div className="space-y-2">
+  1019→          {(members as Array<{ id: string; fullName: string; email: string; phone: string | null; type: string; duration: string; createdAt: string }>).map((m) => (
+  1020→            <MatteCard key={m.id} className="p-4 flex items-center gap-4">
+  1021→              <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center text-xs font-bold shrink-0">
+  1022→                {m.fullName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+  1023→              </div>
+  1024→              <div className="flex-1 min-w-0">
+  1025→                <div className="flex items-center gap-2 flex-wrap">
+  1026→                  <span className="font-medium">{m.fullName}</span>
+  1027→                  <Pill variant="muted">{m.type}</Pill>
+  1028→                  <Pill variant="outline">{m.duration}</Pill>
+  1029→                </div>
+  1030→                <div className="text-xs text-muted-foreground mt-0.5">{m.email} · {m.phone || "no phone"} · {format(new Date(m.createdAt), "MMM d, yyyy")}</div>
+  1031→              </div>
+  1032→            </MatteCard>
+  1033→          ))}
+  1034→        </div>
+  1035→      )}
+  1036→    </div>
+  1037→  );
+  1038→}
+  1039→
+  1040→// ============================================================
+  1041→// REGISTRATIONS
+  1042→// ============================================================
+  1043→function RegistrationsTab() {
+  1044→  const [regs, setRegs] = React.useState<unknown[]>([]);
+  1045→  const [loading, setLoading] = React.useState(true);
+  1046→
+  1047→  React.useEffect(() => {
+  1048→    fetch("/api/courses/registrations")
+  1049→      .then((r) => r.json())
+  1050→      .then((d) => setRegs(d.registrations || []))
+  1051→      .finally(() => setLoading(false));
+  1052→  }, []);
+  1053→
+  1054→  if (loading) return <div className="text-center py-16"><Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" /></div>;
+  1055→
+  1056→  return (
+  1057→    <div className="space-y-4">
+  1058→      <div>
+  1059→        <h2 className="font-display text-xl tracking-tight">Course registrations</h2>
+  1060→        <p className="text-sm text-muted-foreground">{(regs as {length: number}).length} registrations</p>
+  1061→      </div>
+  1062→      {(regs as {length: number}).length === 0 ? (
+  1063→        <MatteCard className="text-center py-12">
+  1064→          <BookOpen className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+  1065→          <p className="text-muted-foreground">No registrations yet.</p>
+  1066→        </MatteCard>
+  1067→      ) : (
+  1068→        <div className="space-y-2">
+  1069→          {(regs as Array<{ id: string; fullName: string; email: string; phone: string | null; level: string; slot: string | null; notes: string | null; createdAt: string }>).map((r) => (
+  1070→            <MatteCard key={r.id} className="p-4 flex items-center gap-4">
+  1071→              <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center text-xs font-bold shrink-0">
+  1072→                {r.fullName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+  1073→              </div>
+  1074→              <div className="flex-1 min-w-0">
+  1075→                <div className="flex items-center gap-2 flex-wrap">
+  1076→                  <span className="font-medium">{r.fullName}</span>
+  1077→                  <Pill variant="muted">{r.level}</Pill>
+  1078→                  {r.slot && <Pill variant="outline">{r.slot}</Pill>}
+  1079→                </div>
+  1080→                <div className="text-xs text-muted-foreground mt-0.5">{r.email} · {r.phone || "no phone"} · {format(new Date(r.createdAt), "MMM d, yyyy")}</div>
+  1081→                {r.notes && <p className="text-xs text-muted-foreground mt-1 italic line-clamp-1">{r.notes}</p>}
+  1082→              </div>
+  1083→            </MatteCard>
+  1084→          ))}
+  1085→        </div>
+  1086→      )}
+  1087→    </div>
+  1088→  );
+  1089→}
+  1090→
+  1091→// ============================================================
+  1092→// COMMENTS
+  1093→// ============================================================
+  1094→function CommentsTab() {
+  1095→  const [comments, setComments] = React.useState<unknown[]>([]);
+  1096→  const [loading, setLoading] = React.useState(true);
+  1097→
+  1098→  React.useEffect(() => {
+  1099→    fetch("/api/comments")
+  1100→      .then((r) => r.json())
+  1101→      .then((d) => setComments(d.comments || []))
+  1102→      .finally(() => setLoading(false));
+  1103→  }, []);
+  1104→
+  1105→  if (loading) return <div className="text-center py-16"><Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" /></div>;
+  1106→
+  1107→  return (
+  1108→    <div className="space-y-4">
+  1109→      <div>
+  1110→        <h2 className="font-display text-xl tracking-tight">Comments & suggestions</h2>
+  1111→        <p className="text-sm text-muted-foreground">{(comments as {length: number}).length} messages</p>
+  1112→      </div>
+  1113→      {(comments as {length: number}).length === 0 ? (
+  1114→        <MatteCard className="text-center py-12">
+  1115→          <MessageSquare className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+  1116→          <p className="text-muted-foreground">No comments yet.</p>
+  1117→        </MatteCard>
+  1118→      ) : (
+  1119→        <div className="space-y-2">
+  1120→          {(comments as Array<{ id: string; name: string; email: string | null; subject: string; message: string; category: string; createdAt: string }>).map((c) => (
+  1121→            <MatteCard key={c.id} className="p-4">
+  1122→              <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+  1123→                <div className="flex items-center gap-2">
+  1124→                  <span className="font-medium">{c.name}</span>
+  1125→                  <Pill variant="muted">{c.category}</Pill>
+  1126→                </div>
+  1127→                <span className="text-xs text-muted-foreground">{format(new Date(c.createdAt), "MMM d, yyyy")}</span>
+  1128→              </div>
+  1129→              {c.subject && c.subject !== "General" && <div className="text-sm font-medium mb-1">{c.subject}</div>}
+  1130→              <p className="text-sm text-muted-foreground leading-relaxed pretty">{c.message}</p>
+  1131→              {c.email && (
+  1132→                <a href={`mailto:${c.email}`} className="mt-3 inline-flex items-center gap-1.5 text-xs text-accent hover:underline">
+  1133→                  <Mail className="w-3 h-3" /> {c.email}
+  1134→                </a>
+  1135→              )}
+  1136→            </MatteCard>
+  1137→          ))}
+  1138→        </div>
+  1139→      )}
+  1140→    </div>
+  1141→  );
+  1142→}
+  1143→
+  1144→// ============================================================
+  1145→// CLUBS (CRUD)
+  1146→// ============================================================
+  1147→interface ClubItem {
+  1148→  id: string;
+  1149→  name: string;
+  1150→  description: string;
+  1151→  schedule: string;
+  1152→  iconName: string;
+  1153→  colorClass: string;
+  1154→  active: number | boolean;
+  1155→}
+  1156→
+  1157→const ICON_OPTIONS = ["Users", "BookOpen", "MessageSquare", "Sparkles", "Star", "Award", "GraduationCap", "HeartHandshake", "Globe2", "Compass", "Camera", "Library"];
+  1158→const COLOR_OPTIONS = [
+  1159→  { label: "Sky", value: "bg-sky-500/10 text-sky-700 dark:text-sky-300" },
+  1160→  { label: "Amber", value: "bg-amber-500/10 text-amber-700 dark:text-amber-300" },
+  1161→  { label: "Rose", value: "bg-rose-500/10 text-rose-700 dark:text-rose-300" },
+  1162→  { label: "Emerald", value: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" },
+  1163→  { label: "Violet", value: "bg-violet-500/10 text-violet-700 dark:text-violet-300" },
+  1164→  { label: "Orange", value: "bg-orange-500/10 text-orange-700 dark:text-orange-300" },
+  1165→];
+  1166→
+  1167→function ClubsTab() {
+  1168→  const [clubs, setClubs] = React.useState<ClubItem[]>([]);
+  1169→  const [loading, setLoading] = React.useState(true);
+  1170→  const [editing, setEditing] = React.useState<ClubItem | null>(null);
+  1171→  const [creating, setCreating] = React.useState(false);
+  1172→
+  1173→  const load = React.useCallback(() => {
+  1174→    setLoading(true);
+  1175→    fetch("/api/clubs")
+  1176→      .then((r) => r.json())
+  1177→      .then((d) => setClubs(d.clubs || []))
+  1178→      .finally(() => setLoading(false));
+  1179→  }, []);
+  1180→  React.useEffect(() => load(), [load]);
+  1181→
+  1182→  const del = async (id: string) => {
+  1183→    setClubs((c) => c.filter((x) => x.id !== id));
+  1184→    await fetch(`/api/clubs?id=${id}`, { method: "DELETE" });
+  1185→    toast.success("Club deleted.");
+  1186→  };
+  1187→
+  1188→  const toggleActive = async (c: ClubItem) => {
+  1189→    const newActive = c.active ? 0 : 1;
+  1190→    setClubs((arr) => arr.map((x) => (x.id === c.id ? { ...x, active: newActive } : x)));
+  1191→    await fetch("/api/clubs", {
+  1192→      method: "PATCH",
+  1193→      headers: { "Content-Type": "application/json" },
+  1194→      body: JSON.stringify({ ...c, active: !!newActive }),
+  1195→    });
+  1196→  };
+  1197→
+  1198→  if (creating || editing) {
+  1199→    return (
+  1200→      <ClubEditor
+  1201→        club={editing}
+  1202→        onClose={() => { setCreating(false); setEditing(null); }}
+  1203→        onSaved={() => { setCreating(false); setEditing(null); load(); }}
+  1204→      />
+  1205→    );
+  1206→  }
+  1207→
+  1208→  return (
+  1209→    <div className="space-y-4">
+  1210→      <div className="flex items-center justify-between gap-3">
+  1211→        <div>
+  1212→          <h2 className="font-display text-xl tracking-tight">Clubs</h2>
+  1213→          <p className="text-sm text-muted-foreground">{clubs.length} clubs · {clubs.filter(c => c.active).length} active</p>
+  1214→        </div>
+  1215→        <Button onClick={() => setCreating(true)} size="sm" className="rounded-full">
+  1216→          <Plus className="w-4 h-4" /> New club
+  1217→        </Button>
+  1218→      </div>
+  1219→
+  1220→      {loading ? (
+  1221→        <div className="text-center py-16"><Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" /></div>
+  1222→      ) : clubs.length === 0 ? (
+  1223→        <MatteCard className="text-center py-12">
+  1224→          <Users className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+  1225→          <p className="text-muted-foreground">No clubs yet. Create your first club.</p>
+  1226→        </MatteCard>
+  1227→      ) : (
+  1228→        <div className="space-y-2">
+  1229→          {clubs.map((c) => (
+  1230→            <MatteCard key={c.id} className="p-4 flex items-center gap-4">
+  1231→              <div className="flex-1 min-w-0">
+  1232→                <div className="flex items-center gap-2 flex-wrap">
+  1233→                  <span className="font-medium">{c.name}</span>
+  1234→                  {!c.active && <Pill variant="outline">Inactive</Pill>}
+  1235→                </div>
+  1236→                <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5">
+  1237→                  <Clock className="w-3 h-3" />{c.schedule}
+  1238→                </div>
+  1239→                {c.description && <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{c.description}</p>}
+  1240→              </div>
+  1241→              <div className="flex items-center gap-1 shrink-0">
+  1242→                <button onClick={() => toggleActive(c)} className={`tap px-2.5 py-1 rounded-full text-xs font-medium ${c.active ? "bg-emerald-500/15 text-emerald-700" : "bg-secondary"}`}>
+  1243→                  {c.active ? "Active" : "Inactive"}
+  1244→                </button>
+  1245→                <button onClick={() => setEditing(c)} className="tap w-8 h-8 rounded-lg hover:bg-secondary flex items-center justify-center">
+  1246→                  <Pencil className="w-3.5 h-3.5" />
+  1247→                </button>
+  1248→                <button onClick={() => del(c.id)} className="tap w-8 h-8 rounded-lg hover:bg-rose-500/10 text-rose-600 flex items-center justify-center">
+  1249→                  <Trash2 className="w-3.5 h-3.5" />
+  1250→                </button>
+  1251→              </div>
+  1252→            </MatteCard>
+  1253→          ))}
+  1254→        </div>
+  1255→      )}
+  1256→    </div>
+  1257→  );
+  1258→}
+  1259→
+  1260→function ClubEditor({ club, onClose, onSaved }: { club: ClubItem | null; onClose: () => void; onSaved: () => void }) {
+  1261→  const [form, setForm] = React.useState({
+  1262→    name: club?.name || "",
+  1263→    description: club?.description || "",
+  1264→    schedule: club?.schedule || "",
+  1265→    iconName: club?.iconName || "Users",
+  1266→    colorClass: club?.colorClass || COLOR_OPTIONS[0].value,
+  1267→    active: club ? !!club.active : true,
+  1268→  });
+  1269→  const [saving, setSaving] = React.useState(false);
+  1270→  const set = (k: keyof typeof form, v: string | boolean) => setForm((f) => ({ ...f, [k]: v }));
+  1271→
+  1272→  const save = async () => {
+  1273→    if (!form.name) { toast.error("Name is required"); return; }
+  1274→    setSaving(true);
+  1275→    try {
+  1276→      const body = { ...form, ...(club ? { id: club.id } : {}) };
+  1277→      const res = await fetch("/api/clubs", {
+  1278→        method: club ? "PATCH" : "POST",
+  1279→        headers: { "Content-Type": "application/json" },
+  1280→        body: JSON.stringify(body),
+  1281→      });
+  1282→      if (!res.ok) throw new Error("Save failed");
+  1283→      toast.success(club ? "Club updated." : "Club created.");
+  1284→      onSaved();
+  1285→    } catch {
+  1286→      toast.error("Save failed.");
+  1287→    } finally {
+  1288→      setSaving(false);
+  1289→    }
+  1290→  };
+  1291→
+  1292→  return (
+  1293→    <MatteCard>
+  1294→      <div className="flex items-center justify-between mb-5">
+  1295→        <h2 className="font-display text-xl tracking-tight">{club ? "Edit club" : "New club"}</h2>
+  1296→        <button onClick={onClose} className="tap w-8 h-8 rounded-lg hover:bg-secondary flex items-center justify-center">
+  1297→          <X className="w-4 h-4" />
+  1298→        </button>
+  1299→      </div>
+  1300→      <div className="space-y-4">
+  1301→        <div>
+  1302→          <Label className="text-sm font-medium mb-1.5 block">Name *</Label>
+  1303→          <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Reading Club" />
+  1304→        </div>
+  1305→        <div>
+  1306→          <Label className="text-sm font-medium mb-1.5 block">Description</Label>
+  1307→          <Textarea value={form.description} onChange={(e) => set("description", e.target.value)} rows={3} />
+  1308→        </div>
+  1309→        <div>
+  1310→          <Label className="text-sm font-medium mb-1.5 block">Schedule</Label>
+  1311→          <Input value={form.schedule} onChange={(e) => set("schedule", e.target.value)} placeholder="Weekly · Wednesdays 18:00" />
+  1312→        </div>
+  1313→        <div className="grid sm:grid-cols-2 gap-4">
+  1314→          <div>
+  1315→            <Label className="text-sm font-medium mb-1.5 block">Icon</Label>
+  1316→            <Select value={form.iconName} onValueChange={(v) => set("iconName", v)}>
+  1317→              <SelectTrigger><SelectValue /></SelectTrigger>
+  1318→              <SelectContent>
+  1319→                {ICON_OPTIONS.map((i) => <SelectItem key={i} value={i}>{i}</SelectItem>)}
+  1320→              </SelectContent>
+  1321→            </Select>
+  1322→          </div>
+  1323→          <div>
+  1324→            <Label className="text-sm font-medium mb-1.5 block">Color</Label>
+  1325→            <Select value={form.colorClass} onValueChange={(v) => set("colorClass", v)}>
+  1326→              <SelectTrigger><SelectValue /></SelectTrigger>
+  1327→              <SelectContent>
+  1328→                {COLOR_OPTIONS.map((c) => <SelectItem key={c.label} value={c.value}>{c.label}</SelectItem>)}
+  1329→              </SelectContent>
+  1330→            </Select>
+  1331→          </div>
+  1332→        </div>
+  1333→        <label className="flex items-center gap-2 text-sm cursor-pointer">
+  1334→          <input type="checkbox" checked={form.active} onChange={(e) => set("active", e.target.checked)} className="rounded" />
+  1335→          Active (visible on the site)
+  1336→        </label>
+  1337→        <div className="flex justify-end gap-2 pt-3 border-t border-border">
+  1338→          <Button variant="outline" onClick={onClose} className="rounded-full bg-transparent">Cancel</Button>
+  1339→          <Button onClick={save} disabled={saving} className="rounded-full">
+  1340→            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+  1341→            {club ? "Save changes" : "Create club"}
+  1342→          </Button>
+  1343→        </div>
+  1344→      </div>
+  1345→    </MatteCard>
+  1346→  );
+  1347→}
+  1348→
+  1349→// ============================================================
+  1350→// LINKS (CRUD)
+  1351→// ============================================================
+  1352→interface LinkItem {
+  1353→  id: string;
+  1354→  name: string;
+  1355→  description: string;
+  1356→  url: string;
+  1357→  iconName: string;
+  1358→  category: string;
+  1359→}
+  1360→
+  1361→function LinksTab() {
+  1362→  const [links, setLinks] = React.useState<LinkItem[]>([]);
+  1363→  const [loading, setLoading] = React.useState(true);
+  1364→  const [creating, setCreating] = React.useState(false);
+  1365→
+  1366→  const load = React.useCallback(() => {
+  1367→    setLoading(true);
+  1368→    fetch("/api/links").then((r) => r.json()).then((d) => setLinks(d.links || [])).finally(() => setLoading(false));
+  1369→  }, []);
+  1370→  React.useEffect(() => load(), [load]);
+  1371→
+  1372→  const del = async (id: string) => {
+  1373→    setLinks((l) => l.filter((x) => x.id !== id));
+  1374→    await fetch(`/api/links?id=${id}`, { method: "DELETE" });
+  1375→    toast.success("Link deleted.");
+  1376→  };
+  1377→
+  1378→  if (creating) {
+  1379→    return <LinkEditor onClose={() => setCreating(false)} onSaved={() => { setCreating(false); load(); }} />;
+  1380→  }
+  1381→
+  1382→  return (
+  1383→    <div className="space-y-4">
+  1384→      <div className="flex items-center justify-between gap-3">
+  1385→        <div>
+  1386→          <h2 className="font-display text-xl tracking-tight">Useful Links</h2>
+  1387→          <p className="text-sm text-muted-foreground">{links.length} links</p>
+  1388→        </div>
+  1389→        <Button onClick={() => setCreating(true)} size="sm" className="rounded-full">
+  1390→          <Plus className="w-4 h-4" /> New link
+  1391→        </Button>
+  1392→      </div>
+  1393→      {loading ? (
+  1394→        <div className="text-center py-16"><Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" /></div>
+  1395→      ) : links.length === 0 ? (
+  1396→        <MatteCard className="text-center py-12">
+  1397→          <Link2 className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+  1398→          <p className="text-muted-foreground">No links yet.</p>
+  1399→        </MatteCard>
+  1400→      ) : (
+  1401→        <div className="space-y-2">
+  1402→          {links.map((l) => (
+  1403→            <MatteCard key={l.id} className="p-4 flex items-center gap-4">
+  1404→              <div className="flex-1 min-w-0">
+  1405→                <div className="flex items-center gap-2 flex-wrap">
+  1406→                  <span className="font-medium">{l.name}</span>
+  1407→                  <Pill variant="muted">{l.category}</Pill>
+  1408→                </div>
+  1409→                <div className="text-xs text-muted-foreground mt-0.5 truncate">{l.url}</div>
+  1410→                {l.description && <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{l.description}</p>}
+  1411→              </div>
+  1412→              <div className="flex items-center gap-1 shrink-0">
+  1413→                <a href={l.url} target="_blank" rel="noopener noreferrer" className="tap w-8 h-8 rounded-lg hover:bg-secondary flex items-center justify-center">
+  1414→                  <Eye className="w-3.5 h-3.5" />
+  1415→                </a>
+  1416→                <button onClick={() => del(l.id)} className="tap w-8 h-8 rounded-lg hover:bg-rose-500/10 text-rose-600 flex items-center justify-center">
+  1417→                  <Trash2 className="w-3.5 h-3.5" />
+  1418→                </button>
+  1419→              </div>
+  1420→            </MatteCard>
+  1421→          ))}
+  1422→        </div>
+  1423→      )}
+  1424→    </div>
+  1425→  );
+  1426→}
+  1427→
+  1428→function LinkEditor({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+  1429→  const [form, setForm] = React.useState({
+  1430→    name: "",
+  1431→    description: "",
+  1432→    url: "",
+  1433→    iconName: "Link2",
+  1434→    category: "partner",
+  1435→  });
+  1436→  const [saving, setSaving] = React.useState(false);
+  1437→  const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  1438→
+  1439→  const save = async () => {
+  1440→    if (!form.name || !form.url) { toast.error("Name and URL are required"); return; }
+  1441→    setSaving(true);
+  1442→    try {
+  1443→      const res = await fetch("/api/links", {
+  1444→        method: "POST",
+  1445→        headers: { "Content-Type": "application/json" },
+  1446→        body: JSON.stringify(form),
+  1447→      });
+  1448→      if (!res.ok) throw new Error("Save failed");
+  1449→      toast.success("Link added.");
+  1450→      onSaved();
+  1451→    } catch {
+  1452→      toast.error("Save failed.");
+  1453→    } finally {
+  1454→      setSaving(false);
+  1455→    }
+  1456→  };
+  1457→
+  1458→  return (
+  1459→    <MatteCard>
+  1460→      <div className="flex items-center justify-between mb-5">
+  1461→        <h2 className="font-display text-xl tracking-tight">Add link</h2>
+  1462→        <button onClick={onClose} className="tap w-8 h-8 rounded-lg hover:bg-secondary flex items-center justify-center">
+  1463→          <X className="w-4 h-4" />
+  1464→        </button>
+  1465→      </div>
+  1466→      <div className="space-y-4">
+  1467→        <div>
+  1468→          <Label className="text-sm font-medium mb-1.5 block">Name *</Label>
+  1469→          <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="U.S. Embassy in Morocco" />
+  1470→        </div>
+  1471→        <div>
+  1472→          <Label className="text-sm font-medium mb-1.5 block">URL *</Label>
+  1473→          <Input value={form.url} onChange={(e) => set("url", e.target.value)} placeholder="https://..." />
+  1474→        </div>
+  1475→        <div>
+  1476→          <Label className="text-sm font-medium mb-1.5 block">Description</Label>
+  1477→          <Textarea value={form.description} onChange={(e) => set("description", e.target.value)} rows={2} />
+  1478→        </div>
+  1479→        <div className="grid sm:grid-cols-2 gap-4">
+  1480→          <div>
+  1481→            <Label className="text-sm font-medium mb-1.5 block">Icon</Label>
+  1482→            <Select value={form.iconName} onValueChange={(v) => set("iconName", v)}>
+  1483→              <SelectTrigger><SelectValue /></SelectTrigger>
+  1484→              <SelectContent>
+  1485→                {["Link2", "Building2", "GraduationCap", "Globe2", "HeartHandshake", "Library", "MessageSquare", "Compass", "Award", "Sparkles"].map((i) => <SelectItem key={i} value={i}>{i}</SelectItem>)}
+  1486→              </SelectContent>
+  1487→            </Select>
+  1488→          </div>
+  1489→          <div>
+  1490→            <Label className="text-sm font-medium mb-1.5 block">Category</Label>
+  1491→            <Select value={form.category} onValueChange={(v) => set("category", v)}>
+  1492→              <SelectTrigger><SelectValue /></SelectTrigger>
+  1493→              <SelectContent>
+  1494→                <SelectItem value="partner">Partner</SelectItem>
+  1495→                <SelectItem value="resource">Resource</SelectItem>
+  1496→                <SelectItem value="embassy">Embassy</SelectItem>
+  1497→              </SelectContent>
+  1498→            </Select>
+  1499→          </div>
+  1500→        </div>
+  1501→        <div className="flex justify-end gap-2 pt-3 border-t border-border">
+  1502→          <Button variant="outline" onClick={onClose} className="rounded-full bg-transparent">Cancel</Button>
+  1503→          <Button onClick={save} disabled={saving} className="rounded-full">
+  1504→            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+  1505→            Add link
+  1506→          </Button>
+  1507→        </div>
+  1508→      </div>
+  1509→    </MatteCard>
+  1510→  );
+  1511→}
+  1512→
+  1513→// ============================================================
+  1514→// SETTINGS (mini-CMS)
+  1515→// ============================================================
+  1516→export function SettingsTab() {
+  1517→  const [settings, setSettings] = React.useState<Record<string, string>>({});
+  1518→  const [loading, setLoading] = React.useState(true);
+  1519→  const [savingKey, setSavingKey] = React.useState<string | null>(null);
+  1520→
+  1521→  const load = React.useCallback(() => {
+  1522→    setLoading(true);
+  1523→    fetch("/api/settings").then((r) => r.json()).then((d) => setSettings(d.settings || {})).finally(() => setLoading(false));
+  1524→  }, []);
+  1525→  React.useEffect(() => load(), [load]);
+  1526→
+  1527→  const fields = [
+  1528→    { key: "contact.email", label: "Contact email", category: "Contact" },
+  1529→    { key: "contact.phone", label: "Contact phone", category: "Contact" },
+  1530→    { key: "contact.address", label: "Address", category: "Contact" },
+  1531→    { key: "hours.monfri", label: "Mon–Fri hours", category: "Hours" },
+  1532→    { key: "hours.saturday", label: "Saturday hours", category: "Hours" },
+  1533→    { key: "hours.sunday", label: "Sunday hours", category: "Hours" },
+  1534→    { key: "home.hero.title", label: "Home hero title", category: "Home page", textarea: true },
+  1535→    { key: "home.hero.subtitle", label: "Home hero subtitle", category: "Home page", textarea: true },
+  1536→  ];
+  1537→
+  1538→  const save = async (key: string, value: string) => {
+  1539→    setSavingKey(key);
+  1540→    try {
+  1541→      const res = await fetch("/api/settings", {
+  1542→        method: "PUT",
+  1543→        headers: { "Content-Type": "application/json" },
+  1544→        body: JSON.stringify({ key, value, category: key.split(".")[0] }),
+  1545→      });
+  1546→      if (!res.ok) throw new Error("Save failed");
+  1547→      toast.success("Saved.");
+  1548→    } catch {
+  1549→      toast.error("Save failed.");
+  1550→    } finally {
+  1551→      setSavingKey(null);
+  1552→    }
+  1553→  };
+  1554→
+  1555→  if (loading) return <div className="text-center py-16"><Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" /></div>;
+  1556→
+  1557→  // Group by category
+  1558→  const categories = Array.from(new Set(fields.map((f) => f.category)));
+  1559→
+  1560→  return (
+  1561→    <div className="space-y-6">
+  1562→      <div>
+  1563→        <h2 className="font-display text-xl tracking-tight">Site settings</h2>
+  1564→        <p className="text-sm text-muted-foreground">Edit the content shown across the site.</p>
+  1565→      </div>
+  1566→      {categories.map((cat) => (
+  1567→        <MatteCard key={cat}>
+  1568→          <h3 className="font-display text-lg tracking-tight mb-4">{cat}</h3>
+  1569→          <div className="space-y-4">
+  1570→            {fields.filter((f) => f.category === cat).map((f) => (
+  1571→              <div key={f.key}>
+  1572→                <Label className="text-sm font-medium mb-1.5 block">{f.label}</Label>
+  1573→                <div className="flex gap-2">
+  1574→                  {f.textarea ? (
+  1575→                    <Textarea
+  1576→                      value={settings[f.key] || ""}
+  1577→                      onChange={(e) => setSettings((s) => ({ ...s, [f.key]: e.target.value }))}
+  1578→                      rows={2}
+  1579→                    />
+  1580→                  ) : (
+  1581→                    <Input
+  1582→                      value={settings[f.key] || ""}
+  1583→                      onChange={(e) => setSettings((s) => ({ ...s, [f.key]: e.target.value }))}
+  1584→                    />
+  1585→                  )}
+  1586→                  <Button
+  1587→                    size="sm"
+  1588→                    onClick={() => save(f.key, settings[f.key] || "")}
+  1589→                    disabled={savingKey === f.key}
+  1590→                    className="rounded-full shrink-0"
+  1591→                  >
+  1592→                    {savingKey === f.key ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+  1593→                  </Button>
+  1594→                </div>
+  1595→              </div>
+  1596→            ))}
+  1597→          </div>
+  1598→        </MatteCard>
+  1599→      ))}
+  1600→    </div>
+  1601→  );
+  1602→}
+  1603→
+  1604→// ============================================================
+  1605→// USERS
+  1606→// ============================================================
+  1607→function UsersTab() {
+  1608→  const [users, setUsers] = React.useState<UserItem[]>([]);
+  1609→  const [loading, setLoading] = React.useState(true);
+  1610→  const [creating, setCreating] = React.useState(false);
+  1611→
+  1612→  const load = React.useCallback(() => {
+  1613→    setLoading(true);
+  1614→    fetch("/api/users").then((r) => r.json()).then((d) => setUsers(d.users || [])).finally(() => setLoading(false));
+  1615→  }, []);
+  1616→  React.useEffect(() => load(), [load]);
+  1617→
+  1618→  const toggleActive = async (u: UserItem) => {
+  1619→    setUsers((arr) => arr.map((x) => (x.id === u.id ? { ...x, active: !x.active } : x)));
+  1620→    await fetch("/api/users", {
+  1621→      method: "PATCH",
+  1622→      headers: { "Content-Type": "application/json" },
+  1623→      body: JSON.stringify({ id: u.id, active: !u.active }),
+  1624→    });
+  1625→    toast.success(u.active ? "User deactivated." : "User activated.");
+  1626→  };
+  1627→
+  1628→  const changeRole = async (u: UserItem, role: string) => {
+  1629→    setUsers((arr) => arr.map((x) => (x.id === u.id ? { ...x, role } : x)));
+  1630→    await fetch("/api/users", {
+  1631→      method: "PATCH",
+  1632→      headers: { "Content-Type": "application/json" },
+  1633→      body: JSON.stringify({ id: u.id, role }),
+  1634→    });
+  1635→    toast.success("Role updated.");
+  1636→  };
+  1637→
+  1638→  const del = async (id: string) => {
+  1639→    setUsers((arr) => arr.filter((x) => x.id !== id));
+  1640→    await fetch(`/api/users?id=${id}`, { method: "DELETE" });
+  1641→    toast.success("User deleted.");
+  1642→  };
+  1643→
+  1644→  if (creating) {
+  1645→    return <UserEditor onClose={() => setCreating(false)} onSaved={() => { setCreating(false); load(); }} />;
+  1646→  }
+  1647→
+  1648→  return (
+  1649→    <div className="space-y-4">
+  1650→      <div className="flex items-center justify-between gap-3">
+  1651→        <div>
+  1652→          <h2 className="font-display text-xl tracking-tight">Users</h2>
+  1653→          <p className="text-sm text-muted-foreground">{users.length} staff accounts</p>
+  1654→        </div>
+  1655→        <Button onClick={() => setCreating(true)} size="sm" className="rounded-full">
+  1656→          <Plus className="w-4 h-4" /> Add user
+  1657→        </Button>
+  1658→      </div>
+  1659→      {loading ? (
+  1660→        <div className="text-center py-16"><Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" /></div>
+  1661→      ) : (
+  1662→        <div className="space-y-2">
+  1663→          {users.map((u) => (
+  1664→            <MatteCard key={u.id} className="p-4 flex items-center gap-3 flex-wrap">
+  1665→              <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center text-xs font-bold shrink-0">
+  1666→                {(u.name || u.email).split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+  1667→              </div>
+  1668→              <div className="flex-1 min-w-0">
+  1669→                <div className="flex items-center gap-2 flex-wrap">
+  1670→                  <span className="font-medium">{u.name || u.email}</span>
+  1671→                  {!u.active && <Pill variant="outline">Inactive</Pill>}
+  1672→                </div>
+  1673→                <div className="text-xs text-muted-foreground">{u.email}</div>
+  1674→              </div>
+  1675→              <Select value={u.role} onValueChange={(v) => changeRole(u, v)}>
+  1676→                <SelectTrigger className="w-32 h-8 text-xs">
+  1677→                  <SelectValue />
+  1678→                </SelectTrigger>
+  1679→                <SelectContent>
+  1680→                  <SelectItem value="ADMIN">Admin</SelectItem>
+  1681→                  <SelectItem value="TEACHER">Teacher</SelectItem>
+  1682→                  <SelectItem value="EDITOR">Editor</SelectItem>
+  1683→                </SelectContent>
+  1684→              </Select>
+  1685→              <button
+  1686→                onClick={() => toggleActive(u)}
+  1687→                className={`tap px-2.5 py-1 rounded-full text-xs font-medium ${u.active ? "bg-emerald-500/15 text-emerald-700" : "bg-secondary"}`}
+  1688→              >
+  1689→                {u.active ? "Active" : "Inactive"}
+  1690→              </button>
+  1691→              <button onClick={() => del(u.id)} className="tap w-8 h-8 rounded-lg hover:bg-rose-500/10 text-rose-600 flex items-center justify-center">
+  1692→                <Trash2 className="w-3.5 h-3.5" />
+  1693→              </button>
+  1694→            </MatteCard>
+  1695→          ))}
+  1696→        </div>
+  1697→      )}
+  1698→    </div>
+  1699→  );
+  1700→}
+  1701→
+  1702→function UserEditor({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+  1703→  const [form, setForm] = React.useState({
+  1704→    email: "",
+  1705→    name: "",
+  1706→    password: "",
+  1707→    role: "TEACHER" as Role,
+  1708→  });
+  1709→  const [saving, setSaving] = React.useState(false);
+  1710→  const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  1711→
+  1712→  const save = async () => {
+  1713→    if (!form.email || !form.password) {
+  1714→      toast.error("Email and password are required.");
+  1715→      return;
+  1716→    }
+  1717→    setSaving(true);
+  1718→    try {
+  1719→      const res = await fetch("/api/users", {
+  1720→        method: "POST",
+  1721→        headers: { "Content-Type": "application/json" },
+  1722→        body: JSON.stringify(form),
+  1723→      });
+  1724→      if (!res.ok) {
+  1725→        const err = await res.json();
+  1726→        throw new Error(err.error || "Save failed");
+  1727→      }
+  1728→      toast.success("User created.");
+  1729→      onSaved();
+  1730→    } catch (e) {
+  1731→      toast.error(e instanceof Error ? e.message : "Save failed");
+  1732→    } finally {
+  1733→      setSaving(false);
+  1734→    }
+  1735→  };
+  1736→
+  1737→  return (
+  1738→    <MatteCard>
+  1739→      <div className="flex items-center justify-between mb-5">
+  1740→        <h2 className="font-display text-xl tracking-tight">Add user</h2>
+  1741→        <button onClick={onClose} className="tap w-8 h-8 rounded-lg hover:bg-secondary flex items-center justify-center">
+  1742→          <X className="w-4 h-4" />
+  1743→        </button>
+  1744→      </div>
+  1745→      <div className="space-y-4">
+  1746→        <div className="grid sm:grid-cols-2 gap-4">
+  1747→          <div>
+  1748→            <Label className="text-sm font-medium mb-1.5 block">Name</Label>
+  1749→            <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Sarah Benali" />
+  1750→          </div>
+  1751→          <div>
+  1752→            <Label className="text-sm font-medium mb-1.5 block">Email *</Label>
+  1753→            <Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="sarah@asoujda.ma" />
+  1754→          </div>
+  1755→          <div>
+  1756→            <Label className="text-sm font-medium mb-1.5 block">Password *</Label>
+  1757→            <Input type="password" value={form.password} onChange={(e) => set("password", e.target.value)} placeholder="••••••••" />
+  1758→          </div>
+  1759→          <div>
+  1760→            <Label className="text-sm font-medium mb-1.5 block">Role</Label>
+  1761→            <Select value={form.role} onValueChange={(v) => set("role", v)}>
+  1762→              <SelectTrigger><SelectValue /></SelectTrigger>
+  1763→              <SelectContent>
+  1764→                <SelectItem value="ADMIN">Admin</SelectItem>
+  1765→                <SelectItem value="TEACHER">Teacher</SelectItem>
+  1766→                <SelectItem value="EDITOR">Editor</SelectItem>
+  1767→              </SelectContent>
+  1768→            </Select>
+  1769→          </div>
+  1770→        </div>
+  1771→        <div className="flex justify-end gap-2 pt-3 border-t border-border">
+  1772→          <Button variant="outline" onClick={onClose} className="rounded-full bg-transparent">Cancel</Button>
+  1773→          <Button onClick={save} disabled={saving} className="rounded-full">
+  1774→            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+  1775→            Create user
+  1776→          </Button>
+  1777→        </div>
+  1778→      </div>
+  1779→    </MatteCard>
+  1780→  );
+  1781→}
+  1782→

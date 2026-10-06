@@ -32,7 +32,11 @@ export type Route =
   | { name: "editor" }
   | { name: "editor-tab"; tab: EditorTab }
   | { name: "login" }
+  | { name: "companion" }
+  | { name: "companion-tab"; tab: CompanionTab }
   | { name: "search"; q?: string };
+
+export type CompanionTab = "overview" | "levels" | "classes" | "team" | "library";
 
 export type AdminTab =
   | "overview"
@@ -119,6 +123,11 @@ function parseHash(): Route {
       return { name: "editor" };
     case "login":
       return { name: "login" };
+    case "companion":
+      if (second && ["overview", "levels", "classes", "team", "library"].includes(second)) {
+        return { name: "companion-tab", tab: second as CompanionTab };
+      }
+      return { name: "companion" };
     case "search":
       return { name: "search", q: second ? decodeURIComponent(second) : undefined };
     case "tvt":
@@ -154,6 +163,8 @@ export function routeToHash(route: Route): string {
       return `#/teacher/${route.tab}`;
     case "editor-tab":
       return `#/editor/${route.tab}`;
+    case "companion-tab":
+      return `#/companion/${route.tab}`;
     case "search":
       return route.q ? `#/search/${encodeURIComponent(route.q)}` : "#/search";
     default:

@@ -61,12 +61,13 @@ const TABS: DashTab[] = [
   { key: "comments", label: "Comments", icon: MessageSquare },
   { key: "settings", label: "Site Settings", icon: Settings },
   { key: "users", label: "Users", icon: UserCog },
+  { key: "companion", label: "Companion", icon: BookOpen },
 ];
 
 export function AdminDashboard({ initialTab = "overview" }: { initialTab?: AdminTab }) {
   const { data: session, status } = useSession();
   const navigate = useRouter((s) => s.navigate);
-  const [tab, setTab] = React.useState<AdminTab>(initialTab);
+  const [tab, setTab] = React.useState<AdminTab | "companion">(initialTab);
 
   React.useEffect(() => setTab(initialTab), [initialTab]);
 
@@ -93,7 +94,13 @@ export function AdminDashboard({ initialTab = "overview" }: { initialTab?: Admin
     );
   }
 
-  const onTabChange = (t: string) => navigate({ name: "admin-tab", tab: t as AdminTab });
+  const onTabChange = (t: string) => {
+    if (t === "companion") {
+      navigate({ name: "companion" });
+      return;
+    }
+    navigate({ name: "admin-tab", tab: t as AdminTab });
+  };
 
   return (
     <DashboardLayout
@@ -117,7 +124,34 @@ export function AdminDashboard({ initialTab = "overview" }: { initialTab?: Admin
       {tab === "comments" && <CommentsTab />}
       {tab === "settings" && <SettingsTab />}
       {tab === "users" && <UsersTab />}
+      {tab === "companion" && <CompanionLinkTab onOpen={() => navigate({ name: "companion" })} />}
     </DashboardLayout>
+  );
+}
+
+// ============================================================
+// COMPANION — link to the full ELTASO Companion dashboard
+// ============================================================
+function CompanionLinkTab({ onOpen }: { onOpen: () => void }) {
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="font-display text-xl tracking-tight">ELTASO Companion</h2>
+        <p className="text-sm text-muted-foreground">
+          Curriculum management tool for coordinators and teachers.
+        </p>
+      </div>
+      <MatteCard className="text-center py-12">
+        <BookOpen className="w-10 h-10 text-accent mx-auto mb-3" />
+        <h3 className="font-display text-lg tracking-tight mb-1">Open the Companion</h3>
+        <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
+          Manage levels, weekly plans, classes, the teaching team, and the shared resource library.
+        </p>
+        <Button onClick={onOpen} className="rounded-full">
+          Open Companion
+        </Button>
+      </MatteCard>
+    </div>
   );
 }
 
