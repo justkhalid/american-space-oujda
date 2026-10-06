@@ -1,5 +1,7 @@
 // Prisma schema — American Space Oujda
-// SQLite for local dev (file:./db/custom.db) and Turso libSQL for production (Cloudflare Pages)
+// Uses libSQL adapter at runtime (see src/lib/db.ts).
+// The datasource URL below is only used by `prisma generate` at build time.
+// At runtime, the adapter in src/lib/db.ts handles the actual connection.
 
 generator client {
   provider        = "prisma-client-js"
@@ -8,7 +10,7 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
+  url      = "file:./db/placeholder.db"
 }
 
 // ============================================================
