@@ -1,0 +1,12 @@
+# Optional Cloudflare configuration
+# Not strictly required when using @cloudflare/next-on-pages
+# See DEPLOY.md for full deployment instructions
+
+name = "american-space-oujda"
+compatibility_date = "2026-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# These are read by `wrangler pages dev` for local Cloudflare testing
+# (you don't need to use this — just use `bun run dev` for normal local dev)
+[vars]
+NEXTAUTH_URL = "http://localhost:3000"
