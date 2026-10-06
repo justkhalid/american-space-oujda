@@ -6,13 +6,9 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
-  // Cloudflare Pages compatibility — don't bundle server-side externals
-  // (Prisma + libsql need to be resolved at runtime, not bundled)
+  // Cloudflare Pages compatibility — Prisma/libsql/bcrypt are external Node deps
+  // that get bundled by @cloudflare/next-on-pages via the nodejs-compat flag.
   serverExternalPackages: ["@prisma/client", "@libsql/client", "@prisma/adapter-libsql", "bcryptjs"],
-  experimental: {
-    // Required for Cloudflare Pages compatibility
-    runtime: "nodejs",
-  },
 };
 
 export default nextConfig;
