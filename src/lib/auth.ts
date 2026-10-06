@@ -20,14 +20,26 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+        console.log("[auth] authorize called for:", credentials?.email);
+        if (!credentials?.email || !credentials?.password) {
+          console.log("[auth] missing email or password");
+          return null;
+        }
         try {
+          console.log("[auth] querying database for user...");
           const user = await db.user.findUnique({
             where: { email: credentials.email.toLowerCase() },
           });
-          if (!user || !user.password || !user.active) return null;
+          console.log("[auth] user found:", user ? user.email : "NONE");
+          if (!user || !user.password || !user.active) {
+            console.log("[auth] no user, no password, or inactive");
+            return null;
+          }
+          console.log("[auth] comparing passwords...");
           const ok = await bcrypt.compare(credentials.password, user.password);
+          console.log("[auth] bcrypt match:", ok);
           if (!ok) return null;
+          console.log("[auth] login successful for:", user.email);
           return {
             id: user.id,
             email: user.email,
@@ -35,7 +47,8 @@ export const authOptions: NextAuthOptions = {
             role: user.role,
           } as unknown as { id: string; email: string; name?: string | null; role: string };
         } catch (e) {
-          console.error("[auth] authorize error:", e);
+          console.error("[auth] authorize error:", e instanceof Error ? e.message : e);
+          console.error("[auth] full error:", e);
           return null;
         }
       },

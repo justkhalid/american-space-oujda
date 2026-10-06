@@ -2,9 +2,9 @@ import { PrismaClient } from "@prisma/client";
 import { PrismaLibSql } from "@prisma/adapter-libsql";
 import { createClient } from "@libsql/client";
 
-// Lazy Prisma client — only connects to the database when actually queried,
-// not when the module is imported. This prevents build-time crashes when
-// DATABASE_URL isn't available during static page generation.
+// Vercel-friendly Prisma client.
+// Vercel supports full Node.js runtime, so no edge runtime hacks needed.
+// We just create one client per environment based on DATABASE_URL.
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
@@ -13,15 +13,14 @@ const globalForPrisma = globalThis as unknown as {
 function createPrismaClient(): PrismaClient {
   const url = process.env.DATABASE_URL || "";
 
-  // If no URL (e.g. during build), return a stub that won't actually connect
-  // until someone calls a method on it
   if (!url) {
-    console.warn("[db] No DATABASE_URL — returning stub PrismaClient");
-    return new PrismaClient();
+    console.error("[db] No DATABASE_URL set!");
+    throw new Error("DATABASE_URL is not set");
   }
 
-  // If it's a libsql:// URL, use the libSQL adapter (production / Turso)
+  // If it's a libsql:// URL (production / Turso), use the libSQL adapter
   if (url.startsWith("libsql://") || url.startsWith("https://")) {
+    console.log("[db] Connecting to Turso:", url);
     const libsql = createClient({
       url,
       authToken: process.env.DATABASE_AUTH_TOKEN,
@@ -30,29 +29,13 @@ function createPrismaClient(): PrismaClient {
     return new PrismaClient({ adapter });
   }
 
-  // Otherwise: local SQLite file
+  // Otherwise: local SQLite file (dev)
+  console.log("[db] Using local SQLite:", url);
   return new PrismaClient({
-    log: process.env.NODE_ENV !== "production" ? ["query"] : [],
+    log: process.env.NODE_ENV !== "production" ? ["query", "error", "warn"] : ["error"],
   });
 }
 
-// Use a Proxy that lazily creates the client on first access
-// This prevents the URL_INVALID error during build static page generation
-let _client: PrismaClient | null = null;
-function getClient(): PrismaClient {
-  if (!_client) {
-    _client = createPrismaClient();
-  }
-  return _client;
-}
+export const db = globalForPrisma.prisma ?? createPrismaClient();
 
-// Export a proxy that lazily initializes on first property access
-export const db = new Proxy({} as PrismaClient, {
-  get(_target, prop) {
-    const client = getClient();
-    const value = (client as never as Record<string | symbol, unknown>)[prop];
-    return typeof value === "function" ? (value as (...args: unknown[]) => unknown).bind(client) : value;
-  },
-});
-
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = getClient();
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = db;
