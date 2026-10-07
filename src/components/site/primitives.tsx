@@ -53,7 +53,7 @@ export function Section({
   containerClassName?: string;
 }) {
   return (
-    <section className={cn("py-16 md:py-24", className)}>
+    <section className={cn("py-12 md:py-16", className)}>
       <div className={cn("max-w-7xl mx-auto px-4 sm:px-6 lg:px-8", containerClassName)}>
         {children}
       </div>
@@ -66,15 +66,24 @@ export function SectionHeader({
   title,
   subtitle,
   action,
+  align = "left",
 }: {
   eyebrow?: string;
   title: React.ReactNode;
   subtitle?: React.ReactNode;
   action?: React.ReactNode;
+  align?: "left" | "center";
 }) {
   return (
-    <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-10">
-      <div className="max-w-2xl">
+    <div
+      className={cn(
+        "flex gap-4 mb-10",
+        align === "center"
+          ? "flex-col items-center text-center"
+          : "flex-col md:flex-row md:items-end md:justify-between"
+      )}
+    >
+      <div className={cn("max-w-2xl", align === "center" && "mx-auto")}>
         {eyebrow && (
           <div className="text-xs font-semibold uppercase tracking-[0.18em] text-accent mb-2">
             {eyebrow}

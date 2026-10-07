@@ -1,15 +1,15 @@
 "use client";
 
 import * as React from "react";
+import { useSession } from "next-auth/react";
 import { useRouter, type Route } from "@/store/router";
 import { SiteHeader, SiteFooter } from "@/components/site/shell";
 import { ScrollEffects } from "@/components/site/scroll-effects";
 import { DirectionEffect } from "@/components/site/direction-effect";
 import { HomePage } from "@/components/site/pages/home";
+import { ActivitiesPage } from "@/components/site/pages/activities";
 import { TVTHubPage, TVTRolePage } from "@/components/site/pages/tvt";
 import { ApplyPage } from "@/components/site/pages/apply";
-import { EventsPage } from "@/components/site/pages/events";
-import { AlbumPage } from "@/components/site/pages/album";
 import { SearchPage } from "@/components/site/pages/search";
 import { LoginPage } from "@/components/auth/login-form";
 import { AdminDashboard } from "@/components/dashboard/admin";
@@ -21,9 +21,6 @@ import { InternDashboard } from "@/components/dashboard/intern";
 import {
   AboutPage,
   RelationsPage,
-  ActivitiesPage,
-  ClubsPage,
-  BooksPage,
   LibraryPage,
   CertificatesPage,
   RegulationsPage,
@@ -44,14 +41,15 @@ function PageRouter({ route }: { route: Route }) {
     case "activities":
       return <ActivitiesPage />;
     case "events":
-      return <EventsPage />;
     case "clubs":
-      return <ClubsPage />;
+      // Events and clubs merged into one Activities page; old hashes land there.
+      return <ActivitiesPage />;
     case "album":
-      return <AlbumPage />;
-    case "books":
-      return <BooksPage />;
+      // Album is no longer public - old links fall back to the home page.
+      return <HomePage />;
     case "library":
+    case "books":
+      // Library and books merged into one Library page.
       return <LibraryPage />;
     case "certificates":
       return <CertificatesPage />;
@@ -97,8 +95,38 @@ function PageRouter({ route }: { route: Route }) {
   }
 }
 
+// Dashboard routes run fullscreen: the public site chrome is hidden,
+// but a "View site" button stays available inside each dashboard.
+const DASHBOARD_ROUTES = new Set([
+  "admin",
+  "admin-tab",
+  "teacher",
+  "teacher-tab",
+  "editor",
+  "editor-tab",
+  "library-dashboard",
+  "intern",
+  "intern-tab",
+  "companion",
+  "companion-tab",
+]);
+
+// Heartbeat: marks signed-in staff as online for the admin overview.
+function PresenceHeartbeat() {
+  const { data: session, status } = useSession();
+  React.useEffect(() => {
+    if (status !== "authenticated") return;
+    const ping = () => fetch("/api/presence", { method: "POST" }).catch(() => {});
+    ping();
+    const id = setInterval(ping, 60_000);
+    return () => clearInterval(id);
+  }, [status, session]);
+  return null;
+}
+
 export default function Home() {
   const route = useRouter((s) => s.route);
+  const isDashboard = DASHBOARD_ROUTES.has(route.name);
 
   // Update document title based on route
   React.useEffect(() => {
@@ -107,10 +135,10 @@ export default function Home() {
       about: "About · American Space Oujda",
       relations: "Moroccan-American Relations · American Space Oujda",
       activities: "Activities · American Space Oujda",
-      events: "Events · American Space Oujda",
-      clubs: "Clubs · American Space Oujda",
-      album: "Album · American Space Oujda",
-      books: "Books & Publications · American Space Oujda",
+      events: "Activities · American Space Oujda",
+      clubs: "Activities · American Space Oujda",
+      album: "American Space Oujda",
+      books: "Library · American Space Oujda",
       library: "Library · American Space Oujda",
       certificates: "Certificates · American Space Oujda",
       regulations: "Internal Regulations · American Space Oujda",
@@ -124,6 +152,7 @@ export default function Home() {
       admin: "Admin · American Space Oujda",
       teacher: "Teacher · American Space Oujda",
       editor: "Editor · American Space Oujda",
+      intern: "Intern · American Space Oujda",
       companion: "ELTASO Companion · American Space Oujda",
       "library-dashboard": "Library · American Space Oujda",
       search: "Search · American Space Oujda",
@@ -135,14 +164,15 @@ export default function Home() {
     <div className="min-h-screen flex flex-col">
       <ScrollEffects />
       <DirectionEffect />
-      <SiteHeader />
+      <PresenceHeartbeat />
+      {!isDashboard && <SiteHeader />}
       <main className="flex-1">
         {/* key forces remount + page-enter animation on route change */}
         <div key={route.name + ("tab" in route ? route.tab : "") + ("role" in route ? route.role : "") + ("q" in route ? route.q : "")} className="page-enter">
           <PageRouter route={route} />
         </div>
       </main>
-      <SiteFooter />
+      {!isDashboard && <SiteFooter />}
     </div>
   );
 }

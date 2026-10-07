@@ -546,7 +546,7 @@ export function LibraryPage() {
   const t = useI18n((s) => s.t);
   return (
     <>
-      <Section className="!pt-12 md:!pt-16 !pb-8">
+      <Section className="!pt-12 md:!pt-16 !pb-6">
         <PageHeader
           eyebrow={t("library.eyebrow")}
           title={t("library.title")}
@@ -554,19 +554,18 @@ export function LibraryPage() {
         />
       </Section>
 
+      {/* Hours + how to join */}
       <Section className="!pt-4">
         <TwoCol
           left={
-            <div className="rounded-3xl overflow-hidden aspect-[4/3] elevated">
-              <img
-                src="https://images.unsplash.com/photo-1507842217343-583bb7270b66?w=900&q=80&auto=format&fit=crop"
-                alt={t("library.title")}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          }
-          right={
             <div className="space-y-6">
+              <div className="rounded-3xl overflow-hidden aspect-[4/3] elevated">
+                <img
+                  src="https://images.unsplash.com/photo-1507842217343-583bb7270b66?w=900&q=80&auto=format&fit=crop"
+                  alt={t("library.title")}
+                  className="w-full h-full object-cover"
+                />
+              </div>
               <div>
                 <h3 className="font-display text-2xl tracking-tight mb-3">{t("library.hours")}</h3>
                 <div className="space-y-1.5">
@@ -581,6 +580,10 @@ export function LibraryPage() {
                   ))}
                 </div>
               </div>
+            </div>
+          }
+          right={
+            <div className="space-y-6">
               <div>
                 <h3 className="font-display text-2xl tracking-tight mb-3">{t("library.how")}</h3>
                 <div className="space-y-3">
@@ -624,6 +627,75 @@ export function LibraryPage() {
             </div>
           }
         />
+      </Section>
+
+      {/* Collection - merged from the old Books page */}
+      <Section className="bg-card/40 border-y border-border !py-12 md:!py-16">
+        <div className="flex items-center gap-3 mb-2">
+          <span className="aso-label flex-1">The collection</span>
+          <span className="tnum text-[10px] font-extrabold uppercase tracking-[0.12em] text-muted-foreground border border-border px-1.5 py-1 leading-none rounded-sm">
+            4,500+
+          </span>
+        </div>
+        <h2 className="font-display text-3xl md:text-4xl leading-tight tracking-tight balance mb-8">
+          Books, periodicals & digital resources
+        </h2>
+        <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { title: "American Literature", count: "1,200+ titles", body: "Fiction, poetry, and drama from the U.S. and the Americas." },
+            { title: "ESL & Language Learning", count: "800+ titles", body: "Grammar, vocabulary, and exam prep for English learners." },
+            { title: "U.S. History & Politics", count: "600+ titles", body: "From the founding era to contemporary America." },
+            { title: "Science & Technology", count: "500+ titles", body: "Popular science, computing, and STEM references." },
+            { title: "Children & Young Adult", count: "700+ titles", body: "Picture books, chapter books, and YA fiction." },
+            { title: "Magazines & Periodicals", count: "30+ subscriptions", body: "Current and back issues of major U.S. magazines." },
+            { title: "Digital Resources", count: "Unlimited", body: "E-books, audiobooks, and academic databases." },
+            { title: "Moroccan-American Studies", count: "200+ titles", body: "Scholarship on bilateral relations and cultural exchange." },
+          ].map((c) => (
+            <div
+              key={c.title}
+              className="rounded-2xl bg-card border border-border/70 p-5 elevated"
+            >
+              <div className="text-xs uppercase tracking-wider text-accent font-semibold mb-2 tnum">
+                {c.count}
+              </div>
+              <h3 className="font-display text-lg tracking-tight mb-1.5">{c.title}</h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">{c.body}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-12">
+          <SectionHeader
+            eyebrow="Featured"
+            title="Recently added to the collection"
+            align="center"
+          />
+          <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { title: "Beloved", author: "Toni Morrison", color: "bg-rose-100 dark:bg-rose-950/40" },
+              { title: "Educated", author: "Tara Westover", color: "bg-amber-100 dark:bg-amber-950/40" },
+              { title: "Hidden Figures", author: "Margot Lee Shetterly", color: "bg-sky-100 dark:bg-sky-950/40" },
+              { title: "The Overstory", author: "Richard Powers", color: "bg-emerald-100 dark:bg-emerald-950/40" },
+            ].map((b) => (
+              <div key={b.title} className="group">
+                <div
+                  className={`aspect-[1/1.3] rounded-xl ${b.color} elevated flex items-center justify-center p-4 transition-transform duration-500 [transition-timing-function:cubic-bezier(0.22,0.61,0.36,1)] group-hover:-translate-y-1`}
+                >
+                  <div className="text-center">
+                    <BookOpen className="w-8 h-8 mx-auto opacity-30" />
+                    <div className="font-display text-base mt-3 leading-tight balance">
+                      {b.title}
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3 text-center">
+                  <div className="text-sm font-medium">{b.title}</div>
+                  <div className="text-xs text-muted-foreground">{b.author}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </Section>
     </>
   );
@@ -767,6 +839,7 @@ export function RegulationsPage() {
 export function RegistrationPage() {
   const [done, setDone] = React.useState(false);
   const [submitting, setSubmitting] = React.useState(false);
+  const [closed, setClosed] = React.useState(false);
   const [form, setForm] = React.useState({
     fullName: "",
     email: "",
@@ -776,6 +849,14 @@ export function RegistrationPage() {
     notes: "",
   });
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  // Admin can close registration when cohorts are full.
+  React.useEffect(() => {
+    fetch("/api/settings")
+      .then((r) => (r.ok ? r.json() : { settings: {} }))
+      .then((d) => setClosed(d.settings?.["courses.open"] === "0"))
+      .catch(() => {});
+  }, []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -839,6 +920,29 @@ export function RegistrationPage() {
       </Section>
 
       <Section className="!pt-4">
+        {closed ? (
+          <MatteCard className="max-w-2xl mx-auto text-center py-12">
+            <div className="w-14 h-14 rounded-full bg-amber-500/15 flex items-center justify-center mx-auto mb-5">
+              <Sparkles className="w-7 h-7 text-amber-600 dark:text-amber-400" />
+            </div>
+            <h2 className="font-display text-2xl tracking-tight mb-2">
+              Registration is currently full
+            </h2>
+            <p className="text-sm text-muted-foreground leading-relaxed pretty max-w-md mx-auto">
+              All places in the current cohorts are taken. New cohorts start every October,
+              February, and July - registration reopens here before each cohort, and announcements
+              are posted on our home page and social media.
+            </p>
+            <Button
+              variant="outline"
+              className="mt-6 rounded-full bg-transparent"
+              onClick={() => (window.location.href = `mailto:${SITE.email}?subject=Course registration waitlist`)}
+            >
+              <Mail className="w-4 h-4" />
+              Join the waitlist by email
+            </Button>
+          </MatteCard>
+        ) : (
         <div className="grid lg:grid-cols-3 gap-8">
           <MatteCard className="lg:col-span-2">
             <form onSubmit={submit} className="space-y-5">
@@ -966,6 +1070,7 @@ export function RegistrationPage() {
             </MatteCard>
           </div>
         </div>
+        )}
       </Section>
     </>
   );

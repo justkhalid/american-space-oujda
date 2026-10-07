@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter } from "@/store/router";
 import { Button } from "@/components/ui/button";
 import { PageHeader, Section, MatteCard, Pill, CheckList, TwoCol } from "@/components/site/primitives";
+import { SITE } from "@/lib/site/content";
 import {
   ArrowRight,
   GraduationCap,
@@ -13,6 +14,7 @@ import {
   Clock,
   Globe2,
   Award,
+  MapPin,
   Users,
   CheckCircle2,
   Mail,
@@ -175,55 +177,160 @@ const ROLES = [
 
 export function TVTHubPage() {
   const navigate = useRouter((s) => s.navigate);
+  const [settings, setSettings] = React.useState<Record<string, string>>({});
+
+  React.useEffect(() => {
+    fetch("/api/settings")
+      .then((r) => (r.ok ? r.json() : { settings: {} }))
+      .then((d) => setSettings(d.settings || {}))
+      .catch(() => {});
+  }, []);
+
+  // Registration gates - admin can toggle these from the dashboard.
+  const teacherOpen = settings["apps.teacher.open"] !== "0";
+  const internOpen = settings["apps.intern.open"] !== "0";
+
+  const OpenBadge = ({ open }: { open: boolean }) =>
+    open ? (
+      <span className="aso-status aso-status--live">Registrations open</span>
+    ) : (
+      <span className="aso-status text-muted-foreground bg-muted border-border">
+        Registrations closed
+      </span>
+    );
+
   return (
     <>
-      <Section className="!pt-12 md:!pt-16 !pb-8">
+      <Section className="!pt-12 md:!pt-16 !pb-6">
         <PageHeader
-          eyebrow="Join our team"
+          eyebrow="Join us"
           title={
             <>
-              Four ways to be part of{" "}
+              Three ways to belong at{" "}
               <span style={{ fontStyle: "italic", fontWeight: 400 }}>American Space Oujda.</span>
             </>
           }
-          subtitle="Teachers, volunteers, interns, and trainers form the heart of our Space. Whatever your skills and availability, there's a role for you here."
+          subtitle="Become a member (it's free), give your time as an intern or volunteer, or teach with us. Pick the path that fits you."
         />
       </Section>
 
-      {/* Role cards */}
-      <Section className="!pt-4 !pb-16">
-        <div className="grid md:grid-cols-2 gap-4">
-          {ROLES.map((r) => (
-            <button
-              key={r.key}
-              onClick={() => navigate({ name: "tvt-role", role: r.key })}
-              className="tap group text-left rounded-3xl bg-card border border-border/70 p-8 elevated hover:-translate-y-0.5 transition-transform"
+      {/* Three paths */}
+      <Section className="!pt-4 !pb-14">
+        <div className="grid md:grid-cols-3 gap-4 items-stretch">
+          {/* 1. ASO Member */}
+          <div className="flex flex-col rounded-3xl bg-card border border-border/70 p-7 elevated">
+            <div className="flex items-start justify-between mb-5">
+              <div className="w-12 h-12 rounded-2xl bg-accent/10 flex items-center justify-center">
+                <HeartHandshake className="w-5 h-5 text-accent" strokeWidth={2} />
+              </div>
+              <span className="aso-status aso-status--live">Free - forever</span>
+            </div>
+            <h3 className="font-display text-2xl tracking-tight leading-tight mb-2">
+              Join as an ASO member
+            </h3>
+            <p className="text-sm text-muted-foreground leading-relaxed pretty flex-1">
+              Membership is free and open to everyone. There is no online form - membership is
+              issued in person, so come visit us at the Space, bring a simple document, and leave
+              with your ASO card the same day.
+            </p>
+            <div className="mt-5 rounded-xl bg-secondary/60 px-4 py-3 text-xs text-muted-foreground space-y-1">
+              <div className="flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5" />
+                {SITE.address}
+              </div>
+              <div className="flex items-center gap-1.5 tnum">
+                <Clock className="w-3.5 h-3.5" />
+                {SITE.hours[0].day}: {SITE.hours[0].time}
+              </div>
+            </div>
+            <Button
+              className="mt-5 rounded-full w-full"
+              onClick={() => navigate({ name: "membership" })}
             >
-              <div className="flex items-start justify-between mb-5">
-                <div className="w-12 h-12 rounded-2xl bg-primary/8 flex items-center justify-center">
-                  <r.icon className="w-5 h-5 text-primary" strokeWidth={2} />
-                </div>
-                <Pill variant="muted">
-                  <Clock className="w-3 h-3" />
-                  {r.commitment.split("·")[0].trim()}
-                </Pill>
+              How to become a member
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </div>
+
+          {/* 2. Intern / Volunteer */}
+          <div className="flex flex-col rounded-3xl bg-card border border-border/70 p-7 elevated">
+            <div className="flex items-start justify-between mb-5">
+              <div className="w-12 h-12 rounded-2xl bg-primary/8 flex items-center justify-center">
+                <Briefcase className="w-5 h-5 text-primary" strokeWidth={2} />
               </div>
-              <h3 className="font-display text-2xl md:text-3xl tracking-tight leading-tight mb-2 balance">
-                {r.title}
-              </h3>
-              <p className="text-muted-foreground pretty leading-relaxed">{r.summary}</p>
-              <div className="mt-5 text-sm font-medium text-accent flex items-center gap-1.5 group-hover:gap-2.5 transition-all">
-                Learn more and apply
-                <ArrowRight className="w-3.5 h-3.5" />
+              <OpenBadge open={internOpen} />
+            </div>
+            <h3 className="font-display text-2xl tracking-tight leading-tight mb-2">
+              Intern / Volunteer
+            </h3>
+            <p className="text-sm text-muted-foreground leading-relaxed pretty flex-1">
+              Structured 3-6 month internships for university students, and an annual volunteer
+              cohort (recruitment usually opens in September and October). Gain hands-on
+              experience, certificates, and mentorship.
+            </p>
+            <div className="mt-5 rounded-xl bg-secondary/60 px-4 py-3 text-xs text-muted-foreground">
+              3-6 months - 15-30 hours/week - certificate + recommendation letter
+            </div>
+            {internOpen ? (
+              <Button
+                className="mt-5 rounded-full w-full"
+                onClick={() => navigate({ name: "apply" })}
+              >
+                Apply as intern / volunteer
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            ) : (
+              <Button variant="outline" disabled className="mt-5 rounded-full w-full bg-transparent">
+                Registrations currently closed
+              </Button>
+            )}
+          </div>
+
+          {/* 3. Teacher */}
+          <div className="flex flex-col rounded-3xl bg-card border border-border/70 p-7 elevated">
+            <div className="flex items-start justify-between mb-5">
+              <div className="w-12 h-12 rounded-2xl bg-primary/8 flex items-center justify-center">
+                <GraduationCap className="w-5 h-5 text-primary" strokeWidth={2} />
               </div>
+              <OpenBadge open={teacherOpen} />
+            </div>
+            <h3 className="font-display text-2xl tracking-tight leading-tight mb-2">
+              Teach with us
+            </h3>
+            <p className="text-sm text-muted-foreground leading-relaxed pretty flex-1">
+              Lead English or skill-building courses to motivated learners - volunteer or
+              compensated arrangements. Certification, library access, and pedagogical support
+              included.
+            </p>
+            <div className="mt-5 rounded-xl bg-secondary/60 px-4 py-3 text-xs text-muted-foreground">
+              4-10 hours/week - minimum one semester
+            </div>
+            {teacherOpen ? (
+              <Button
+                className="mt-5 rounded-full w-full"
+                onClick={() => navigate({ name: "apply", role: "teacher" })}
+              >
+                Apply as teacher
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            ) : (
+              <Button variant="outline" disabled className="mt-5 rounded-full w-full bg-transparent">
+                Registrations currently closed
+              </Button>
+            )}
+            <button
+              onClick={() => navigate({ name: "tvt-role", role: "trainer" })}
+              className="mt-3 text-xs text-muted-foreground hover:text-accent transition-colors"
+            >
+              Specialized in something else? Propose a workshop as a trainer.
             </button>
-          ))}
+          </div>
         </div>
       </Section>
 
       {/* Why join */}
-      <Section className="bg-card/40 border-y border-border !py-16 md:!py-20">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+      <Section className="bg-card/40 border-y border-border !py-14 md:!py-16">
+        <div className="grid lg:grid-cols-2 gap-10 items-center">
           <div>
             <Pill variant="accent" className="mb-4">
               <Sparkles className="w-3 h-3" />
@@ -251,7 +358,7 @@ export function TVTHubPage() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             {[
-              { icon: Users, label: "Active members", value: "1,200+" },
+              { icon: Users, label: "Current members", value: "13,000" },
               { icon: GraduationCap, label: "Courses / year", value: "18" },
               { icon: Globe2, label: "Nationalities", value: "12" },
               { icon: Award, label: "Years operating", value: `${new Date().getFullYear() - 2014}+` },
@@ -271,7 +378,7 @@ export function TVTHubPage() {
         </div>
       </Section>
 
-      <Section className="!pt-16 !pb-0">
+      <Section className="!pt-14 !pb-0">
         <MatteCard className="bg-primary text-primary-foreground border-primary">
           <div className="grid md:grid-cols-2 gap-6 items-center">
             <div>

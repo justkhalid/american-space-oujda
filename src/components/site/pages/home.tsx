@@ -31,6 +31,7 @@ import {
   Share2,
   Sparkles,
   Users,
+  UserRound,
   Youtube,
   type LucideIcon,
 } from "lucide-react";
@@ -56,6 +57,7 @@ interface ClubLite {
   schedule: string;
   iconName: string;
   imageUrl: string | null;
+  moderator: string | null;
   active: number | boolean;
 }
 
@@ -76,13 +78,11 @@ const EXPLORE_ITEMS: {
   route: Parameters<ReturnType<typeof useRouter.getState>["navigate"]>[0];
 }[] = [
   { key: "nav.about", icon: Info, route: { name: "about" } },
-  { key: "nav.events", icon: CalendarDays, route: { name: "events" } },
-  { key: "nav.clubs", icon: Users, route: { name: "clubs" } },
-  { key: "nav.album", icon: Camera, route: { name: "album" } },
+  { key: "nav.activities", icon: CalendarDays, route: { name: "activities" } },
   { key: "nav.library", icon: Library, route: { name: "library" } },
-  { key: "nav.books", icon: BookOpen, route: { name: "books" } },
   { key: "nav.courses", icon: GraduationCap, route: { name: "registration" } },
   { key: "nav.membership", icon: HeartHandshake, route: { name: "membership" } },
+  { key: "nav.relations", icon: Globe2, route: { name: "relations" } },
 ];
 
 const HERO_IMG =
@@ -210,7 +210,7 @@ export function HomePage() {
           <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-transparent to-background" />
         </div>
 
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 md:pt-32 pb-20 md:pb-28 text-center">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 md:pt-24 pb-14 md:pb-20 text-center">
           <div className="fade-up inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full mb-7 backdrop-blur-xl bg-accent/10 border border-accent/20 shadow-sm">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
@@ -274,7 +274,7 @@ export function HomePage() {
         <div className="flex items-center gap-3 mb-2">
           <span className="aso-label flex-1">{t("home.announce.eyebrow")}</span>
           <button
-            onClick={() => navigate({ name: "events" })}
+            onClick={() => navigate({ name: "activities" })}
             className="draw-underline flex shrink-0 items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground hover:text-accent transition-colors"
           >
             {t("home.announce.all")}
@@ -299,7 +299,7 @@ export function HomePage() {
           </div>
         ) : announcement ? (
           <div
-            onClick={() => navigate({ name: "events" })}
+            onClick={() => navigate({ name: "activities" })}
             className="group grid md:grid-cols-[320px_1fr] gap-7 md:gap-9 items-start rounded-2xl bg-card border border-border/70 overflow-hidden elevated cursor-pointer"
           >
             {/* Poster */}
@@ -371,7 +371,7 @@ export function HomePage() {
         <div className="flex items-center gap-3 mb-2">
           <span className="aso-label flex-1">{t("home.clubs.eyebrow")}</span>
           <button
-            onClick={() => navigate({ name: "clubs" })}
+            onClick={() => navigate({ name: "activities" })}
             className="draw-underline flex shrink-0 items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground hover:text-accent transition-colors"
           >
             {t("home.clubs.all")}
@@ -408,15 +408,14 @@ export function HomePage() {
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 stagger">
             {openClubs.map((club) => {
-              const Icon = CLUB_ICONS[club.iconName] ?? Users;
               return (
                 <button
                   key={club.id}
-                  onClick={() => navigate({ name: "clubs" })}
+                  onClick={() => navigate({ name: "activities" })}
                   className="group text-left rtl:text-right rounded-2xl bg-card border border-border/70 p-4 elevated transition-transform duration-500 [transition-timing-function:cubic-bezier(0.22,0.61,0.36,1)] hover:-translate-y-1"
                 >
-                  {/* Poster */}
-                  <div className="relative aspect-[16/10] rounded-xl overflow-hidden mb-4 poster-ring">
+                  {/* A4 poster */}
+                  <div className="relative aspect-[1/1.3] rounded-xl overflow-hidden mb-4 poster-ring bg-secondary">
                     {club.imageUrl ? (
                       <img
                         src={club.imageUrl}
@@ -424,30 +423,33 @@ export function HomePage() {
                         className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 [transition-timing-function:cubic-bezier(0.22,0.61,0.36,1)] group-hover:scale-[1.04]"
                       />
                     ) : (
-                      <div className="absolute inset-0 flex items-center justify-center bg-primary/90">
-                        <span className="font-display text-4xl text-primary-foreground/70 tracking-wide">
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-primary/90">
+                        <span className="font-display text-6xl text-primary-foreground/70 tracking-wide">
                           {club.name.charAt(0)}
+                        </span>
+                        <span className="text-[10px] font-extrabold uppercase tracking-[0.3em] text-primary-foreground/50">
+                          {t("nav.clubs")}
                         </span>
                       </div>
                     )}
                   </div>
                   <div className="px-1.5 pb-1.5">
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <span className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-accent">
-                        <Icon className="w-3.5 h-3.5" strokeWidth={2.5} />
-                        {t("nav.clubs")}
-                      </span>
-                      {club.schedule && (
-                        <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground tnum">
-                          <Clock className="w-3 h-3" />
-                          {club.schedule}
-                        </span>
-                      )}
-                    </div>
-                    <h3 className="font-display text-xl tracking-tight leading-tight transition-colors duration-300 group-hover:text-accent">
+                    <h3 className="font-display text-lg tracking-tight leading-tight transition-colors duration-300 group-hover:text-accent">
                       {club.name}
                     </h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed pretty line-clamp-2 mt-1">
+                    {club.moderator && (
+                      <div className="mt-1.5 text-xs text-muted-foreground flex items-center gap-1.5">
+                        <UserRound className="w-3.5 h-3.5" />
+                        {club.moderator}
+                      </div>
+                    )}
+                    {club.schedule && (
+                      <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground tnum">
+                        <Clock className="w-3.5 h-3.5" />
+                        {club.schedule}
+                      </div>
+                    )}
+                    <p className="text-sm text-muted-foreground leading-relaxed pretty line-clamp-2 mt-2">
                       {club.description}
                     </p>
                   </div>
@@ -465,7 +467,7 @@ export function HomePage() {
           title={t("home.explore.title")}
           subtitle={t("home.explore.subtitle")}
         />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 stagger">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 stagger">
           {EXPLORE_ITEMS.map((item) => (
             <button
               key={item.key}

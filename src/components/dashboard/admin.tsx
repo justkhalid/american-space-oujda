@@ -171,62 +171,169 @@ function CompanionLinkTab({ onOpen }: { onOpen: () => void }) {
 // OVERVIEW
 // ============================================================
 function OverviewTab() {
-  const [stats, setStats] = React.useState({
-    applications: 0,
-    events: 0,
-    gallery: 0,
-    members: 0,
-    registrations: 0,
-    users: 0,
-    courses: 0,
-  });
+  const navigate = useRouter((s) => s.navigate);
+  const [stats, setStats] = React.useState<Record<string, number>>({});
+  const [online, setOnline] = React.useState<{ id: string; name: string; email: string; role: string; lastSeenAt: string }[]>([]);
+  const [recent, setRecent] = React.useState<{ id: string; name: string; email: string; role: string; lastSeenAt: string }[]>([]);
 
   React.useEffect(() => {
+    const safe = (url: string, key: string) =>
+      fetch(url)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => [key, d] as const)
+        .catch(() => [key, null] as const);
+
     Promise.all([
-      fetch("/api/applications").then((r) => r.ok ? r.json() : { applications: [] }),
-      fetch("/api/events?upcoming=0&limit=1").then((r) => r.json()),
-      fetch("/api/gallery").then((r) => r.json()),
-      fetch("/api/courses").then((r) => r.json()),
-    ]).then(([apps, evs, gal, courses]) => {
-      setStats((s) => ({
-        ...s,
-        applications: apps.applications?.length || 0,
-        events: evs.events?.length || 0,
-        gallery: gal.items?.length || 0,
-        courses: courses.courses?.length || 0,
-      }));
+      safe("/api/applications", "apps"),
+      safe("/api/events?upcoming=0&limit=500", "events"),
+      safe("/api/gallery", "gallery"),
+      safe("/api/courses", "courses"),
+      safe("/api/clubs", "clubs"),
+      safe("/api/library/stats", "library"),
+      safe("/api/users", "users"),
+      safe("/api/membership", "membership"),
+      safe("/api/courses/registrations", "registrations"),
+      safe("/api/event-reports?status=PENDING", "reports"),
+      safe("/api/event-edits?status=PENDING", "edits"),
+      safe("/api/comments", "comments"),
+    ]).then((all) => {
+      const m: Record<string, number> = {};
+      const get = (k: string) => all.find(([key]) => key === k)?.[1];
+      const count = (d: unknown, key: string) =>
+        (d as Record<string, unknown[]> | null)?.[key]?.length || 0;
+      m.applications = count(get("apps"), "applications");
+      m.applicationsPending = (get("apps") as { applications?: { status?: string }[] } | null)?.applications?.filter((a) => a.status === "PENDING").length || 0;
+      m.events = count(get("events"), "events");
+      m.gallery = count(get("gallery"), "items");
+      m.courses = count(get("courses"), "courses");
+      m.clubs = count(get("clubs"), "clubs");
+      m.memberships = count(get("membership"), "memberships");
+      m.registrations = count(get("registrations"), "registrations");
+      m.comments = count(get("comments"), "comments");
+      m.reportsPending = count(get("reports"), "reports");
+      m.editsPending = count(get("edits"), "requests");
+      const lib = get("library") as Record<string, number> | null;
+      m.books = lib?.totalBooks || 0;
+      m.libraryMembers = lib?.totalMembers || 0;
+      m.activeLoans = lib?.activeLoans || 0;
+      m.users = count(get("users"), "users");
+      setStats(m);
     });
+
+    const loadPresence = () =>
+      fetch("/api/presence")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => {
+          setOnline(d?.online || []);
+          setRecent(d?.recent || []);
+        })
+        .catch(() => {});
+    loadPresence();
+    const id = setInterval(loadPresence, 30_000);
+    return () => clearInterval(id);
   }, []);
 
-  const cards = [
-    { label: "Applications", value: stats.applications, icon: FileText, color: "text-amber-600" },
-    { label: "Events", value: stats.events, icon: CalendarDays, color: "text-sky-600" },
-    { label: "Gallery items", value: stats.gallery, icon: Camera, color: "text-violet-600" },
-    { label: "Active courses", value: stats.courses, icon: GraduationCap, color: "text-emerald-600" },
+  const fmt = (n: number | undefined) => (n || 0).toLocaleString();
+
+  const main = [
+    { label: "Applications", value: stats.applications, sub: stats.applicationsPending ? (stats.applicationsPending + " pending") : "all reviewed", icon: FileText, color: "text-amber-600" },
+    { label: "Events", value: stats.events, sub: "all time", icon: CalendarDays, color: "text-sky-600" },
+    { label: "Clubs", value: stats.clubs, sub: "active groups", icon: Users, color: "text-emerald-600" },
+    { label: "Courses", value: stats.courses, sub: "with enrollments", icon: GraduationCap, color: "text-teal-600" },
+    { label: "Library books", value: stats.books, sub: (stats.activeLoans || 0) + " on loan", icon: BookOpen, color: "text-rose-600" },
+    { label: "Library members", value: stats.libraryMembers, sub: "ASO cards", icon: HeartHandshake, color: "text-orange-600" },
+    { label: "Gallery", value: stats.gallery, sub: "photos", icon: Camera, color: "text-violet-600" },
+    { label: "Staff users", value: stats.users, sub: "logins", icon: UserCog, color: "text-primary" },
+  ];
+
+  const queues = [
+    { label: "Membership requests", value: stats.memberships, tab: "members" },
+    { label: "Course registrations", value: stats.registrations, tab: "registrations" },
+    { label: "Comments", value: stats.comments, tab: "comments" },
+    { label: "Intern reports pending", value: stats.reportsPending, tab: "interns" },
+    { label: "Edit requests pending", value: stats.editsPending, tab: "interns" },
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {cards.map((c) => (
+        {main.map((c) => (
           <MatteCard key={c.label} className="p-4">
-            <c.icon className={`w-5 h-5 mb-3 ${c.color}`} />
-            <div className="font-display text-3xl tracking-tight tnum">{c.value}</div>
-            <div className="text-xs uppercase tracking-wider text-muted-foreground mt-1">
-              {c.label}
+            <div className="flex items-start justify-between">
+              <c.icon className={`w-5 h-5 mb-3 ${c.color}`} />
             </div>
+            <div className="font-display text-3xl tracking-tight tnum">{fmt(c.value)}</div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground mt-1">{c.label}</div>
+            <div className="text-[11px] text-muted-foreground/70 mt-0.5">{c.sub}</div>
           </MatteCard>
         ))}
       </div>
 
-      <MatteCard>
-        <h3 className="font-display text-xl tracking-tight mb-2">Welcome back</h3>
-        <p className="text-sm text-muted-foreground leading-relaxed pretty">
-          From here you can manage applications, events, the photo gallery, courses, members,
-          on-site text content, and staff user accounts. Use the sidebar to navigate between
-          sections. Recent activity appears in each tab.
-        </p>
-      </MatteCard>
+      <div className="grid lg:grid-cols-2 gap-4">
+        {/* Who is online */}
+        <MatteCard>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-display text-lg tracking-tight">Who is online</h3>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              </span>
+              {online.length} online
+            </span>
+          </div>
+          {online.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No staff activity in the last 5 minutes.</p>
+          ) : (
+            <div className="space-y-2">
+              {online.map((u) => (
+                <div key={u.id} className="flex items-center gap-3 rounded-xl bg-secondary/50 px-3 py-2">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">
+                    {(u.name || u.email).split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">{u.name || u.email}</div>
+                    <div className="text-xs text-muted-foreground truncate">{u.role.toLowerCase()}</div>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground tnum">
+                    {new Date(u.lastSeenAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+          {recent.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-border/60 text-xs text-muted-foreground">
+              Last seen: {recent.slice(0, 3).map((u) => u.name || u.email).join(", ")}
+            </div>
+          )}
+        </MatteCard>
+
+        {/* Queues */}
+        <MatteCard>
+          <h3 className="font-display text-lg tracking-tight mb-3">Needs attention</h3>
+          <div className="space-y-2">
+            {queues.map((q) => (
+              <button
+                key={q.label}
+                onClick={() => navigate({ name: "admin-tab", tab: q.tab as AdminTab })}
+                className="tap w-full flex items-center justify-between rounded-xl bg-secondary/50 px-3.5 py-2.5 hover:bg-secondary text-left rtl:text-right"
+              >
+                <span className="text-sm">{q.label}</span>
+                <span className={
+                  "text-sm font-bold tnum " + (q.value > 0 ? "text-accent" : "text-muted-foreground")
+                }>
+                  {fmt(q.value)}
+                </span>
+              </button>
+            ))}
+          </div>
+          <p className="mt-3 text-xs text-muted-foreground leading-relaxed">
+            Everything on the site - content, library, people, interns - is managed from the tabs
+            on the left. CSV exports for every dataset live in the Exports tab.
+          </p>
+        </MatteCard>
+      </div>
     </div>
   );
 }
@@ -1309,6 +1416,8 @@ function ClubEditor({ club, onClose, onSaved }: { club: ClubItem | null; onClose
     description: club?.description || "",
     schedule: club?.schedule || "",
     iconName: club?.iconName || "Users",
+    moderator: (club as { moderator?: string } | null)?.moderator || "",
+    imageUrl: (club as { imageUrl?: string } | null)?.imageUrl || "",
     colorClass: club?.colorClass || COLOR_OPTIONS[0].value,
     active: club ? !!club.active : true,
   });
@@ -1355,6 +1464,16 @@ function ClubEditor({ club, onClose, onSaved }: { club: ClubItem | null; onClose
         <div>
           <Label className="text-sm font-medium mb-1.5 block">Schedule</Label>
           <Input value={form.schedule} onChange={(e) => set("schedule", e.target.value)} placeholder="Weekly · Wednesdays 18:00" />
+        </div>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <Label className="text-sm font-medium mb-1.5 block">Moderator</Label>
+            <Input value={form.moderator} onChange={(e) => set("moderator", e.target.value)} placeholder="Sarah Benali" />
+          </div>
+          <div>
+            <Label className="text-sm font-medium mb-1.5 block">Poster URL (A4 portrait works best)</Label>
+            <Input value={form.imageUrl} onChange={(e) => set("imageUrl", e.target.value)} placeholder="https://..." />
+          </div>
         </div>
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
@@ -1603,12 +1722,62 @@ export function SettingsTab() {
   // Group by category
   const categories = Array.from(new Set(fields.map((f) => f.category)));
 
+  const gates: { key: string; label: string; hint: string; openValue: string }[] = [
+    { key: "apps.teacher.open", label: "Teacher applications", hint: "Shown on the Join Us page - closes the Apply as Teacher path.", openValue: "1" },
+    { key: "apps.intern.open", label: "Intern / volunteer applications", hint: "Shown on the Join Us page - closes the Intern-Volunteer path.", openValue: "1" },
+    { key: "courses.open", label: "English course registration", hint: "Shown on the Course Registration page - marks cohorts as full.", openValue: "1" },
+  ];
+
+  const setGate = async (key: string, open: boolean) => {
+    setSettings((s) => ({ ...s, [key]: open ? "1" : "0" }));
+    await save(key, open ? "1" : "0");
+  };
+
   return (
     <div className="space-y-6">
       <div>
         <h2 className="font-display text-xl tracking-tight">Site settings</h2>
         <p className="text-sm text-muted-foreground">Edit the content shown across the site.</p>
       </div>
+
+      <MatteCard>
+        <h3 className="font-display text-lg tracking-tight mb-1">Registration gates</h3>
+        <p className="text-sm text-muted-foreground mb-4">Toggle what the public can sign up for right now.</p>
+        <div className="space-y-3">
+          {gates.map((g) => {
+            const open = settings[g.key] !== "0";
+            return (
+              <div key={g.key} className="flex items-center justify-between gap-4 rounded-xl bg-secondary/50 px-4 py-3">
+                <div className="min-w-0">
+                  <div className="text-sm font-medium flex items-center gap-2">
+                    {g.label}
+                    <span className={open ? "text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400" : "text-[10px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400"}>
+                      {open ? "Open" : "Closed"}
+                    </span>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{g.hint}</div>
+                </div>
+                <button
+                  role="switch"
+                  aria-checked={open}
+                  onClick={() => setGate(g.key, !open)}
+                  className={
+                    "tap relative shrink-0 w-11 h-6 rounded-full transition-colors " +
+                    (open ? "bg-emerald-500" : "bg-muted-foreground/30")
+                  }
+                >
+                  <span
+                    className={
+                      "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all " +
+                      (open ? "left-[22px]" : "left-0.5")
+                    }
+                  />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </MatteCard>
       {categories.map((cat) => (
         <MatteCard key={cat}>
           <h3 className="font-display text-lg tracking-tight mb-4">{cat}</h3>
