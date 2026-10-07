@@ -133,6 +133,38 @@ export const translations: Record<Lang, Record<string, string>> = {
     "home.visit.body": "Find us at {address}. Free membership, free events, free coffee on Saturdays.",
     "home.visit.cta": "Become a member",
 
+    // Home announcement (latest event)
+    "home.announce.eyebrow": "Latest announcement",
+    "home.announce.pill": "Mark your calendar",
+    "home.announce.empty": "New events and announcements are posted here - check back soon.",
+    "home.announce.all": "All events",
+
+    // Home clubs
+    "home.clubs.eyebrow": "Join a club",
+    "home.clubs.title": "Currently open clubs",
+    "home.clubs.subtitle": "Small, regular gatherings around a shared interest. Walk in, no fees.",
+    "home.clubs.all": "All clubs",
+    "home.clubs.empty": "Club schedules are being updated - check back soon.",
+
+    // Home explore
+    "home.explore.eyebrow": "Explore",
+    "home.explore.title": "Explore more of the Space",
+    "home.explore.subtitle": "Everything we offer, in one place.",
+
+    // Home find us
+    "home.find.eyebrow": "Find us",
+    "home.find.title": "In the heart of Oujda",
+    "home.find.hours": "Opening hours",
+    "home.find.directions": "Get directions",
+    "home.find.map": "Map",
+
+    // Home contact
+    "home.contact.eyebrow": "Contact",
+    "home.contact.title": "Get in touch",
+    "home.contact.body": "Questions, suggestions, or a partnership idea? We usually reply within two business days.",
+    "home.contact.message": "Send us a message",
+    "home.contact.follow": "Follow the Space",
+
     // About page
     "about.eyebrow": "About",
     "about.title": "A free cultural & learning space in eastern Morocco.",
@@ -473,6 +505,38 @@ export const translations: Record<Lang, Record<string, string>> = {
     "home.visit.title": "مرحبًا بكم. نحن مفتوحون للجميع - مجانًا.",
     "home.visit.body": "تجدنا في {address}. عضوية مجانية، فعاليات مجانية، وقهوة مجانية يوم السبت.",
     "home.visit.cta": "كن عضوًا",
+
+    // Home announcement (latest event)
+    "home.announce.eyebrow": "آخر الإعلانات",
+    "home.announce.pill": "دوّن في تقويمك",
+    "home.announce.empty": "تُنشر الفعاليات والإعلانات الجديدة هنا - عد قريبًا.",
+    "home.announce.all": "كل الفعاليات",
+
+    // Home clubs
+    "home.clubs.eyebrow": "انضم إلى نادٍ",
+    "home.clubs.title": "الأندية المفتوحة حاليًا",
+    "home.clubs.subtitle": "لقاءات صغيرة منتظمة حول اهتمام مشترك. ادخل، فالمشاركة مجانية.",
+    "home.clubs.all": "كل الأندية",
+    "home.clubs.empty": "يتم حاليًا تحديث جداول الأندية - عد قريبًا.",
+
+    // Home explore
+    "home.explore.eyebrow": "استكشف",
+    "home.explore.title": "استكشف المزيد من الفضاء",
+    "home.explore.subtitle": "كل ما نقدمه، في مكان واحد.",
+
+    // Home find us
+    "home.find.eyebrow": "اعثروا علينا",
+    "home.find.title": "في قلب وجدة",
+    "home.find.hours": "ساعات العمل",
+    "home.find.directions": "احصل على الاتجاهات",
+    "home.find.map": "الخريطة",
+
+    // Home contact
+    "home.contact.eyebrow": "تواصل",
+    "home.contact.title": "ابقَ على اتصال",
+    "home.contact.body": "سؤال أو اقتراح أو فكرة شراكة؟ نجيب عادةً خلال يومي عمل.",
+    "home.contact.message": "أرسل لنا رسالة",
+    "home.contact.follow": "تابعوا الفضاء",
 
     // About page
     "about.eyebrow": "حول",
