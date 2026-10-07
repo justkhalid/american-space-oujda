@@ -82,7 +82,7 @@ function Logo({ compact = false }: { compact?: boolean }) {
         alt={t("brand.name")}
         width={40}
         height={40}
-        className="w-10 h-10 object-contain shrink-0"
+        className="w-10 h-10 object-contain shrink-0 transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110"
         priority
       />
       {!compact && (
@@ -239,15 +239,16 @@ function SearchDialog({
 // Desktop nav: top-level groups. Labels are translated at render time.
 // Companion is intentionally absent: it lives inside the admin/teacher
 // dashboards (tab) and at /#/companion, guarded by login.
+// Each item carries its own hover accent (per-item color theming).
 const PRIMARY_NAV = [
-  { key: "nav.about", route: { name: "about" as const } },
-  { key: "nav.events", route: { name: "events" as const } },
-  { key: "nav.clubs", route: { name: "clubs" as const } },
-  { key: "nav.album", route: { name: "album" as const } },
-  { key: "nav.library", route: { name: "library" as const } },
-  { key: "nav.books", route: { name: "books" as const } },
-  { key: "nav.courses", route: { name: "registration" as const } },
-  { key: "nav.join", route: { name: "tvt" as const }, highlight: true },
+  { key: "nav.about", route: { name: "about" as const }, hover: "hover:text-sky-600 dark:hover:text-sky-400 hover:bg-sky-500/10" },
+  { key: "nav.events", route: { name: "events" as const }, hover: "hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-500/10" },
+  { key: "nav.clubs", route: { name: "clubs" as const }, hover: "hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-500/10" },
+  { key: "nav.album", route: { name: "album" as const }, hover: "hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-500/10" },
+  { key: "nav.library", route: { name: "library" as const }, hover: "hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10" },
+  { key: "nav.books", route: { name: "books" as const }, hover: "hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-500/10" },
+  { key: "nav.courses", route: { name: "registration" as const }, hover: "hover:text-teal-600 dark:hover:text-teal-400 hover:bg-teal-500/10" },
+  { key: "nav.join", route: { name: "tvt" as const }, highlight: true, hover: "" },
 ];
 
 export function SiteHeader() {
@@ -288,39 +289,49 @@ export function SiteHeader() {
 
   return (
     <>
-      <header
-        className={cn(
-          "sticky top-0 z-40 frosted transition-[box-shadow,background] duration-300",
-          scrolled ? "hairline" : "border-b border-transparent"
-        )}
-      >
+      {/* Floating glass pill header */}
+      <header className="sticky top-0 z-40 pt-3">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="h-16 flex items-center justify-between gap-4">
+          <div
+            className={cn(
+              "h-14 px-3 sm:px-4 rounded-full frosted flex items-center justify-between gap-3 transition-all duration-500 [transition-timing-function:cubic-bezier(0.22,0.61,0.36,1)]",
+              scrolled ? "elevated shadow-lg shadow-black/5 border border-border/70" : "border border-transparent"
+            )}
+          >
             <Logo />
 
             <nav className="hidden lg:flex items-center gap-0.5">
-              {PRIMARY_NAV.map((n) => (
-                <button
-                  key={n.key}
-                  onClick={() => navigate(n.route)}
-                  className={cn(
-                    "tap px-3 py-1.5 rounded-full text-[13.5px] font-medium transition-colors",
-                    n.highlight
-                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                      : isActive(typeof n.route.name === "string" ? n.route.name : "")
-                      ? "bg-secondary text-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-                  )}
-                >
-                  {t(n.key)}
-                </button>
-              ))}
+              {PRIMARY_NAV.map((n) => {
+                const active = isActive(typeof n.route.name === "string" ? n.route.name : "");
+                return (
+                  <button
+                    key={n.key}
+                    onClick={() => navigate(n.route)}
+                    className={cn(
+                      "tap relative px-3 py-1.5 rounded-full text-[13.5px] font-medium transition-[color,background-color] duration-500 [transition-timing-function:cubic-bezier(0.22,0.61,0.36,1)]",
+                      n.highlight
+                        ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                        : active
+                        ? "bg-secondary text-foreground"
+                        : cn("text-muted-foreground", n.hover)
+                    )}
+                  >
+                    {active && !n.highlight && (
+                      <span
+                        aria-hidden
+                        className="absolute top-1/2 -translate-y-1/2 -left-1.5 rtl:-left-auto rtl:-right-1.5 h-4 w-0.5 rounded-full bg-accent"
+                      />
+                    )}
+                    {t(n.key)}
+                  </button>
+                );
+              })}
             </nav>
 
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setSearchOpen(true)}
-                className="tap h-9 px-3 rounded-full hover:bg-secondary flex items-center gap-2 text-muted-foreground hover:text-foreground"
+                className="tap h-9 px-3 rounded-full hover:bg-secondary flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors duration-300"
                 aria-label={t("nav.search")}
               >
                 <Search className="w-4 h-4" />
@@ -332,7 +343,7 @@ export function SiteHeader() {
               <LanguageToggle />
               <ThemeToggle />
 
-              {/* Auth controls - Sign in is hidden from public.
+              {/* Auth controls — Sign in is hidden from public.
                   Staff access via /#/login URL directly. */}
               {status === "loading" ? (
                 <div className="w-9 h-9" />
@@ -505,7 +516,7 @@ export function SiteFooter() {
                 <li key={n.routeName}>
                   <button
                     onClick={() => navigate({ name: n.routeName } as never)}
-                    className="text-sm text-muted-foreground hover:text-foreground"
+                    className="draw-underline w-fit text-sm text-muted-foreground hover:text-foreground"
                   >
                     {t(NAV_LABEL_KEYS[n.routeName] ?? "nav." + n.routeName) || n.label}
                   </button>
@@ -521,7 +532,7 @@ export function SiteFooter() {
                 <li key={n.routeName}>
                   <button
                     onClick={() => navigate({ name: n.routeName } as never)}
-                    className="text-sm text-muted-foreground hover:text-foreground"
+                    className="draw-underline w-fit text-sm text-muted-foreground hover:text-foreground"
                   >
                     {t(NAV_LABEL_KEYS[n.routeName] ?? "nav." + n.routeName) || n.label}
                   </button>

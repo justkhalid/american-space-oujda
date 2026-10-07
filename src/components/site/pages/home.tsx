@@ -87,6 +87,15 @@ const HERO_IMG =
 const ANNOUNCE_FALLBACK_IMG =
   "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1600&q=80&auto=format&fit=crop";
 
+// Per-category accent for the announcement chip (subtle tinted pill, ASO palette).
+const CATEGORY_CHIPS: Record<string, string> = {
+  CLUB: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-400",
+  WORKSHOP: "bg-sky-500/12 text-sky-700 dark:text-sky-400",
+  CULTURAL: "bg-violet-500/12 text-violet-700 dark:text-violet-400",
+  LECTURE: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+  OTHER: "bg-secondary text-secondary-foreground",
+};
+
 export function HomePage() {
   const navigate = useRouter((s) => s.navigate);
   const t = useI18n((s) => s.t);
@@ -120,9 +129,9 @@ export function HomePage() {
             aria-hidden
             className="w-full h-full object-cover"
           />
-          {/* readability scrims: heavy veil so both themes keep contrast */}
-          <div className="absolute inset-0 bg-background/75 dark:bg-background/80" />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-transparent to-background" />
+          {/* readability scrims: veil the photo while keeping it visible */}
+          <div className="absolute inset-0 bg-background/68 dark:bg-background/60" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-transparent to-background" />
         </div>
 
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 md:pt-32 pb-20 md:pb-28 text-center">
@@ -233,7 +242,9 @@ export function HomePage() {
               </div>
               <div className="p-7 md:p-9 flex flex-col justify-center">
                 <div className="flex flex-wrap items-center gap-2 mb-4">
-                  <Pill variant="accent">{announcement.category}</Pill>
+                  <Pill className={CATEGORY_CHIPS[announcement.category] ?? CATEGORY_CHIPS.OTHER}>
+                    {announcement.category}
+                  </Pill>
                   <Pill variant="muted" className="tnum">
                     <CalendarDays className="w-3 h-3" />
                     {format(new Date(announcement.startDate), "EEE, MMM d · HH:mm")}
@@ -255,9 +266,9 @@ export function HomePage() {
                     {announcement.registered}
                     {announcement.capacity ? ` / ${announcement.capacity}` : ""}
                   </span>
-                  <span className="ms-auto flex items-center gap-1.5 font-medium text-accent">
+                  <span className="ms-auto flex items-center gap-1.5 font-medium text-accent draw-underline">
                     {t("home.events.all")}
-                    <ArrowRight className="w-3.5 h-3.5 rtl:-scale-x-100 transition-transform group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5" />
+                    <ArrowRight className="w-3.5 h-3.5 rtl:-scale-x-100 transition-transform duration-300 [transition-timing-function:cubic-bezier(0.22,0.61,0.36,1)] group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5" />
                   </span>
                 </div>
               </div>
