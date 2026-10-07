@@ -1,4 +1,4 @@
-// Direct libSQL client for authentication — bypasses Prisma entirely.
+// Direct libSQL client for authentication - bypasses Prisma entirely.
 // This is more reliable on Vercel serverless where Prisma client caching can cause issues.
 
 import { createClient } from "@libsql/client";

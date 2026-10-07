@@ -50,7 +50,7 @@ export async function POST(req: Request) {
 
   const dateStr = new Date(date).toISOString();
 
-  // Batch upsert using ON CONFLICT — unique(courseId, date, studentEmail)
+  // Batch upsert using ON CONFLICT - unique(courseId, date, studentEmail)
   for (const r of records) {
     const id = "att_" + Math.random().toString(36).slice(2, 12);
     await db.execute({

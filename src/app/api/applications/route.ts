@@ -21,7 +21,7 @@ const schema = z.object({
   duration: z.string().optional().nullable(),
 });
 
-// GET — admin only (full list)
+// GET - admin only (full list)
 export async function GET() {
   const auth = await requireRole(["ADMIN"]);
   if (!auth.ok) return auth.response;
@@ -31,7 +31,7 @@ export async function GET() {
   return NextResponse.json({ applications: r.rows.map((x) => row(x)) });
 }
 
-// POST — public (anyone can apply)
+// POST - public (anyone can apply)
 export async function POST(req: Request) {
   try {
     const body = await req.json();

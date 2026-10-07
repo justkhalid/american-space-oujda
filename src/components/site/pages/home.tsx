@@ -52,7 +52,7 @@ export function HomePage() {
 
   return (
     <>
-      {/* HERO — glossy, premium, with gradient mesh + glassmorphism */}
+      {/* HERO - glossy, premium, with gradient mesh + glassmorphism */}
       <section className="relative overflow-hidden">
         {/* Animated gradient mesh background */}
         <div className="absolute inset-0 -z-10">
@@ -132,7 +132,7 @@ export function HomePage() {
               </div>
             </div>
 
-            {/* Hero side card — glossy glassmorphism */}
+            {/* Hero side card - glossy glassmorphism */}
             <div className="lg:col-span-5 fade-up" style={{ animationDelay: "150ms" }}>
               <div className="relative float">
                 {/* Glow */}

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb, row, requireRole } from "@/lib/sql";
 
-// GET — admin only
+// GET - admin only
 export async function GET() {
   const auth = await requireRole(["ADMIN"]);
   if (!auth.ok) return auth.response;
@@ -11,7 +11,7 @@ export async function GET() {
   return NextResponse.json({ comments: r.rows.map((x) => row(x)) });
 }
 
-// POST — public (anyone can submit feedback)
+// POST - public (anyone can submit feedback)
 export async function POST(req: Request) {
   const body = await req.json();
   if (!body.name || !body.message) {

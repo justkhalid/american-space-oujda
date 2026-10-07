@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb, row, requireRole } from "@/lib/sql";
 
-// GET — public (returns all site settings as a flat key→value map)
+// GET - public (returns all site settings as a flat key→value map)
 export async function GET() {
   const db = getDb();
   const r = await db.execute("SELECT key, value FROM SiteSetting");

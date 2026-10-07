@@ -237,6 +237,8 @@ function SearchDialog({
 }
 
 // Desktop nav: top-level groups. Labels are translated at render time.
+// Companion is intentionally absent: it lives inside the admin/teacher
+// dashboards (tab) and at /#/companion, guarded by login.
 const PRIMARY_NAV = [
   { key: "nav.about", route: { name: "about" as const } },
   { key: "nav.events", route: { name: "events" as const } },
@@ -245,7 +247,6 @@ const PRIMARY_NAV = [
   { key: "nav.library", route: { name: "library" as const } },
   { key: "nav.books", route: { name: "books" as const } },
   { key: "nav.courses", route: { name: "registration" as const } },
-  { key: "nav.companion", route: { name: "companion" as const }, authOnly: true },
   { key: "nav.join", route: { name: "tvt" as const }, highlight: true },
 ];
 
@@ -298,7 +299,7 @@ export function SiteHeader() {
             <Logo />
 
             <nav className="hidden lg:flex items-center gap-0.5">
-              {PRIMARY_NAV.filter((n) => !n.authOnly || session).map((n) => (
+              {PRIMARY_NAV.map((n) => (
                 <button
                   key={n.key}
                   onClick={() => navigate(n.route)}
@@ -331,7 +332,7 @@ export function SiteHeader() {
               <LanguageToggle />
               <ThemeToggle />
 
-              {/* Auth controls — Sign in is hidden from public.
+              {/* Auth controls - Sign in is hidden from public.
                   Staff access via /#/login URL directly. */}
               {status === "loading" ? (
                 <div className="w-9 h-9" />
@@ -400,25 +401,6 @@ export function SiteHeader() {
                           </button>
                         </SheetClose>
                       ))}
-
-                      {session && (
-                        <SheetClose asChild>
-                          <button
-                            onClick={() => navigate({ name: "companion" })}
-                            className="tap w-full flex items-start gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary text-left rtl:text-right"
-                          >
-                            <div className="w-8 h-8 rounded-lg bg-accent/15 flex items-center justify-center shrink-0">
-                              <BookOpen className="w-4 h-4 text-accent" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="text-sm font-medium">{t("nav.companion")}</div>
-                              <div className="text-xs text-muted-foreground truncate">
-                                ELTASO curriculum for coordinators & teachers
-                              </div>
-                            </div>
-                          </button>
-                        </SheetClose>
-                      )}
                     </div>
 
                     <div className="mt-3 px-1">

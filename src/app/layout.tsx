@@ -24,7 +24,7 @@ const mono = JetBrains_Mono({
   display: "swap",
 });
 
-// Arabic font — applied automatically when <html dir="rtl">.
+// Arabic font - applied automatically when <html dir="rtl">.
 const arabic = Cairo({
   variable: "--font-arabic",
   subsets: ["arabic", "latin"],
@@ -33,7 +33,7 @@ const arabic = Cairo({
 });
 
 export const metadata: Metadata = {
-  title: "American Space Oujda — A Cultural & Learning Space",
+  title: "American Space Oujda - A Cultural & Learning Space",
   description:
     "American Space Oujda (ASO) is a cultural and educational center in Oujda, Morocco, run by the U.S. Embassy. Offering free English courses, TOEFL/SAT/GRE prep, EducationUSA advising, a public library, cultural events, and clubs.",
   keywords: [
@@ -61,7 +61,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "American Space Oujda",
     description:
-      "A cultural and educational center in Oujda, Morocco — free English courses, TOEFL/SAT/GRE prep, EducationUSA advising, library, events, and clubs. Run by the U.S. Embassy in Morocco.",
+      "A cultural and educational center in Oujda, Morocco - free English courses, TOEFL/SAT/GRE prep, EducationUSA advising, library, events, and clubs. Run by the U.S. Embassy in Morocco.",
     type: "website",
     locale: "en_US",
     images: [{ url: "/logo.png", width: 500, height: 500, alt: "American Space Oujda" }],
@@ -83,14 +83,14 @@ export default function RootLayout({
   return (
     <html lang="en" dir="ltr" suppressHydrationWarning>
       <head>
-        {/* Anti-flash theme script — runs before paint, sets the .dark class on <html>
+        {/* Anti-flash theme script - runs before paint, sets the .dark class on <html>
             based on localStorage or system preference. Mirrors next-themes config. */}
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var t=localStorage.getItem('theme');var d=t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d)document.documentElement.classList.add('dark');else document.documentElement.classList.remove('dark');}catch(e){}})();`,
           }}
         />
-        {/* Anti-flash language script — sets dir/lang before paint to avoid RTL FOUC. */}
+        {/* Anti-flash language script - sets dir/lang before paint to avoid RTL FOUC. */}
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var l=localStorage.getItem('aso-lang');if(l==='ar'){document.documentElement.lang='ar';document.documentElement.dir='rtl';}else{document.documentElement.lang='en';document.documentElement.dir='ltr';}}catch(e){}})();`,

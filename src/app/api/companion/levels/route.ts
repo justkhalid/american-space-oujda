@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb, row, requireRole, getCurrentUser, type InValue } from "@/lib/sql";
 
-// GET — any authenticated user. Returns levels with their weeks (week count).
+// GET - any authenticated user. Returns levels with their weeks (week count).
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) {
@@ -30,7 +30,7 @@ export async function GET() {
   return NextResponse.json({ levels });
 }
 
-// POST — admin only. Create a new level.
+// POST - admin only. Create a new level.
 export async function POST(req: Request) {
   const auth = await requireRole(["ADMIN"]);
   if (!auth.ok) return auth.response;
@@ -53,7 +53,7 @@ export async function POST(req: Request) {
   return NextResponse.json({ level }, { status: 201 });
 }
 
-// PATCH — admin only. Update level fields.
+// PATCH - admin only. Update level fields.
 export async function PATCH(req: Request) {
   const auth = await requireRole(["ADMIN"]);
   if (!auth.ok) return auth.response;
@@ -86,7 +86,7 @@ export async function PATCH(req: Request) {
   return NextResponse.json({ level });
 }
 
-// DELETE — admin only. Removes a level (and cascades weeks via SQL or manually).
+// DELETE - admin only. Removes a level (and cascades weeks via SQL or manually).
 export async function DELETE(req: Request) {
   const auth = await requireRole(["ADMIN"]);
   if (!auth.ok) return auth.response;

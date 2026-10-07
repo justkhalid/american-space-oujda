@@ -49,7 +49,7 @@
   /* iOS-inspired, matte, civic palette */
   --radius: 0.875rem;
 
-  /* Surface tones — warm off-white, paper-like */
+  /* Surface tones - warm off-white, paper-like */
   --background: oklch(0.985 0.003 95);
   --foreground: oklch(0.18 0.02 260);
 
@@ -59,7 +59,7 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.18 0.02 260);
 
-  /* Deep navy primary — civic, serious, Apple-like ink */
+  /* Deep navy primary - civic, serious, Apple-like ink */
   --primary: oklch(0.24 0.04 260);
   --primary-foreground: oklch(0.985 0.003 95);
 
@@ -70,7 +70,7 @@
   --muted: oklch(0.965 0.004 260);
   --muted-foreground: oklch(0.48 0.015 260);
 
-  /* Warm Moroccan accent — used sparingly */
+  /* Warm Moroccan accent - used sparingly */
   --accent: oklch(0.62 0.16 38);
   --accent-foreground: oklch(0.99 0.005 95);
 
@@ -134,7 +134,7 @@
     @apply border-border outline-ring/50;
   }
   html {
-    /* Heavier, smoother scroll — like iOS rubber-band but with momentum */
+    /* Heavier, smoother scroll - like iOS rubber-band but with momentum */
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -142,10 +142,10 @@
     /* iOS-style scroll momentum */
     -webkit-overflow-scrolling: touch;
     scroll-padding-top: 5rem;
-    /* Scroll snap weight — gives a subtle "settle" feel on long pages */
+    /* Scroll snap weight - gives a subtle "settle" feel on long pages */
     scroll-snap-stop: normal;
   }
-  /* Custom scroll feel — heavier, smoother */
+  /* Custom scroll feel - heavier, smoother */
   html, body {
     scrollbar-width: thin;
     scrollbar-color: oklch(0.24 0.04 260 / 0.25) transparent;
@@ -165,7 +165,7 @@
   ::selection {
     background: oklch(0.24 0.04 260 / 0.18);
   }
-  /* Scroll progress bar — fixed at top */
+  /* Scroll progress bar - fixed at top */
   #scroll-progress {
     position: fixed;
     top: 0;
@@ -180,7 +180,7 @@
   }
 }
 
-/* iOS-like frosted header — subtle, not glossy */
+/* iOS-like frosted header - subtle, not glossy */
 .frosted {
   background: color-mix(in oklch, var(--background) 78%, transparent);
   backdrop-filter: saturate(180%) blur(20px);
@@ -201,7 +201,7 @@
   box-shadow: inset 0 1px 0 0 var(--border);
 }
 
-/* Subtle elevated card — matte, not glossy */
+/* Subtle elevated card - matte, not glossy */
 .elevated {
   box-shadow:
     0 1px 1px oklch(0.24 0.04 260 / 0.04),
@@ -215,7 +215,7 @@
     0 0 0 1px oklch(0.24 0.04 260 / 0.05);
 }
 
-/* Tap feedback for clickable cards/buttons — iOS-like */
+/* Tap feedback for clickable cards/buttons - iOS-like */
 .tap {
   transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1), background-color 180ms ease, box-shadow 180ms ease;
 }
@@ -267,10 +267,10 @@
 }
 
 /* ============================================================
-   ANIMATIONS — alive, smooth, with weight
+   ANIMATIONS - alive, smooth, with weight
    ============================================================ */
 
-/* Scroll-reveal — elements with .reveal animate in when they enter viewport */
+/* Scroll-reveal - elements with .reveal animate in when they enter viewport */
 .reveal {
   opacity: 0;
   transform: translateY(28px) scale(0.98);
@@ -284,7 +284,7 @@
   transform: translateY(0) scale(1);
 }
 
-/* Staggered children — apply to parent, children get incremental delays */
+/* Staggered children - apply to parent, children get incremental delays */
 .stagger > * {
   opacity: 0;
   transform: translateY(24px) scale(0.97);
@@ -302,12 +302,12 @@
 .stagger.is-visible > *:nth-child(8) { transition-delay: 840ms; opacity: 1; transform: translateY(0) scale(1); }
 .stagger.is-visible > *:nth-child(n+9) { transition-delay: 960ms; opacity: 1; transform: translateY(0) scale(1); }
 
-/* Parallax — for hero image, gives weight as you scroll */
+/* Parallax - for hero image, gives weight as you scroll */
 .parallax {
   will-change: transform;
 }
 
-/* Float — subtle continuous motion for hero elements */
+/* Float - subtle continuous motion for hero elements */
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
   50% { transform: translateY(-6px); }
@@ -316,7 +316,7 @@
   animation: float 6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
 }
 
-/* Slow zoom — for hero background images */
+/* Slow zoom - for hero background images */
 @keyframes slow-zoom {
   from { transform: scale(1); }
   to { transform: scale(1.08); }
@@ -325,7 +325,7 @@
   animation: slow-zoom 20s ease-out infinite alternate;
 }
 
-/* Card lift on hover — heavier, more deliberate */
+/* Card lift on hover - heavier, more deliberate */
 .lift {
   transition:
     transform 380ms cubic-bezier(0.34, 1.56, 0.64, 1),
@@ -336,7 +336,7 @@
   transform: translateY(-4px);
 }
 
-/* Page transition — fade-up between route changes */
+/* Page transition - fade-up between route changes */
 @keyframes page-enter {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
@@ -361,7 +361,7 @@
   animation: shimmer 2.2s linear infinite;
 }
 
-/* Gradient text — for accent words */
+/* Gradient text - for accent words */
 .gradient-text {
   background: linear-gradient(135deg, var(--foreground) 0%, var(--accent) 100%);
   -webkit-background-clip: text;
@@ -377,7 +377,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   transition: outline-offset 120ms ease;
 }
 
-/* Reduce motion — respect user preference */
+/* Reduce motion - respect user preference */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -392,7 +392,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 }
 
 /* ============================================================
-   RTL — Arabic language support
+   RTL - Arabic language support
    ============================================================ */
 
 /* When the document is in RTL mode, swap the primary font stack to an
@@ -412,7 +412,7 @@ html[dir="rtl"] body {
   line-height: 1.65;
 }
 
-/* Headings in Arabic — slightly heavier weight for visual parity with Latin. */
+/* Headings in Arabic - slightly heavier weight for visual parity with Latin. */
 html[dir="rtl"] h1,
 html[dir="rtl"] h2,
 html[dir="rtl"] h3,
@@ -421,7 +421,7 @@ html[dir="rtl"] h4 {
   line-height: 1.3;
 }
 
-/* Text alignment fallbacks — most components use logical (start/end) but a
+/* Text alignment fallbacks - most components use logical (start/end) but a
    few legacy ones hardcode text-left/right. Normalize in RTL. */
 html[dir="rtl"] .text-left {
   text-align: right;
@@ -443,7 +443,7 @@ html[dir="rtl"] select {
   text-align: start;
 }
 
-/* The mobile drawer slides from the right by default — in RTL we want it
+/* The mobile drawer slides from the right by default - in RTL we want it
    from the left to feel native. */
 html[dir="rtl"] [data-state="open"][role="dialog"].fixed.inset-y-0.right-0 {
   right: auto;
@@ -457,12 +457,12 @@ html[dir="rtl"] #scroll-progress {
   transform-origin: right;
 }
 
-/* Hairline border utility used by the sticky header — flip inset axis. */
+/* Hairline border utility used by the sticky header - flip inset axis. */
 html[dir="rtl"] .hairline {
   box-shadow: inset 0 -1px 0 0 var(--border);
 }
 
-/* Tabs / pills underline — flip origin if any hard-coded left. */
+/* Tabs / pills underline - flip origin if any hard-coded left. */
 html[dir="rtl"] .underline-offset-auto {
   /* no-op safety net */
 }

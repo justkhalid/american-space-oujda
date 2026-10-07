@@ -158,7 +158,7 @@ export function ApplyPage({ presetRole }: { presetRole?: Role }) {
         <PageHeader
           eyebrow="Application"
           title="Apply to join our team"
-          subtitle="Tell us about yourself. We review every application carefully — the more context you share, the better we can find the right fit."
+          subtitle="Tell us about yourself. We review every application carefully - the more context you share, the better we can find the right fit."
         />
 
         {/* Role selector */}
@@ -285,7 +285,7 @@ export function ApplyPage({ presetRole }: { presetRole?: Role }) {
                 <Textarea
                   value={form.references}
                   onChange={(e) => set("references", e.target.value)}
-                  placeholder="Optional — list 1–2 references we may contact."
+                  placeholder="Optional - list 1-2 references we may contact."
                   rows={2}
                 />
               </Field>
@@ -319,9 +319,9 @@ export function ApplyPage({ presetRole }: { presetRole?: Role }) {
                       <SelectValue placeholder="Select duration" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="1-3-months">1–3 months</SelectItem>
-                      <SelectItem value="3-6-months">3–6 months</SelectItem>
-                      <SelectItem value="6-12-months">6–12 months</SelectItem>
+                      <SelectItem value="1-3-months">1-3 months</SelectItem>
+                      <SelectItem value="3-6-months">3-6 months</SelectItem>
+                      <SelectItem value="6-12-months">6-12 months</SelectItem>
                       <SelectItem value="1+ year">1+ year</SelectItem>
                       <SelectItem value="ongoing">Ongoing / flexible</SelectItem>
                     </SelectContent>

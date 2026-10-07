@@ -3,7 +3,7 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-// Reusable layout primitives — symmetric, iOS-like, matte.
+// Reusable layout primitives - symmetric, iOS-like, matte.
 
 export function PageHeader({
   eyebrow,
@@ -92,7 +92,7 @@ export function SectionHeader({
   );
 }
 
-// Stat block — symmetric, tabular
+// Stat block - symmetric, tabular
 export function Stat({ value, label }: { value: React.ReactNode; label: string }) {
   return (
     <div className="text-center md:text-left">
@@ -102,7 +102,7 @@ export function Stat({ value, label }: { value: React.ReactNode; label: string }
   );
 }
 
-// Card — matte, subtle border + shadow
+// Card - matte, subtle border + shadow
 export function MatteCard({
   children,
   className,

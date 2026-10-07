@@ -126,7 +126,7 @@ export function CompanionDashboard({ initialTab = "overview" }: { initialTab?: C
 
   React.useEffect(() => setTab(initialTab), [initialTab]);
 
-  // Auth guard — send unauthenticated users to login.
+  // Auth guard - send unauthenticated users to login.
   React.useEffect(() => {
     if (status === "loading") return;
     if (!session) {
@@ -404,25 +404,25 @@ function WeeksList({ level, onChanged }: { level: Level; onChanged: () => void }
     const weekDate =
       s1Start && w.weekNumber
         ? format(addWeeks(s1Start, w.weekNumber - 1), "MMM d, yyyy")
-        : "—";
-    const links = w.urls.length > 0 ? w.urls.map((u) => `• ${u}`).join("\n") : "—";
+        : "-";
+    const links = w.urls.length > 0 ? w.urls.map((u) => `• ${u}`).join("\n") : "-";
     const msg = tpl
       .replace(/\{teacher\}/g, "")
       .replace(/\{level\}/g, level.label)
       .replace(/\{week\}/g, String(w.weekNumber))
       .replace(/\{date\}/g, weekDate)
-      .replace(/\{theme\}/g, w.theme || "—")
-      .replace(/\{obj\}/g, w.objectives || "—")
-      .replace(/\{lang\}/g, w.language || "—")
-      .replace(/\{act\}/g, w.activities || "—")
-      .replace(/\{hw\}/g, w.homework || "—")
+      .replace(/\{theme\}/g, w.theme || "-")
+      .replace(/\{obj\}/g, w.objectives || "-")
+      .replace(/\{lang\}/g, w.language || "-")
+      .replace(/\{act\}/g, w.activities || "-")
+      .replace(/\{hw\}/g, w.homework || "-")
       .replace(/\{links\}/g, links)
       .replace(/\{coordinator\}/g, settings.coordinator || "");
     try {
       await navigator.clipboard.writeText(msg);
       toast.success("WhatsApp plan copied to clipboard.");
     } catch {
-      toast.error("Could not copy — clipboard blocked by browser.");
+      toast.error("Could not copy - clipboard blocked by browser.");
     }
   };
 
@@ -840,7 +840,7 @@ function ClassesTab() {
                     <Pill variant="muted">{c.levelKey}</Pill>
                     {!c.active && <Pill variant="outline">Inactive</Pill>}
                   </div>
-                  <div className="text-xs text-muted-foreground mt-0.5">Teacher: {c.teacherId || "—"}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">Teacher: {c.teacherId || "-"}</div>
                 </div>
                 {userRole === "ADMIN" && (
                   <div className="flex items-center gap-1 shrink-0">
@@ -862,11 +862,11 @@ function ClassesTab() {
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div>
                   <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Schedule</div>
-                  <div className="text-foreground/90">{c.schedule || "—"}</div>
+                  <div className="text-foreground/90">{c.schedule || "-"}</div>
                 </div>
                 <div>
                   <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Room</div>
-                  <div className="text-foreground/90">{c.room || "—"}</div>
+                  <div className="text-foreground/90">{c.room || "-"}</div>
                 </div>
                 <div>
                   <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Students</div>
@@ -959,7 +959,7 @@ function ClassEditor({
             <Select value={form.teacherId} onValueChange={(v) => set("teacherId", v)}>
               <SelectTrigger><SelectValue placeholder="Select teacher" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">— Unassigned —</SelectItem>
+                <SelectItem value="">- Unassigned -</SelectItem>
                 {team.map((t) => (
                   <SelectItem key={t.id} value={t.name}>{t.name} · {t.role}</SelectItem>
                 ))}
@@ -972,7 +972,7 @@ function ClassEditor({
           </div>
           <div>
             <Label className="text-sm font-medium mb-1.5 block">Schedule</Label>
-            <Input value={form.schedule} onChange={(e) => set("schedule", e.target.value)} placeholder="Mon & Wed · 18:00–20:00" />
+            <Input value={form.schedule} onChange={(e) => set("schedule", e.target.value)} placeholder="Mon & Wed · 18:00-20:00" />
           </div>
           <div>
             <Label className="text-sm font-medium mb-1.5 block">Students</Label>

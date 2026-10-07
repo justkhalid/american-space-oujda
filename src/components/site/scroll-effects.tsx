@@ -28,7 +28,7 @@ export function ScrollEffects() {
     window.addEventListener("scroll", updateBar, { passive: true });
     window.addEventListener("resize", updateBar);
 
-    // 2. Scroll reveal — observe elements with .reveal and .stagger
+    // 2. Scroll reveal - observe elements with .reveal and .stagger
     //    Elements stay visible once revealed (we unobserve after triggering).
     const observer = new IntersectionObserver(
       (entries) => {
@@ -52,7 +52,7 @@ export function ScrollEffects() {
 
     // Re-observe when DOM changes (route changes add new elements)
     const mo = new MutationObserver(() => {
-      // Debounce — only re-observe once per batch of DOM changes
+      // Debounce - only re-observe once per batch of DOM changes
       requestAnimationFrame(observeAll);
     });
     mo.observe(document.body, { childList: true, subtree: true });

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb, row, requireRole } from "@/lib/sql";
 
-// GET — admin only (full list of public course registrations)
+// GET - admin only (full list of public course registrations)
 export async function GET() {
   const auth = await requireRole(["ADMIN"]);
   if (!auth.ok) return auth.response;

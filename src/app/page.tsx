@@ -99,9 +99,9 @@ export default function Home() {
   // Update document title based on route
   React.useEffect(() => {
     const titles: Partial<Record<string, string>> = {
-      home: "American Space Oujda — A Cultural & Learning Space",
+      home: "American Space Oujda - A Cultural & Learning Space",
       about: "About · American Space Oujda",
-      relations: "Moroccan–American Relations · American Space Oujda",
+      relations: "Moroccan-American Relations · American Space Oujda",
       activities: "Activities · American Space Oujda",
       events: "Events · American Space Oujda",
       clubs: "Clubs · American Space Oujda",

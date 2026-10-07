@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getDb, row, requireRole, type InValue } from "@/lib/sql";
 import bcrypt from "bcryptjs";
 
-// GET — admin only. Returns user list with course/report counts.
+// GET - admin only. Returns user list with course/report counts.
 export async function GET() {
   const auth = await requireRole(["ADMIN"]);
   if (!auth.ok) return auth.response;

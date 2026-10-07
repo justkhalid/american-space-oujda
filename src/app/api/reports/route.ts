@@ -38,7 +38,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ reports: r.rows.map((x) => normalizeReport(x)) });
   }
 
-  // Admin (or unauthenticated — preserves original behavior)
+  // Admin (or unauthenticated - preserves original behavior)
   if (courseId) {
     const r = await db.execute({
       sql: `SELECT r.*, c.title AS course_title, c.level AS course_level,

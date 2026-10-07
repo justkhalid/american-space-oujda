@@ -156,7 +156,7 @@ export function LibraryDashboard({ initialTab = "overview" }: { initialTab?: Tab
     );
   }
 
-  // Double-check role on render — if not allowed, show spinner while the
+  // Double-check role on render - if not allowed, show spinner while the
   // navigate effect kicks in.
   const role = (session.user as { role?: string })?.role;
   if (role !== "ADMIN" && role !== "LIBRARY") {
@@ -1086,7 +1086,7 @@ function LoanRow({ loan, onChanged }: { loan: Loan; onChanged: () => void }) {
           <div className="text-sm text-muted-foreground mt-0.5 truncate">
             {loan.memberName || "Unknown"} ·{" "}
             <code className="text-xs font-mono px-1.5 py-0.5 rounded bg-primary/8 text-primary font-semibold tracking-wider">
-              {loan.memberAsoNumber || "—"}
+              {loan.memberAsoNumber || "-"}
             </code>
           </div>
           <div className="text-xs text-muted-foreground mt-1 space-x-2">
@@ -1176,7 +1176,7 @@ function NewLoanDialog({ onClose, onSaved }: { onClose: () => void; onSaved: () 
         const e = await r.json().catch(() => ({}));
         throw new Error(e.error || "Failed to create loan");
       }
-      toast.success("Loan created — due in 14 days");
+      toast.success("Loan created - due in 14 days");
       onSaved();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to create loan");
@@ -1210,7 +1210,7 @@ function NewLoanDialog({ onClose, onSaved }: { onClose: () => void; onSaved: () 
                 <SelectContent>
                   {books.map((b) => (
                     <SelectItem key={b.id} value={b.id}>
-                      {b.title} — {b.author || "Unknown"} ({b.available} avail)
+                      {b.title} - {b.author || "Unknown"} ({b.available} avail)
                     </SelectItem>
                   ))}
                 </SelectContent>

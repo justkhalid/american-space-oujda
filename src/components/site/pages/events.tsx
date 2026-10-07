@@ -61,7 +61,7 @@ export function EventsPage() {
         <PageHeader
           eyebrow="Calendar"
           title="What's happening at the Space"
-          subtitle="Lectures, workshops, films, and cultural celebrations. Most events are free — registration is encouraged to reserve your spot."
+          subtitle="Lectures, workshops, films, and cultural celebrations. Most events are free - registration is encouraged to reserve your spot."
         />
       </Section>
 

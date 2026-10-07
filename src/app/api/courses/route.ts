@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb, row, requireRole } from "@/lib/sql";
 
-// GET — public (list of active courses with teacher info + enrollment counts)
+// GET - public (list of active courses with teacher info + enrollment counts)
 export async function GET() {
   const db = getDb();
   const r = await db.execute({

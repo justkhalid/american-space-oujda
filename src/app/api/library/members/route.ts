@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb, row, requireRole, type InValue } from "@/lib/sql";
 
-// GET — ADMIN + LIBRARY. List all members, with optional ?search= filter
+// GET - ADMIN + LIBRARY. List all members, with optional ?search= filter
 // on asoNumber / fullName / phone / cniNumber.
 export async function GET(req: Request) {
   const auth = await requireRole(["ADMIN", "LIBRARY"]);
@@ -39,7 +39,7 @@ async function nextAsoNumber(db: ReturnType<typeof getDb>): Promise<string> {
   return "ASO-" + String(next).padStart(4, "0");
 }
 
-// POST — ADMIN + LIBRARY. Register a new member. asoNumber is auto-generated.
+// POST - ADMIN + LIBRARY. Register a new member. asoNumber is auto-generated.
 export async function POST(req: Request) {
   const auth = await requireRole(["ADMIN", "LIBRARY"]);
   if (!auth.ok) return auth.response;
@@ -79,7 +79,7 @@ export async function POST(req: Request) {
   return NextResponse.json({ member: m }, { status: 201 });
 }
 
-// PATCH — ADMIN + LIBRARY. Update a member (incl. status).
+// PATCH - ADMIN + LIBRARY. Update a member (incl. status).
 export async function PATCH(req: Request) {
   const auth = await requireRole(["ADMIN", "LIBRARY"]);
   if (!auth.ok) return auth.response;
@@ -126,7 +126,7 @@ export async function PATCH(req: Request) {
   return NextResponse.json({ member: row(r.rows[0]) });
 }
 
-// DELETE — ADMIN + LIBRARY. Delete a member by ?id=.
+// DELETE - ADMIN + LIBRARY. Delete a member by ?id=.
 export async function DELETE(req: Request) {
   const auth = await requireRole(["ADMIN", "LIBRARY"]);
   if (!auth.ok) return auth.response;

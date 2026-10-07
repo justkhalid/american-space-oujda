@@ -15,8 +15,8 @@ function createPrismaClient(): PrismaClient {
 
   if (!url) {
     // During build time, DATABASE_URL might not be available yet.
-    // Return a stub PrismaClient — it won't actually be called at build time.
-    console.warn("[db] No DATABASE_URL — returning stub client (build-time)");
+    // Return a stub PrismaClient - it won't actually be called at build time.
+    console.warn("[db] No DATABASE_URL - returning stub client (build-time)");
     return new PrismaClient();
   }
 

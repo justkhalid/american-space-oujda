@@ -42,7 +42,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ enrollments: r.rows.map((x) => normalizeEnrollment(x)) });
   }
 
-  // Admins (and unauthenticated — preserves original behavior): all enrollments
+  // Admins (and unauthenticated - preserves original behavior): all enrollments
   if (courseId && teacherId) {
     const r = await db.execute({
       sql: `SELECT e.*, c.title AS course_title, c.level AS course_level, c.schedule AS course_schedule

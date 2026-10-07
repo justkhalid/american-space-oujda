@@ -3,7 +3,7 @@ import { getDb, row, requireRole, type InValue } from "@/lib/sql";
 
 const LOAN_DAYS = 14;
 
-// GET — ADMIN + LIBRARY. List all loans (with book + member joins).
+// GET - ADMIN + LIBRARY. List all loans (with book + member joins).
 // Filters: ?status=ACTIVE|RETURNED|OVERDUE  and  ?memberId=
 export async function GET(req: Request) {
   const auth = await requireRole(["ADMIN", "LIBRARY"]);
@@ -56,7 +56,7 @@ export async function GET(req: Request) {
   return NextResponse.json({ loans });
 }
 
-// POST — ADMIN + LIBRARY. Create a new loan.
+// POST - ADMIN + LIBRARY. Create a new loan.
 // - dueAt = borrowedAt + 14 days
 // - decrements LibraryBook.available
 // - blocks if the member already has an ACTIVE loan (1 book at a time rule)
@@ -143,7 +143,7 @@ export async function POST(req: Request) {
   );
 }
 
-// PATCH — ADMIN + LIBRARY. Return a loan (?id=).
+// PATCH - ADMIN + LIBRARY. Return a loan (?id=).
 // - sets returnedAt = now, status = RETURNED
 // - increments LibraryBook.available
 export async function PATCH(req: Request) {
@@ -184,8 +184,8 @@ export async function PATCH(req: Request) {
   return NextResponse.json({ loan: { ...updated, effectiveStatus: "RETURNED" } });
 }
 
-// DELETE — ADMIN + LIBRARY. Delete a loan record by ?id=.
-// Note: this does NOT adjust book.available — use PATCH to return a loan
+// DELETE - ADMIN + LIBRARY. Delete a loan record by ?id=.
+// Note: this does NOT adjust book.available - use PATCH to return a loan
 // first if you want stock counts to stay correct.
 export async function DELETE(req: Request) {
   const auth = await requireRole(["ADMIN", "LIBRARY"]);

@@ -1,4 +1,4 @@
-// Centralized site content — single source of truth for nav, contact, and reusable content.
+// Centralized site content - single source of truth for nav, contact, and reusable content.
 
 import {
   Home,
@@ -53,8 +53,8 @@ export const SITE = {
   phone: "+212 536 50 67 57",
   established: 2014,
   hours: [
-    { day: "Monday – Friday", time: "09:00 – 19:00" },
-    { day: "Saturday", time: "10:00 – 17:00" },
+    { day: "Monday - Friday", time: "09:00 - 19:00" },
+    { day: "Saturday", time: "10:00 - 17:00" },
     { day: "Sunday", time: "Closed" },
   ],
   social: {
@@ -70,7 +70,7 @@ export const SITE = {
   },
 };
 
-// Morocco-US milestones — historically grounded content
+// Morocco-US milestones - historically grounded content
 export const RELATIONS_MILESTONES = [
   {
     year: "1777",
@@ -80,7 +80,7 @@ export const RELATIONS_MILESTONES = [
   {
     year: "1786",
     title: "Treaty of Peace and Friendship",
-    body: "The Moroccan–American Treaty of Peace and Friendship was signed — the longest-unbroken treaty in U.S. history. It established peaceful relations and free trade between the two nations.",
+    body: "The Moroccan-American Treaty of Peace and Friendship was signed - the longest-unbroken treaty in U.S. history. It established peaceful relations and free trade between the two nations.",
   },
   {
     year: "1905",
@@ -104,18 +104,18 @@ export const RELATIONS_MILESTONES = [
   },
   {
     year: "2004",
-    title: "U.S.–Morocco Free Trade Agreement",
+    title: "U.S.-Morocco Free Trade Agreement",
     body: "Morocco became the first African country to sign a free trade agreement with the United States, deepening economic and cultural exchange.",
   },
   {
     year: "2014",
     title: "American Space Oujda Opens",
-    body: "American Space Oujda was inaugurated as part of the U.S. Embassy's network of cultural spaces across Morocco — providing English-language learning, library services, and cultural programming.",
+    body: "American Space Oujda was inaugurated as part of the U.S. Embassy's network of cultural spaces across Morocco - providing English-language learning, library services, and cultural programming.",
   },
   {
     year: "2021",
     title: "Digital Programming Expansion",
-    body: "In response to global changes, American Space Oujda expanded its digital offerings — online English courses, virtual lectures, and remote access to library resources.",
+    body: "In response to global changes, American Space Oujda expanded its digital offerings - online English courses, virtual lectures, and remote access to library resources.",
   },
   {
     year: "Today",

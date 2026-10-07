@@ -1,4 +1,4 @@
-// Direct libSQL client — bypasses Prisma entirely.
+// Direct libSQL client - bypasses Prisma entirely.
 // More reliable on Vercel serverless where Prisma client caching causes issues.
 
 import { createClient, type Client, type InValue } from "@libsql/client";
@@ -89,7 +89,7 @@ export type RequireRoleResult =
   | { ok: false; response: Response };
 
 // Check that the current user is signed in AND has one of the allowed roles.
-// Returns a discriminated union — callers do `if (!auth.ok) return auth.response;`.
+// Returns a discriminated union - callers do `if (!auth.ok) return auth.response;`.
 export async function requireRole(roles: string[]): Promise<RequireRoleResult> {
   const user = await getCurrentUser();
   if (!user) {

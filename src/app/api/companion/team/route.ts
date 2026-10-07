@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb, row, requireRole, getCurrentUser, type InValue } from "@/lib/sql";
 
-// GET — any authenticated user. Returns all active team members.
+// GET - any authenticated user. Returns all active team members.
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) {
@@ -35,7 +35,7 @@ export async function GET() {
   return NextResponse.json({ team });
 }
 
-// POST — admin only.
+// POST - admin only.
 export async function POST(req: Request) {
   const auth = await requireRole(["ADMIN"]);
   if (!auth.ok) return auth.response;
@@ -67,7 +67,7 @@ export async function POST(req: Request) {
   return NextResponse.json({ member }, { status: 201 });
 }
 
-// PATCH — admin only.
+// PATCH - admin only.
 export async function PATCH(req: Request) {
   const auth = await requireRole(["ADMIN"]);
   if (!auth.ok) return auth.response;
@@ -103,7 +103,7 @@ export async function PATCH(req: Request) {
   return NextResponse.json({ member });
 }
 
-// DELETE — admin only.
+// DELETE - admin only.
 export async function DELETE(req: Request) {
   const auth = await requireRole(["ADMIN"]);
   if (!auth.ok) return auth.response;

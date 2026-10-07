@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb, row, requireRole, getCurrentUser, type InValue } from "@/lib/sql";
 
-// GET — any authenticated user. Optional ?levelId=X filter; if omitted, returns all weeks.
+// GET - any authenticated user. Optional ?levelId=X filter; if omitted, returns all weeks.
 export async function GET(req: Request) {
   const user = await getCurrentUser();
   if (!user) {
@@ -50,7 +50,7 @@ export async function GET(req: Request) {
   return NextResponse.json({ weeks });
 }
 
-// POST — admin + teacher. Create or upsert a week (levelId + weekNumber must be unique).
+// POST - admin + teacher. Create or upsert a week (levelId + weekNumber must be unique).
 export async function POST(req: Request) {
   const auth = await requireRole(["ADMIN", "TEACHER"]);
   if (!auth.ok) return auth.response;
@@ -97,7 +97,7 @@ export async function POST(req: Request) {
   return NextResponse.json({ week }, { status: 201 });
 }
 
-// PATCH — admin + teacher. Update week content by id.
+// PATCH - admin + teacher. Update week content by id.
 export async function PATCH(req: Request) {
   const auth = await requireRole(["ADMIN", "TEACHER"]);
   if (!auth.ok) return auth.response;
@@ -136,7 +136,7 @@ export async function PATCH(req: Request) {
   return NextResponse.json({ week });
 }
 
-// DELETE — admin + teacher. Remove a week by id.
+// DELETE - admin + teacher. Remove a week by id.
 export async function DELETE(req: Request) {
   const auth = await requireRole(["ADMIN", "TEACHER"]);
   if (!auth.ok) return auth.response;

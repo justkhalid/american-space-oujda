@@ -1,19 +1,19 @@
 import { NextResponse } from "next/server";
 import { getDb, row, requireRole } from "@/lib/sql";
 
-// GET — ADMIN + LIBRARY. Returns high-level counts for the dashboard overview.
+// GET - ADMIN + LIBRARY. Returns high-level counts for the dashboard overview.
 export async function GET() {
   const auth = await requireRole(["ADMIN", "LIBRARY"]);
   if (!auth.ok) return auth.response;
 
   const db = getDb();
 
-  // totalBooks — total number of distinct titles
+  // totalBooks - total number of distinct titles
   const totalBooksR = await db.execute({
     sql: "SELECT COUNT(*) AS n FROM LibraryBook",
     args: [],
   });
-  // availableBooks — sum of available copies across all books
+  // availableBooks - sum of available copies across all books
   const availableBooksR = await db.execute({
     sql: "SELECT COALESCE(SUM(available), 0) AS n FROM LibraryBook",
     args: [],
@@ -23,7 +23,7 @@ export async function GET() {
     sql: "SELECT COUNT(*) AS n FROM LibraryMember",
     args: [],
   });
-  // activeMembers — status = 'ACTIVE'
+  // activeMembers - status = 'ACTIVE'
   const activeMembersR = await db.execute({
     sql: "SELECT COUNT(*) AS n FROM LibraryMember WHERE status = 'ACTIVE'",
     args: [],
@@ -33,7 +33,7 @@ export async function GET() {
     sql: "SELECT COUNT(*) AS n FROM LibraryLoan WHERE status = 'ACTIVE'",
     args: [],
   });
-  // overdueLoans — active + past dueAt
+  // overdueLoans - active + past dueAt
   const overdueLoansR = await db.execute({
     sql: "SELECT COUNT(*) AS n FROM LibraryLoan WHERE status = 'ACTIVE' AND dueAt < ?",
     args: [new Date().toISOString()],

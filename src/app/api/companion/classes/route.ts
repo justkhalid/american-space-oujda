@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb, row, requireRole, getCurrentUser, type InValue } from "@/lib/sql";
 
-// GET — any authenticated user; teachers only see their own classes
+// GET - any authenticated user; teachers only see their own classes
 // (matched by teacherId === user.id OR teacherId === user.name).
 export async function GET() {
   const user = await getCurrentUser();
@@ -41,7 +41,7 @@ export async function GET() {
   return NextResponse.json({ classes });
 }
 
-// POST — admin only.
+// POST - admin only.
 export async function POST(req: Request) {
   const auth = await requireRole(["ADMIN"]);
   if (!auth.ok) return auth.response;
@@ -74,7 +74,7 @@ export async function POST(req: Request) {
   return NextResponse.json({ class: cls }, { status: 201 });
 }
 
-// PATCH — admin only.
+// PATCH - admin only.
 export async function PATCH(req: Request) {
   const auth = await requireRole(["ADMIN"]);
   if (!auth.ok) return auth.response;
@@ -110,7 +110,7 @@ export async function PATCH(req: Request) {
   return NextResponse.json({ class: cls });
 }
 
-// DELETE — admin only.
+// DELETE - admin only.
 export async function DELETE(req: Request) {
   const auth = await requireRole(["ADMIN"]);
   if (!auth.ok) return auth.response;

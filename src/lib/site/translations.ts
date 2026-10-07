@@ -18,7 +18,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     // Header nav
     "nav.home": "Home",
     "nav.about": "About",
-    "nav.relations": "Moroccan–American Relations",
+    "nav.relations": "Moroccan-American Relations",
     "nav.events": "Events",
     "nav.clubs": "Clubs",
     "nav.album": "Album",
@@ -45,7 +45,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     "footer.programs": "Programs",
     "footer.visit": "Visit",
     "footer.feedback": "Feedback",
-    "footer.about.text": "A cultural and learning space in eastern Morocco — open to all, free of charge. English courses, library, events, and cultural programs bridging Morocco and the United States since {year}.",
+    "footer.about.text": "A cultural and learning space in eastern Morocco - open to all, free of charge. English courses, library, events, and cultural programs bridging Morocco and the United States since {year}.",
     "footer.rights": "All rights reserved.",
 
     // Search dialog
@@ -56,16 +56,16 @@ export const translations: Record<Lang, Record<string, string>> = {
     "search.empty": "No matching pages for “{q}”",
     "search.full": "Full site search →",
 
-    // Home — hero
+    // Home - hero
     "home.hero.pill": "Bridging Morocco and the United States since {year}",
     "home.hero.title": "A cultural & learning space, open to all in eastern Morocco.",
-    "home.hero.subtitle": "American Space Oujda offers free English courses, a public library, cultural events, and a community of curious minds — a place where Morocco and the United States meet.",
+    "home.hero.subtitle": "American Space Oujda offers free English courses, a public library, cultural events, and a community of curious minds - a place where Morocco and the United States meet.",
     "home.hero.cta1": "Register for English courses",
     "home.hero.cta2": "Join our team",
     "home.hero.card.pill": "This week",
     "home.hero.card.featured": "Featured",
     "home.hero.card.title": "English Conversation Circle",
-    "home.hero.card.body": "Weekly informal sessions — all levels welcome. Practice your English in a friendly, low-pressure setting.",
+    "home.hero.card.body": "Weekly informal sessions - all levels welcome. Practice your English in a friendly, low-pressure setting.",
     "home.hero.card.location": "Main Hall",
     "home.hero.card.registered": "18 / 25 registered",
 
@@ -81,10 +81,10 @@ export const translations: Record<Lang, Record<string, string>> = {
     // Home programs
     "home.programs.eyebrow": "What we offer",
     "home.programs.title": "Programs for every curious mind",
-    "home.programs.subtitle": "Free, open, and inclusive — our programs span language learning, cultural exchange, and skill-building for the eastern Morocco community.",
+    "home.programs.subtitle": "Free, open, and inclusive - our programs span language learning, cultural exchange, and skill-building for the eastern Morocco community.",
     "home.programs.all": "See all programs",
     "home.programs.english.title": "English Courses",
-    "home.programs.english.body": "From beginner to TOEFL and IELTS preparation — small-group classes led by qualified teachers.",
+    "home.programs.english.body": "From beginner to TOEFL and IELTS preparation - small-group classes led by qualified teachers.",
     "home.programs.english.cta": "Register",
     "home.programs.library.title": "Public Library",
     "home.programs.library.body": "4,500+ English-language books, periodicals, and digital resources. Free membership for all.",
@@ -93,7 +93,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     "home.programs.events.body": "Lectures, film screenings, cultural celebrations, and hands-on workshops every week.",
     "home.programs.events.cta": "See calendar",
     "home.programs.clubs.title": "Clubs",
-    "home.programs.clubs.body": "Reading club, debate club, conversation circle, coding club — find your community.",
+    "home.programs.clubs.body": "Reading club, debate club, conversation circle, coding club - find your community.",
     "home.programs.clubs.cta": "Join a club",
     "home.programs.books.title": "Books & Publications",
     "home.programs.books.body": "Browse our catalog of books, e-books, and American studies publications.",
@@ -105,7 +105,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     // Home events preview
     "home.events.eyebrow": "Upcoming",
     "home.events.title": "What's happening at the Space",
-    "home.events.subtitle": "Reserve your spot — most events are free, but registration is encouraged.",
+    "home.events.subtitle": "Reserve your spot - most events are free, but registration is encouraged.",
     "home.events.all": "Full calendar",
 
     // Home testimonial / CTA
@@ -114,29 +114,29 @@ export const translations: Record<Lang, Record<string, string>> = {
     "home.cta.body": "Share your skills, gain experience, and join a community that has been bridging cultures for over a decade.",
     "home.cta.teacher.body": "Lead English or skill-building courses.",
     "home.cta.volunteer.body": "Help with events and day-to-day operations.",
-    "home.cta.intern.body": "3–6 month internships for university students.",
+    "home.cta.intern.body": "3-6 month internships for university students.",
     "home.cta.trainer.body": "Deliver specialized workshops in your field.",
     "home.cta.apply": "Apply now",
-    "home.testimonial.body": "“The American Space gave me the confidence to apply for a Fulbright — and I got in. The community here changed my life.”",
+    "home.testimonial.body": "“The American Space gave me the confidence to apply for a Fulbright - and I got in. The community here changed my life.”",
     "home.testimonial.name": "Imane A.",
     "home.testimonial.role": "Fulbright Scholar, Class of 2024",
 
     // Home relations preview
     "home.relations.eyebrow": "Two nations, one story",
-    "home.relations.title": "Moroccan–American relations",
+    "home.relations.title": "Moroccan-American relations",
     "home.relations.subtitle": "Morocco was the first nation to recognize the United States. Our Space continues a friendship that goes back to 1777.",
     "home.relations.all": "Explore milestones",
 
     // Home visit
     "home.visit.pill": "Visit us",
-    "home.visit.title": "Come say hello. We're open to everyone — free of charge.",
+    "home.visit.title": "Come say hello. We're open to everyone - free of charge.",
     "home.visit.body": "Find us at {address}. Free membership, free events, free coffee on Saturdays.",
     "home.visit.cta": "Become a member",
 
     // About page
     "about.eyebrow": "About",
     "about.title": "A free cultural & learning space in eastern Morocco.",
-    "about.subtitle": "American Space Oujda is part of a network of cultural centers supported by the U.S. Embassy in Morocco — open to everyone, free of charge.",
+    "about.subtitle": "American Space Oujda is part of a network of cultural centers supported by the U.S. Embassy in Morocco - open to everyone, free of charge.",
     "about.pill": "Est. {year}",
     "about.mission.title": "A bridge between Morocco and the United States.",
     "about.mission.eyebrow": "What we do",
@@ -144,7 +144,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     "about.pillar.education": "Education",
     "about.pillar.education.body": "English courses, TOEFL/IELTS prep, study-in-the-USA advising, and skill-building workshops for all ages and levels.",
     "about.pillar.culture": "Culture",
-    "about.pillar.culture.body": "Film screenings, art exhibitions, guest lectures, and celebrations of Moroccan–American cultural ties.",
+    "about.pillar.culture.body": "Film screenings, art exhibitions, guest lectures, and celebrations of Moroccan-American cultural ties.",
     "about.pillar.information": "Information",
     "about.pillar.information.body": "A free public library with 4,500+ English-language books, periodicals, and digital resources about the United States.",
     "about.find.pill": "Find us",
@@ -154,7 +154,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     // Events
     "events.eyebrow": "Events",
     "events.title": "What's happening at the Space",
-    "events.subtitle": "Browse upcoming events and reserve your spot — most events are free, but registration is encouraged.",
+    "events.subtitle": "Browse upcoming events and reserve your spot - most events are free, but registration is encouraged.",
     "events.filter.all": "All",
     "events.filter.upcoming": "Upcoming",
     "events.filter.past": "Past",
@@ -168,14 +168,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     // Clubs
     "clubs.eyebrow": "Clubs",
     "clubs.title": "Find your community",
-    "clubs.subtitle": "Clubs are the heart of the Space — small, regular gatherings of people who share an interest. Newcomers always welcome.",
+    "clubs.subtitle": "Clubs are the heart of the Space - small, regular gatherings of people who share an interest. Newcomers always welcome.",
     "clubs.join": "Join this club",
     "clubs.empty": "No clubs are running right now. Check back soon.",
 
     // Library
     "library.eyebrow": "Library",
     "library.title": "A free public library, open to all",
-    "library.subtitle": "Browse, borrow, and read in a calm space. Membership is free — bring your documents and we'll issue your ASO card on the spot.",
+    "library.subtitle": "Browse, borrow, and read in a calm space. Membership is free - bring your documents and we'll issue your ASO card on the spot.",
     "library.hours": "Hours",
     "library.how": "How to join the library",
     "library.how.1": "Bring a photocopy of your CNI (Carte Nationale d'Identité) and two passport-size photos.",
@@ -193,7 +193,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     // Books
     "books.eyebrow": "Books & Publications",
     "books.title": "Our collection",
-    "books.subtitle": "4,500+ English-language books, periodicals, and digital resources — freely available to all members.",
+    "books.subtitle": "4,500+ English-language books, periodicals, and digital resources - freely available to all members.",
     "books.cat.literature": "American Literature",
     "books.cat.esl": "ESL & Language Learning",
     "books.cat.history": "U.S. History & Politics",
@@ -214,7 +214,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     // Registration
     "registration.eyebrow": "English Courses",
     "registration.title": "Register for English courses",
-    "registration.subtitle": "Free English courses for all levels — from absolute beginner to TOEFL preparation. New cohorts start every October, February, and July.",
+    "registration.subtitle": "Free English courses for all levels - from absolute beginner to TOEFL preparation. New cohorts start every October, February, and July.",
     "registration.label.name": "Full name *",
     "registration.label.email": "Email *",
     "registration.label.phone": "Phone",
@@ -236,7 +236,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     "registration.next.2": "Take a short placement test (free, in-person or online).",
     "registration.next.3": "Get your class schedule and start learning.",
     "registration.questions.title": "Questions?",
-    "registration.questions.body": "Email us any time — we usually reply within 2 business days.",
+    "registration.questions.body": "Email us any time - we usually reply within 2 business days.",
 
     // Membership
     "membership.eyebrow": "Membership",
@@ -313,7 +313,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     "login.signing": "Signing in…",
     "login.invalid": "Invalid email or password.",
     "login.success": "Signed in.",
-    "login.demo": "Demo accounts — click to fill",
+    "login.demo": "Demo accounts - click to fill",
     "login.demo.admin": "Admin",
     "login.demo.admin.body": "Full access",
     "login.demo.teacher": "Teacher",
@@ -386,7 +386,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     "footer.programs": "البرامج",
     "footer.visit": "زورونا",
     "footer.feedback": "الملاحظات",
-    "footer.about.text": "فضاء ثقافي وتعليمي شرق المغرب — مفتوح للجميع ومجاني. دورات اللغة الإنجليزية، مكتبة، فعاليات، وبرامج ثقافية تربط بين المغرب والولايات المتحدة منذ عام {year}.",
+    "footer.about.text": "فضاء ثقافي وتعليمي شرق المغرب - مفتوح للجميع ومجاني. دورات اللغة الإنجليزية، مكتبة، فعاليات، وبرامج ثقافية تربط بين المغرب والولايات المتحدة منذ عام {year}.",
     "footer.rights": "جميع الحقوق محفوظة.",
 
     // Search dialog
@@ -397,16 +397,16 @@ export const translations: Record<Lang, Record<string, string>> = {
     "search.empty": "لا توجد نتائج مطابقة لـ «{q}»",
     "search.full": "بحث شامل في الموقع ←",
 
-    // Home — hero
+    // Home - hero
     "home.hero.pill": "جسر بين المغرب والولايات المتحدة منذ عام {year}",
     "home.hero.title": "فضاء ثقافي وتعليمي مفتوح للجميع شرق المغرب.",
-    "home.hero.subtitle": "يقدّم الفضاء الأمريكي بوجدة دورات مجانية في اللغة الإنجليزية، ومكتبة عامة، وفعاليات ثقافية، ومجتمعًا من العقول الفضولية — مكان يلتقي فيه المغرب بالولايات المتحدة.",
+    "home.hero.subtitle": "يقدّم الفضاء الأمريكي بوجدة دورات مجانية في اللغة الإنجليزية، ومكتبة عامة، وفعاليات ثقافية، ومجتمعًا من العقول الفضولية - مكان يلتقي فيه المغرب بالولايات المتحدة.",
     "home.hero.cta1": "سجّل في دورات الإنجليزية",
     "home.hero.cta2": "انضم إلى فريقنا",
     "home.hero.card.pill": "هذا الأسبوع",
     "home.hero.card.featured": "مميّزة",
     "home.hero.card.title": "نادي المحادثة بالإنجليزية",
-    "home.hero.card.body": "جلسات أسبوعية غير رسمية — جميع المستويات مرحب بها. تدرّب على الإنجليزية في جو ودّي ومنخفض الضغط.",
+    "home.hero.card.body": "جلسات أسبوعية غير رسمية - جميع المستويات مرحب بها. تدرّب على الإنجليزية في جو ودّي ومنخفض الضغط.",
     "home.hero.card.location": "القاعة الرئيسية",
     "home.hero.card.registered": "18 / 25 مسجّلًا",
 
@@ -422,10 +422,10 @@ export const translations: Record<Lang, Record<string, string>> = {
     // Home programs
     "home.programs.eyebrow": "ما نقدّمه",
     "home.programs.title": "برامج لكل عقل فضولي",
-    "home.programs.subtitle": "مجانية ومفتوحة وشاملة — تمتد برامجنا عبر تعليم اللغة والتبادل الثقافي وبناء المهارات لمجتمع شرق المغرب.",
+    "home.programs.subtitle": "مجانية ومفتوحة وشاملة - تمتد برامجنا عبر تعليم اللغة والتبادل الثقافي وبناء المهارات لمجتمع شرق المغرب.",
     "home.programs.all": "كل البرامج",
     "home.programs.english.title": "دورات اللغة الإنجليزية",
-    "home.programs.english.body": "من المبتدئ إلى تحضير التوفل والأيلتس — مجموعات صغيرة يديرها أساتذة مؤهّلون.",
+    "home.programs.english.body": "من المبتدئ إلى تحضير التوفل والأيلتس - مجموعات صغيرة يديرها أساتذة مؤهّلون.",
     "home.programs.english.cta": "سجّل الآن",
     "home.programs.library.title": "المكتبة العامة",
     "home.programs.library.body": "أكثر من 4500 كتاب ومطبوعة ومورد رقمي باللغة الإنجليزية. عضوية مجانية للجميع.",
@@ -434,7 +434,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     "home.programs.events.body": "محاضرات وعروض أفلام واحتفالات ثقافية وورشات تطبيقية كل أسبوع.",
     "home.programs.events.cta": "الرزنامة",
     "home.programs.clubs.title": "الأندية",
-    "home.programs.clubs.body": "نادي القراءة، نادي النقاش، نادي المحادثة، نادي البرمجة — اعثر على مجتمعك.",
+    "home.programs.clubs.body": "نادي القراءة، نادي النقاش، نادي المحادثة، نادي البرمجة - اعثر على مجتمعك.",
     "home.programs.clubs.cta": "انضم إلى نادٍ",
     "home.programs.books.title": "الكتب والمطبوعات",
     "home.programs.books.body": "تصفّح فهرسنا من الكتب والكتب الإلكترونية وإصدارات الدراسات الأمريكية.",
@@ -446,7 +446,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     // Home events preview
     "home.events.eyebrow": "قادمة",
     "home.events.title": "ماذا يجري في الفضاء",
-    "home.events.subtitle": "احجز مكانك — معظم الفعاليات مجانية، لكن ننصح بالتسجيل المسبق.",
+    "home.events.subtitle": "احجز مكانك - معظم الفعاليات مجانية، لكن ننصح بالتسجيل المسبق.",
     "home.events.all": "الرزنامة الكاملة",
 
     // Home testimonial / CTA
@@ -458,7 +458,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     "home.cta.intern.body": "تدريبات من 3 إلى 6 أشهر لطلبة الجامعات.",
     "home.cta.trainer.body": "قدّم ورشات متخصصة في مجالك.",
     "home.cta.apply": "قدّم طلبًا الآن",
-    "home.testimonial.body": "«منحني الفضاء الأمريكي الثقة للتقديم على منحة فولبرايت — وقد قُبلت. المجتمع هنا غيّر حياتي.»",
+    "home.testimonial.body": "«منحني الفضاء الأمريكي الثقة للتقديم على منحة فولبرايت - وقد قُبلت. المجتمع هنا غيّر حياتي.»",
     "home.testimonial.name": "إيمان أ.",
     "home.testimonial.role": "باحثة فولبرايت، دفعة 2024",
 
@@ -470,14 +470,14 @@ export const translations: Record<Lang, Record<string, string>> = {
 
     // Home visit
     "home.visit.pill": "زورونا",
-    "home.visit.title": "مرحبًا بكم. نحن مفتوحون للجميع — مجانًا.",
+    "home.visit.title": "مرحبًا بكم. نحن مفتوحون للجميع - مجانًا.",
     "home.visit.body": "تجدنا في {address}. عضوية مجانية، فعاليات مجانية، وقهوة مجانية يوم السبت.",
     "home.visit.cta": "كن عضوًا",
 
     // About page
     "about.eyebrow": "حول",
     "about.title": "فضاء ثقافي وتعليمي مجاني شرق المغرب.",
-    "about.subtitle": "الفضاء الأمريكي بوجدة جزء من شبكة مراكز ثقافية تدعمها سفارة الولايات المتحدة في المغرب — مفتوح للجميع ومجاني.",
+    "about.subtitle": "الفضاء الأمريكي بوجدة جزء من شبكة مراكز ثقافية تدعمها سفارة الولايات المتحدة في المغرب - مفتوح للجميع ومجاني.",
     "about.pill": "تأسس عام {year}",
     "about.mission.title": "جسر بين المغرب والولايات المتحدة.",
     "about.mission.eyebrow": "ماذا نفعل",
@@ -495,7 +495,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     // Events
     "events.eyebrow": "الفعاليات",
     "events.title": "ماذا يجري في الفضاء",
-    "events.subtitle": "تصفّح الفعاليات القادمة واحجز مكانك — معظمها مجاني، لكن ننصح بالتسجيل المسبق.",
+    "events.subtitle": "تصفّح الفعاليات القادمة واحجز مكانك - معظمها مجاني، لكن ننصح بالتسجيل المسبق.",
     "events.filter.all": "الكل",
     "events.filter.upcoming": "القادمة",
     "events.filter.past": "الماضية",
@@ -509,14 +509,14 @@ export const translations: Record<Lang, Record<string, string>> = {
     // Clubs
     "clubs.eyebrow": "الأندية",
     "clubs.title": "اعثر على مجتمعك",
-    "clubs.subtitle": "الأندية قلب الفضاء — تجمّعات صغيرة منتظمة لمن يجمعهم اهتمام مشترك. القادمون الجدد مرحب بهم دائمًا.",
+    "clubs.subtitle": "الأندية قلب الفضاء - تجمّعات صغيرة منتظمة لمن يجمعهم اهتمام مشترك. القادمون الجدد مرحب بهم دائمًا.",
     "clubs.join": "انضم إلى هذا النادي",
     "clubs.empty": "لا توجد أندية نشطة حاليًا. عُد قريبًا.",
 
     // Library
     "library.eyebrow": "المكتبة",
     "library.title": "مكتبة عامة مجانية مفتوحة للجميع",
-    "library.subtitle": "تصفّح واستعن واقرأ في فضاء هادئ. العضوية مجانية — أحضر وثائقك وسنصدر بطاقة الفضاء الأمريكي بوجدة فورًا.",
+    "library.subtitle": "تصفّح واستعن واقرأ في فضاء هادئ. العضوية مجانية - أحضر وثائقك وسنصدر بطاقة الفضاء الأمريكي بوجدة فورًا.",
     "library.hours": "أوقات العمل",
     "library.how": "كيف تنضم إلى المكتبة",
     "library.how.1": "أحضر نسخة من بطاقتك الوطنية (CNI) وصورتين شخصيتين بحجم جواز السفر.",
@@ -534,7 +534,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     // Books
     "books.eyebrow": "الكتب والمطبوعات",
     "books.title": "مجموعتنا",
-    "books.subtitle": "أكثر من 4500 كتاب ومطبوعة ومورد رقمي باللغة الإنجليزية — متاحة مجانًا لجميع الأعضاء.",
+    "books.subtitle": "أكثر من 4500 كتاب ومطبوعة ومورد رقمي باللغة الإنجليزية - متاحة مجانًا لجميع الأعضاء.",
     "books.cat.literature": "الأدب الأمريكي",
     "books.cat.esl": "تعليم الإنجليزية كلغة ثانية",
     "books.cat.history": "التاريخ والسياسة الأمريكية",
@@ -555,7 +555,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     // Registration
     "registration.eyebrow": "دورات الإنجليزية",
     "registration.title": "سجّل في دورات الإنجليزية",
-    "registration.subtitle": "دورات إنجليزية مجانية لجميع المستويات — من المبتدئ التام إلى تحضير التوفل. تبدأ أفواج جديدة كل أكتوبر وفبراير ويوليوز.",
+    "registration.subtitle": "دورات إنجليزية مجانية لجميع المستويات - من المبتدئ التام إلى تحضير التوفل. تبدأ أفواج جديدة كل أكتوبر وفبراير ويوليوز.",
     "registration.label.name": "الاسم الكامل *",
     "registration.label.email": "البريد الإلكتروني *",
     "registration.label.phone": "الهاتف",
@@ -577,7 +577,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     "registration.next.2": "اختبار تحديد قصير (مجاني، حضوري أو عن بُعد).",
     "registration.next.3": "استلم جدول دروسك وابدأ التعلّم.",
     "registration.questions.title": "أسئلة؟",
-    "registration.questions.body": "راسلنا في أي وقت — نردّ عادة خلال يومَي عمل.",
+    "registration.questions.body": "راسلنا في أي وقت - نردّ عادة خلال يومَي عمل.",
 
     // Membership
     "membership.eyebrow": "العضوية",
@@ -654,7 +654,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     "login.signing": "جارٍ الدخول…",
     "login.invalid": "بريد إلكتروني أو كلمة مرور غير صحيحة.",
     "login.success": "تم تسجيل الدخول.",
-    "login.demo": "حسابات تجريبية — اضغط للتعبئة",
+    "login.demo": "حسابات تجريبية - اضغط للتعبئة",
     "login.demo.admin": "مدير",
     "login.demo.admin.body": "دخول كامل",
     "login.demo.teacher": "أستاذ",

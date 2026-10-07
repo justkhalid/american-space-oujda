@@ -130,7 +130,7 @@ export function AdminDashboard({ initialTab = "overview" }: { initialTab?: Admin
 }
 
 // ============================================================
-// COMPANION — link to the full ELTASO Companion dashboard
+// COMPANION - link to the full ELTASO Companion dashboard
 // ============================================================
 function CompanionLinkTab({ onOpen }: { onOpen: () => void }) {
   return (
@@ -370,7 +370,7 @@ function AppRow({
             </span>
           </div>
           <div className="text-xs text-muted-foreground mt-1">
-            {app.email} · {app.city || "—"} · {format(new Date(app.createdAt), "MMM d, yyyy")}
+            {app.email} · {app.city || "-"} · {format(new Date(app.createdAt), "MMM d, yyyy")}
           </div>
         </div>
         {expanded ? <EyeOff className="w-4 h-4 text-muted-foreground" /> : <Eye className="w-4 h-4 text-muted-foreground" />}
@@ -631,7 +631,7 @@ function EventEditor({
         </div>
         <div>
           <Label className="text-sm font-medium mb-1.5 block">Location</Label>
-          <Input value={form.location} onChange={(e) => set("location", e.target.value)} placeholder="American Space Oujda — Main Hall" />
+          <Input value={form.location} onChange={(e) => set("location", e.target.value)} placeholder="American Space Oujda - Main Hall" />
         </div>
         <label className="flex items-center gap-2 text-sm cursor-pointer">
           <input
@@ -894,7 +894,7 @@ function CoursesTab() {
                     {!c.active && <Pill variant="outline">Inactive</Pill>}
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
-                    {c.schedule} · {c._count.enrollments}/{c.capacity} students · Teacher: {c.teacher?.name || c.teacher?.email || "—"}
+                    {c.schedule} · {c._count.enrollments}/{c.capacity} students · Teacher: {c.teacher?.name || c.teacher?.email || "-"}
                   </div>
                   {c.description && <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{c.description}</p>}
                 </div>
@@ -987,7 +987,7 @@ function CourseEditor({
           </div>
           <div>
             <Label className="text-sm font-medium mb-1.5 block">Schedule</Label>
-            <Input value={form.schedule} onChange={(e) => set("schedule", e.target.value)} placeholder="Mon & Wed · 18:00–20:00" />
+            <Input value={form.schedule} onChange={(e) => set("schedule", e.target.value)} placeholder="Mon & Wed · 18:00-20:00" />
           </div>
           <div>
             <Label className="text-sm font-medium mb-1.5 block">Teacher</Label>
@@ -1562,7 +1562,7 @@ export function SettingsTab() {
     { key: "contact.email", label: "Contact email", category: "Contact" },
     { key: "contact.phone", label: "Contact phone", category: "Contact" },
     { key: "contact.address", label: "Address", category: "Contact" },
-    { key: "hours.monfri", label: "Mon–Fri hours", category: "Hours" },
+    { key: "hours.monfri", label: "Mon-Fri hours", category: "Hours" },
     { key: "hours.saturday", label: "Saturday hours", category: "Hours" },
     { key: "hours.sunday", label: "Sunday hours", category: "Hours" },
     { key: "home.hero.title", label: "Home hero title", category: "Home page", textarea: true },

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb, row, requireRole, type InValue } from "@/lib/sql";
 
-// GET — ADMIN + LIBRARY. List all books, with optional ?search= filter
+// GET - ADMIN + LIBRARY. List all books, with optional ?search= filter
 // on title / author / isbn / deweyCode / category.
 export async function GET(req: Request) {
   const auth = await requireRole(["ADMIN", "LIBRARY"]);
@@ -32,7 +32,7 @@ export async function GET(req: Request) {
   return NextResponse.json({ books });
 }
 
-// POST — ADMIN + LIBRARY. Add a new book.
+// POST - ADMIN + LIBRARY. Add a new book.
 export async function POST(req: Request) {
   const auth = await requireRole(["ADMIN", "LIBRARY"]);
   if (!auth.ok) return auth.response;
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
   );
 }
 
-// PATCH — ADMIN + LIBRARY. Update a book by id.
+// PATCH - ADMIN + LIBRARY. Update a book by id.
 export async function PATCH(req: Request) {
   const auth = await requireRole(["ADMIN", "LIBRARY"]);
   if (!auth.ok) return auth.response;
@@ -127,7 +127,7 @@ export async function PATCH(req: Request) {
   });
 }
 
-// DELETE — ADMIN + LIBRARY. Delete a book by ?id=.
+// DELETE - ADMIN + LIBRARY. Delete a book by ?id=.
 export async function DELETE(req: Request) {
   const auth = await requireRole(["ADMIN", "LIBRARY"]);
   if (!auth.ok) return auth.response;

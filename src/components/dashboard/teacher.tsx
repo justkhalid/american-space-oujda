@@ -119,7 +119,7 @@ export function TeacherDashboard({ initialTab = "courses" }: { initialTab?: Teac
 }
 
 // ============================================================
-// COMPANION — link to the full ELTASO Companion dashboard
+// COMPANION - link to the full ELTASO Companion dashboard
 // ============================================================
 function CompanionLinkTab({ onOpen }: { onOpen: () => void }) {
   return (
@@ -146,7 +146,7 @@ function CompanionLinkTab({ onOpen }: { onOpen: () => void }) {
 }
 
 // ============================================================
-// COURSES — list courses assigned to this teacher + their students
+// COURSES - list courses assigned to this teacher + their students
 // ============================================================
 function CoursesTab() {
   const [courses, setCourses] = React.useState<Course[]>([]);
@@ -257,7 +257,7 @@ function CoursesTab() {
 }
 
 // ============================================================
-// ATTENDANCE — mark present/absent for a date
+// ATTENDANCE - mark present/absent for a date
 // ============================================================
 interface AttendanceRecord {
   id: string;
@@ -437,7 +437,7 @@ function AttendanceTab() {
 }
 
 // ============================================================
-// GRADES — add marks for assignments/exams
+// GRADES - add marks for assignments/exams
 // ============================================================
 interface Grade {
   id: string;
@@ -545,7 +545,7 @@ function GradesTab() {
           {Object.entries(byStudent).map(([email, gs]) => {
             const totalWeighted = gs.reduce((sum, g) => sum + (g.score / g.maxScore) * g.weight * 100, 0);
             const totalWeight = gs.reduce((sum, g) => sum + g.weight, 0);
-            const avg = totalWeight > 0 ? (totalWeighted / totalWeight).toFixed(1) : "—";
+            const avg = totalWeight > 0 ? (totalWeighted / totalWeight).toFixed(1) : "-";
             return (
               <MatteCard key={email} className="p-4">
                 <div className="flex items-center justify-between mb-3">
@@ -695,7 +695,7 @@ function GradeEditor({
 }
 
 // ============================================================
-// REPORTS — submit periodic reports per course
+// REPORTS - submit periodic reports per course
 // ============================================================
 interface Report {
   id: string;
@@ -876,11 +876,11 @@ function ReportEditor({
         </div>
         <div>
           <Label className="text-sm font-medium mb-1.5 block">Challenges</Label>
-          <Textarea value={form.challenges} onChange={(e) => set("challenges", e.target.value)} rows={2} placeholder="Optional — difficulties encountered" />
+          <Textarea value={form.challenges} onChange={(e) => set("challenges", e.target.value)} rows={2} placeholder="Optional - difficulties encountered" />
         </div>
         <div>
           <Label className="text-sm font-medium mb-1.5 block">Recommendations</Label>
-          <Textarea value={form.recommendations} onChange={(e) => set("recommendations", e.target.value)} rows={2} placeholder="Optional — what should change next period" />
+          <Textarea value={form.recommendations} onChange={(e) => set("recommendations", e.target.value)} rows={2} placeholder="Optional - what should change next period" />
         </div>
         <div className="flex justify-end gap-2 pt-2 border-t border-border">
           <Button variant="outline" onClick={onClose} className="rounded-full bg-transparent">Cancel</Button>

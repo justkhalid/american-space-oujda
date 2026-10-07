@@ -61,7 +61,7 @@ export function AboutPage() {
               <span style={{ fontStyle: "italic", fontWeight: 400 }}>eastern Morocco.</span>
             </>
           }
-          subtitle="American Space Oujda is part of a network of cultural centers supported by the U.S. Embassy in Morocco — open to everyone, free of charge."
+          subtitle="American Space Oujda is part of a network of cultural centers supported by the U.S. Embassy in Morocco - open to everyone, free of charge."
         />
       </Section>
 
@@ -91,7 +91,7 @@ export function AboutPage() {
               <div className="space-y-4 text-muted-foreground leading-relaxed pretty">
                 <p>
                   American Space Oujda (ASO) was inaugurated in 2014 as part of the U.S. Embassy
-                  in Morocco&apos;s network of American Spaces — a sister to Dar America in
+                  in Morocco&apos;s network of American Spaces - a sister to Dar America in
                   Casablanca. We provide a free, open, and inclusive environment where members of
                   the eastern Morocco community can learn English, access information about
                   studying in the United States, and engage in cultural exchange.
@@ -105,8 +105,8 @@ export function AboutPage() {
                   TOEFL, SAT, GRE, and GMAT.
                 </p>
                 <p>
-                  We host more than 200 events each year — including English courses, lectures,
-                  film screenings, workshops, and cultural celebrations — and serve a community
+                  We host more than 200 events each year - including English courses, lectures,
+                  film screenings, workshops, and cultural celebrations - and serve a community
                   of over 1,200 active members from across the Oriental region. Find us on Rue
                   Dakhla in Oujda, and follow us on Instagram and Facebook at{" "}
                   <span className="text-foreground font-medium">@americanspaceoujda</span>.
@@ -133,7 +133,7 @@ export function AboutPage() {
             {
               icon: Globe2,
               title: "Culture",
-              body: "Film screenings, art exhibitions, guest lectures, and celebrations of Moroccan–American cultural ties.",
+              body: "Film screenings, art exhibitions, guest lectures, and celebrations of Moroccan-American cultural ties.",
             },
             {
               icon: LibraryIcon,
@@ -216,7 +216,7 @@ export function RelationsPage() {
           eyebrow="Two nations, one story"
           title={
             <>
-              Moroccan–American relations,{" "}
+              Moroccan-American relations,{" "}
               <span style={{ fontStyle: "italic", fontWeight: 400 }}>since 1777.</span>
             </>
           }
@@ -292,7 +292,7 @@ export function ActivitiesPage() {
         <PageHeader
           eyebrow="Activities"
           title="Programs, workshops, and gatherings"
-          subtitle="A snapshot of everything that happens at the Space — from weekly clubs to one-off cultural celebrations."
+          subtitle="A snapshot of everything that happens at the Space - from weekly clubs to one-off cultural celebrations."
         />
       </Section>
 
@@ -300,7 +300,7 @@ export function ActivitiesPage() {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[
             { icon: GraduationCap, title: "English Courses", body: "Beginner to advanced. TOEFL, IELTS, conversation, academic writing.", cta: "Register", action: () => navigate({ name: "registration" }) },
-            { icon: Users, title: "Clubs", body: "Reading, debate, conversation, coding — find your people.", cta: "Browse clubs", action: () => navigate({ name: "clubs" }) },
+            { icon: Users, title: "Clubs", body: "Reading, debate, conversation, coding - find your people.", cta: "Browse clubs", action: () => navigate({ name: "clubs" }) },
             { icon: CalendarDays, title: "Events", body: "Lectures, film screenings, cultural celebrations all year.", cta: "See calendar", action: () => navigate({ name: "events" }) },
             { icon: Sparkles, title: "Workshops", body: "Hands-on sessions in coding, design, study skills, and more.", cta: "See calendar", action: () => navigate({ name: "events" }) },
             { icon: Award, title: "Certified Courses", body: "Semester-long courses with formal certification.", cta: "Learn more", action: () => navigate({ name: "certificates" }) },
@@ -406,7 +406,7 @@ export function ClubsPage() {
         <PageHeader
           eyebrow="Clubs"
           title="Find your community"
-          subtitle="Clubs are the heart of the Space — small, regular gatherings of people who share an interest. Newcomers always welcome."
+          subtitle="Clubs are the heart of the Space - small, regular gatherings of people who share an interest. Newcomers always welcome."
         />
       </Section>
 
@@ -471,7 +471,7 @@ export function BooksPage() {
         <PageHeader
           eyebrow="Books & Publications"
           title="Our collection"
-          subtitle="4,500+ English-language books, periodicals, and digital resources — freely available to all members."
+          subtitle="4,500+ English-language books, periodicals, and digital resources - freely available to all members."
         />
       </Section>
 
@@ -639,17 +639,17 @@ export function CertificatesPage() {
         <PageHeader
           eyebrow="Certificates"
           title="Certified courses"
-          subtitle="Semester-long courses with formal certification from American Space Oujda — recognized by Moroccan universities and employers."
+          subtitle="Semester-long courses with formal certification from American Space Oujda - recognized by Moroccan universities and employers."
         />
       </Section>
 
       <Section className="!pt-4">
         <div className="grid md:grid-cols-2 gap-4">
           {[
-            { title: "General English (A1–C1)", duration: "12 weeks · 36 hours", body: "Six-level general English program aligned with the CEFR. Includes speaking, listening, reading, and writing." },
+            { title: "General English (A1-C1)", duration: "12 weeks · 36 hours", body: "Six-level general English program aligned with the CEFR. Includes speaking, listening, reading, and writing." },
             { title: "TOEFL Preparation", duration: "8 weeks · 24 hours", body: "Comprehensive TOEFL prep covering all four sections, with weekly mock tests and individual feedback." },
             { title: "IELTS Preparation", duration: "8 weeks · 24 hours", body: "Targeted IELTS prep for both Academic and General Training, with exam-strategy workshops." },
-            { title: "Academic Writing", duration: "6 weeks · 18 hours", body: "Essay structure, citation, and academic style — for university students and researchers." },
+            { title: "Academic Writing", duration: "6 weeks · 18 hours", body: "Essay structure, citation, and academic style - for university students and researchers." },
             { title: "Public Speaking", duration: "6 weeks · 18 hours", body: "Speech crafting, body language, and impromptu speaking. Final showcase open to the public." },
             { title: "Digital Literacy", duration: "8 weeks · 24 hours", body: "Computer basics, office software, internet research, and an introduction to coding." },
           ].map((c) => (
@@ -720,7 +720,7 @@ export function RegulationsPage() {
             <h3 className="font-display text-2xl tracking-tight mb-5 text-accent">Library & borrowing</h3>
             <div className="space-y-4">
               {[
-                "To borrow books, you must hold a valid membership card. The cardholder must be present in person — sending someone else is only allowed in special circumstances.",
+                "To borrow books, you must hold a valid membership card. The cardholder must be present in person - sending someone else is only allowed in special circumstances.",
                 "The loan period is two weeks (14 days). Only one document may be borrowed at a time. The loan may be renewed at the librarian's discretion, depending on demand from other members.",
                 "Some rare or frequently-used books, and titles with limited copies, may be excluded from external borrowing at the librarian's discretion.",
                 "Borrowed documents must be returned within the specified period. The member should verify the condition of the document before borrowing. Late returns result in a warning; repeated violations lead to revocation of the membership card.",
@@ -834,7 +834,7 @@ export function RegistrationPage() {
         <PageHeader
           eyebrow="English Courses"
           title="Register for English courses"
-          subtitle="Free English courses for all levels — from absolute beginner to TOEFL preparation. New cohorts start every October, February, and July."
+          subtitle="Free English courses for all levels - from absolute beginner to TOEFL preparation. New cohorts start every October, February, and July."
         />
       </Section>
 
@@ -879,7 +879,7 @@ export function RegistrationPage() {
                     <SelectContent>
                       <SelectItem value="BEGINNER">Beginner (A1)</SelectItem>
                       <SelectItem value="ELEMENTARY">Elementary (A2)</SelectItem>
-                      <SelectItem value="INTERMEDIATE">Intermediate (B1–B2)</SelectItem>
+                      <SelectItem value="INTERMEDIATE">Intermediate (B1-B2)</SelectItem>
                       <SelectItem value="ADVANCED">Advanced (C1)</SelectItem>
                       <SelectItem value="CONVERSATION">Conversation only</SelectItem>
                       <SelectItem value="TOEFL">TOEFL Preparation</SelectItem>
@@ -895,11 +895,11 @@ export function RegistrationPage() {
                     <SelectValue placeholder="Select a slot" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="mon-wed-am">Mon & Wed · 10:00–12:00</SelectItem>
-                    <SelectItem value="mon-wed-pm">Mon & Wed · 18:00–20:00</SelectItem>
-                    <SelectItem value="tue-thu-am">Tue & Thu · 10:00–12:00</SelectItem>
-                    <SelectItem value="tue-thu-pm">Tue & Thu · 18:00–20:00</SelectItem>
-                    <SelectItem value="sat-am">Saturday · 10:00–13:00</SelectItem>
+                    <SelectItem value="mon-wed-am">Mon & Wed · 10:00-12:00</SelectItem>
+                    <SelectItem value="mon-wed-pm">Mon & Wed · 18:00-20:00</SelectItem>
+                    <SelectItem value="tue-thu-am">Tue & Thu · 10:00-12:00</SelectItem>
+                    <SelectItem value="tue-thu-pm">Tue & Thu · 18:00-20:00</SelectItem>
+                    <SelectItem value="sat-am">Saturday · 10:00-13:00</SelectItem>
                     <SelectItem value="flexible">Flexible</SelectItem>
                   </SelectContent>
                 </Select>
@@ -955,7 +955,7 @@ export function RegistrationPage() {
             <MatteCard>
               <h3 className="font-display text-lg tracking-tight mb-2">Questions?</h3>
               <p className="text-sm text-muted-foreground mb-3">
-                Email us any time — we usually reply within 2 business days.
+                Email us any time - we usually reply within 2 business days.
               </p>
               <a href={`mailto:${SITE.email}`}>
                 <Button variant="outline" size="sm" className="rounded-full bg-transparent">
@@ -1251,7 +1251,7 @@ export function CommentsPage() {
         <PageHeader
           eyebrow="Comments & Suggestions"
           title="Tell us what you think"
-          subtitle="Your feedback helps us improve. We read every message — and we act on the most common suggestions."
+          subtitle="Your feedback helps us improve. We read every message - and we act on the most common suggestions."
         />
       </Section>
 

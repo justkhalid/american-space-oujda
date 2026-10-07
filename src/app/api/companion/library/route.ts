@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb, row, requireRole, getCurrentUser } from "@/lib/sql";
 
-// GET — any authenticated user. Returns all library items.
+// GET - any authenticated user. Returns all library items.
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) {
@@ -26,7 +26,7 @@ export async function GET() {
   return NextResponse.json({ items });
 }
 
-// POST — admin + editor.
+// POST - admin + editor.
 export async function POST(req: Request) {
   const auth = await requireRole(["ADMIN", "EDITOR"]);
   if (!auth.ok) return auth.response;
@@ -55,7 +55,7 @@ export async function POST(req: Request) {
   return NextResponse.json({ item }, { status: 201 });
 }
 
-// DELETE — admin + editor.
+// DELETE - admin + editor.
 export async function DELETE(req: Request) {
   const auth = await requireRole(["ADMIN", "EDITOR"]);
   if (!auth.ok) return auth.response;

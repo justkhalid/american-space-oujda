@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb, row, getCurrentUser } from "@/lib/sql";
 
-// GET — any authenticated user. Returns:
+// GET - any authenticated user. Returns:
 //   - settings (flat map from CompanionSetting)
 //   - counts: levels, classes, team, library
 //   - current term + week info computed from s1Start + s1Weeks + s2Start

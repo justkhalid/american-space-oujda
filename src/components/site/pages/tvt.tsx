@@ -27,7 +27,7 @@ const ROLES = [
     icon: GraduationCap,
     summary:
       "Teach English or specialized skill-building courses to motivated adult learners. We welcome both volunteer and compensated teaching arrangements.",
-    commitment: "4–10 hours per week · minimum one semester",
+    commitment: "4-10 hours per week · minimum one semester",
     perks: [
       "Teaching certification from American Space Oujda",
       "Access to our full library and digital resources",
@@ -43,7 +43,7 @@ const ROLES = [
     faq: [
       {
         q: "Do I need prior teaching experience?",
-        a: "Not strictly — we provide onboarding and mentorship. Passion, organization, and a willingness to learn matter most.",
+        a: "Not strictly - we provide onboarding and mentorship. Passion, organization, and a willingness to learn matter most.",
       },
       {
         q: "Are teachers paid?",
@@ -61,8 +61,8 @@ const ROLES = [
     title: "Give your time. Change a life.",
     icon: HeartHandshake,
     summary:
-      "Are you passionate about building community, cultural exchange, and developing your leadership skills? American Space Oujda opens volunteer recruitment for the 2026/2027 cohort — usually in September and October. This is an opportunity for youth and students to gain valuable hands-on experience and contribute to the Space's programs and activities.",
-    commitment: "Registration opens September–October each year",
+      "Are you passionate about building community, cultural exchange, and developing your leadership skills? American Space Oujda opens volunteer recruitment for the 2026/2027 cohort - usually in September and October. This is an opportunity for youth and students to gain valuable hands-on experience and contribute to the Space's programs and activities.",
+    commitment: "Registration opens September-October each year",
     perks: [
       "Volunteer certificate and reference letter",
       "Free membership and library access",
@@ -89,11 +89,11 @@ const ROLES = [
       },
       {
         q: "Can I volunteer if I don't speak English?",
-        a: "Yes — many volunteer roles (hospitality, photography, logistics) don't require English. We'll find a fit.",
+        a: "Yes - many volunteer roles (hospitality, photography, logistics) don't require English. We'll find a fit.",
       },
       {
         q: "Can groups volunteer?",
-        a: "Absolutely. Student associations, companies, and civic groups are welcome — reach out via the application form.",
+        a: "Absolutely. Student associations, companies, and civic groups are welcome - reach out via the application form.",
       },
       {
         q: "Is there a minimum commitment?",
@@ -107,8 +107,8 @@ const ROLES = [
     title: "Learn by doing. Build your career.",
     icon: Briefcase,
     summary:
-      "Structured 3–6 month internships in program management, communications, library science, or event planning. Open to university students and recent graduates.",
-    commitment: "3–6 months · 15–30 hours per week",
+      "Structured 3-6 month internships in program management, communications, library science, or event planning. Open to university students and recent graduates.",
+    commitment: "3-6 months · 15-30 hours per week",
     perks: [
       "Formal internship certificate and detailed recommendation",
       "Hands-on experience in a Binational Center environment",
@@ -128,7 +128,7 @@ const ROLES = [
       },
       {
         q: "Can the internship count toward my degree?",
-        a: "Yes — we sign conventions with most Moroccan universities. Bring your paperwork to the interview.",
+        a: "Yes - we sign conventions with most Moroccan universities. Bring your paperwork to the interview.",
       },
       {
         q: "When do internships start?",
@@ -142,8 +142,8 @@ const ROLES = [
     title: "Bring your expertise. Lead a workshop.",
     icon: Presentation,
     summary:
-      "Deliver specialized short workshops (1–5 sessions) in your area of expertise — coding, design, public speaking, study skills, professional development, and more.",
-    commitment: "Per workshop · typically 2–10 hours total",
+      "Deliver specialized short workshops (1-5 sessions) in your area of expertise - coding, design, public speaking, study skills, professional development, and more.",
+    commitment: "Per workshop · typically 2-10 hours total",
     perks: [
       "Trainer honorarium for accepted workshops",
       "Visibility through our marketing channels",
@@ -167,7 +167,7 @@ const ROLES = [
       },
       {
         q: "Can I propose a workshop series?",
-        a: "Yes — multi-session series are welcome if they fit our calendar. Propose it in the application's motivation field.",
+        a: "Yes - multi-session series are welcome if they fit our calendar. Propose it in the application's motivation field.",
       },
     ],
   },
@@ -230,7 +230,7 @@ export function TVTHubPage() {
               Why join us
             </Pill>
             <h2 className="font-display text-3xl md:text-4xl leading-tight tracking-tight balance">
-              More than a line on your CV — a community.
+              More than a line on your CV - a community.
             </h2>
             <p className="mt-4 text-muted-foreground pretty leading-relaxed">
               Our team is made up of teachers, students, professionals, retirees, and aspiring
@@ -419,7 +419,7 @@ export function TVTRolePage({ role }: { role: "teacher" | "volunteer" | "intern"
             Sound like a fit?
           </h3>
           <p className="mt-3 text-muted-foreground max-w-lg mx-auto pretty">
-            Apply today — we review applications every week and respond within 7 days.
+            Apply today - we review applications every week and respond within 7 days.
           </p>
           <Button
             size="lg"
