@@ -61,8 +61,8 @@ const ROLES = [
     title: "Give your time. Change a life.",
     icon: HeartHandshake,
     summary:
-      "Help with events, library operations, hospitality, photography, social media, and more. Perfect for students, professionals, and retirees alike.",
-    commitment: "Flexible — 4+ hours per month",
+      "Are you passionate about building community, cultural exchange, and developing your leadership skills? American Space Oujda opens volunteer recruitment for the 2026/2027 cohort — usually in September and October. This is an opportunity for youth and students to gain valuable hands-on experience and contribute to the Space's programs and activities.",
+    commitment: "Registration opens September–October each year",
     perks: [
       "Volunteer certificate and reference letter",
       "Free membership and library access",
@@ -75,7 +75,18 @@ const ROLES = [
       "Respect for the Space's inclusive, non-partisan mission",
       "Curiosity and willingness to help wherever needed",
     ],
+    areas: [
+      { icon: "📚", label: "English teaching & language practice" },
+      { icon: "🎭", label: "Organizing cultural events & activities" },
+      { icon: "🤝", label: "Community outreach & engagement" },
+      { icon: "💡", label: "Leadership & professional skill development" },
+      { icon: "🌍", label: "Promoting cultural exchange" },
+    ],
     faq: [
+      {
+        q: "When does volunteer registration open?",
+        a: "Recruitment usually opens in September and October each year for the 2026/2027 cohort. Watch our social media for the announcement.",
+      },
       {
         q: "Can I volunteer if I don't speak English?",
         a: "Yes — many volunteer roles (hospitality, photography, logistics) don't require English. We'll find a fit.",

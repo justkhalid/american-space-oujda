@@ -1713,6 +1713,7 @@ function UsersTab() {
                 <SelectContent>
                   <SelectItem value="ADMIN">Admin</SelectItem>
                   <SelectItem value="TEACHER">Teacher</SelectItem>
+                  <SelectItem value="LIBRARY">Library</SelectItem>
                   <SelectItem value="EDITOR">Editor</SelectItem>
                 </SelectContent>
               </Select>
@@ -1796,8 +1797,9 @@ function UserEditor({ onClose, onSaved }: { onClose: () => void; onSaved: () => 
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="ADMIN">Admin</SelectItem>
-                <SelectItem value="TEACHER">Teacher</SelectItem>
-                <SelectItem value="EDITOR">Editor</SelectItem>
+                  <SelectItem value="TEACHER">Teacher</SelectItem>
+                  <SelectItem value="LIBRARY">Library</SelectItem>
+                  <SelectItem value="EDITOR">Editor</SelectItem>
               </SelectContent>
             </Select>
           </div>

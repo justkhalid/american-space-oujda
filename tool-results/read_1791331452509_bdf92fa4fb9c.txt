@@ -1,0 +1,1449 @@
+     1→"use client";
+     2→
+     3→import * as React from "react";
+     4→import { useSession } from "next-auth/react";
+     5→import { useRouter, type CompanionTab } from "@/store/router";
+     6→import { DashboardLayout, type DashTab } from "@/components/dashboard/layout";
+     7→import { Button } from "@/components/ui/button";
+     8→import { Input } from "@/components/ui/input";
+     9→import { Textarea } from "@/components/ui/textarea";
+    10→import { Label } from "@/components/ui/label";
+    11→import {
+    12→  Select,
+    13→  SelectContent,
+    14→  SelectItem,
+    15→  SelectTrigger,
+    16→  SelectValue,
+    17→} from "@/components/ui/select";
+    18→import {
+    19→  Dialog,
+    20→  DialogContent,
+    21→  DialogHeader,
+    22→  DialogTitle,
+    23→  DialogDescription,
+    24→  DialogFooter,
+    25→} from "@/components/ui/dialog";
+    26→import { MatteCard, Pill } from "@/components/site/primitives";
+    27→import {
+    28→  BookOpen,
+    29→  LayoutGrid,
+    30→  Layers,
+    31→  School,
+    32→  Users,
+    33→  Library as LibraryIcon,
+    34→  Plus,
+    35→  Trash2,
+    36→  Pencil,
+    37→  X,
+    38→  Save,
+    39→  Loader2,
+    40→  Mail,
+    41→  Phone,
+    42→  ExternalLink,
+    43→  CalendarClock,
+    44→  Copy,
+    45→  ChevronRight,
+    46→  ChevronDown,
+    47→  Sparkles,
+    48→} from "lucide-react";
+    49→import { toast } from "sonner";
+    50→import { format, addWeeks } from "date-fns";
+    51→
+    52→const TABS: DashTab[] = [
+    53→  { key: "overview", label: "Overview", icon: LayoutGrid },
+    54→  { key: "levels", label: "Levels", icon: Layers },
+    55→  { key: "classes", label: "Classes", icon: School },
+    56→  { key: "team", label: "Team", icon: Users },
+    57→  { key: "library", label: "Library", icon: LibraryIcon },
+    58→];
+    59→
+    60→// ============================================================
+    61→// Types
+    62→// ============================================================
+    63→interface OverviewData {
+    64→  settings: Record<string, string>;
+    65→  counts: { levels: number; classes: number; team: number; library: number };
+    66→  current: {
+    67→    term: "before" | "S1" | "break" | "S2" | "complete";
+    68→    weekNumber: number | null;
+    69→    label: string;
+    70→    s1Start?: string;
+    71→    s2Start?: string;
+    72→    s1Weeks?: number;
+    73→  };
+    74→}
+    75→interface Level {
+    76→  id: string;
+    77→  key: string;
+    78→  label: string;
+    79→  cefr: string;
+    80→  sortOrder: number;
+    81→  weekCount: number;
+    82→}
+    83→interface Week {
+    84→  id: string;
+    85→  levelId: string;
+    86→  weekNumber: number;
+    87→  theme: string;
+    88→  objectives: string;
+    89→  language: string;
+    90→  resources: string;
+    91→  urls: string[];
+    92→  activities: string;
+    93→  homework: string;
+    94→}
+    95→interface ClassItem {
+    96→  id: string;
+    97→  name: string;
+    98→  levelKey: string;
+    99→  teacherId: string;
+   100→  schedule: string;
+   101→  room: string;
+   102→  students: number;
+   103→  active: boolean;
+   104→}
+   105→interface TeamMember {
+   106→  id: string;
+   107→  name: string;
+   108→  role: string;
+   109→  phone: string;
+   110→  email: string;
+   111→  levels: string[];
+   112→  active: boolean;
+   113→}
+   114→interface LibraryItem {
+   115→  id: string;
+   116→  name: string;
+   117→  category: string;
+   118→  url: string;
+   119→  notes: string;
+   120→}
+   121→
+   122→export function CompanionDashboard({ initialTab = "overview" }: { initialTab?: CompanionTab }) {
+   123→  const { data: session, status } = useSession();
+   124→  const navigate = useRouter((s) => s.navigate);
+   125→  const [tab, setTab] = React.useState<CompanionTab>(initialTab);
+   126→
+   127→  React.useEffect(() => setTab(initialTab), [initialTab]);
+   128→
+   129→  // Auth guard — send unauthenticated users to login.
+   130→  React.useEffect(() => {
+   131→    if (status === "loading") return;
+   132→    if (!session) {
+   133→      navigate({ name: "login" });
+   134→    }
+   135→  }, [session, status, navigate]);
+   136→
+   137→  if (status === "loading" || !session) {
+   138→    return (
+   139→      <div className="flex items-center justify-center py-32">
+   140→        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+   141→      </div>
+   142→    );
+   143→  }
+   144→
+   145→  const onTabChange = (t: string) => navigate({ name: "companion-tab", tab: t as CompanionTab });
+   146→
+   147→  return (
+   148→    <DashboardLayout
+   149→      title="ELTASO Companion"
+   150→      pillLabel="Companion"
+   151→      pillIcon={BookOpen}
+   152→      tabs={TABS}
+   153→      activeTab={tab}
+   154→      onTabChange={onTabChange}
+   155→      baseRoute={{ name: "companion" }}
+   156→    >
+   157→      {tab === "overview" && <OverviewTab onNavigate={(t) => setTab(t)} />}
+   158→      {tab === "levels" && <LevelsTab />}
+   159→      {tab === "classes" && <ClassesTab />}
+   160→      {tab === "team" && <TeamTab />}
+   161→      {tab === "library" && <LibraryTab />}
+   162→    </DashboardLayout>
+   163→  );
+   164→}
+   165→
+   166→// ============================================================
+   167→// OVERVIEW
+   168→// ============================================================
+   169→function OverviewTab({ onNavigate }: { onNavigate: (t: CompanionTab) => void }) {
+   170→  const [data, setData] = React.useState<OverviewData | null>(null);
+   171→  const [loading, setLoading] = React.useState(true);
+   172→
+   173→  React.useEffect(() => {
+   174→    fetch("/api/companion/overview")
+   175→      .then((r) => (r.ok ? r.json() : null))
+   176→      .then((d) => setData(d))
+   177→      .finally(() => setLoading(false));
+   178→  }, []);
+   179→
+   180→  if (loading) {
+   181→    return (
+   182→      <div className="text-center py-16">
+   183→        <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
+   184→      </div>
+   185→    );
+   186→  }
+   187→  if (!data) {
+   188→    return (
+   189→      <MatteCard className="text-center py-12">
+   190→        <p className="text-muted-foreground">Could not load overview.</p>
+   191→      </MatteCard>
+   192→    );
+   193→  }
+   194→
+   195→  const coordinator = data.settings.coordinator || "Coordinator";
+   196→  const institute = data.settings.institute || "American Space Oujda";
+   197→  const year = data.settings.year || "";
+   198→
+   199→  const cards = [
+   200→    { label: "Levels", value: data.counts.levels, icon: Layers, color: "text-sky-600", tab: "levels" as const },
+   201→    { label: "Active classes", value: data.counts.classes, icon: School, color: "text-emerald-600", tab: "classes" as const },
+   202→    { label: "Team members", value: data.counts.team, icon: Users, color: "text-amber-600", tab: "team" as const },
+   203→    { label: "Library items", value: data.counts.library, icon: LibraryIcon, color: "text-violet-600", tab: "library" as const },
+   204→  ];
+   205→
+   206→  return (
+   207→    <div className="space-y-6">
+   208→      {/* Greeting + current week chip */}
+   209→      <MatteCard>
+   210→        <div className="flex flex-wrap items-start justify-between gap-4">
+   211→          <div>
+   212→            <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground mb-1.5">
+   213→              <Sparkles className="w-3 h-3 text-accent" />
+   214→              {institute} · {year}
+   215→            </div>
+   216→            <h2 className="font-display text-2xl tracking-tight">Salam, {coordinator}!</h2>
+   217→            <p className="text-sm text-muted-foreground mt-1 pretty">
+   218→              Here&apos;s the curriculum snapshot for the ELTASO program at American Space Oujda.
+   219→              Browse levels, manage classes, and share weekly plans with your teaching team.
+   220→            </p>
+   221→          </div>
+   222→          <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-secondary/70">
+   223→            <CalendarClock className="w-4 h-4 text-accent" />
+   224→            <div className="leading-tight">
+   225→              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Now</div>
+   226→              <div className="text-sm font-semibold">{data.current.label}</div>
+   227→            </div>
+   228→          </div>
+   229→        </div>
+   230→      </MatteCard>
+   231→
+   232→      {/* Stat cards */}
+   233→      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+   234→        {cards.map((c) => (
+   235→          <button
+   236→            key={c.label}
+   237→            onClick={() => onNavigate(c.tab)}
+   238→            className="tap text-left"
+   239→          >
+   240→            <MatteCard className="p-4 h-full hover:bg-secondary/40 transition-colors">
+   241→              <c.icon className={`w-5 h-5 mb-3 ${c.color}`} />
+   242→              <div className="font-display text-3xl tracking-tight tnum">{c.value}</div>
+   243→              <div className="text-xs uppercase tracking-wider text-muted-foreground mt-1">
+   244→                {c.label}
+   245→              </div>
+   246→            </MatteCard>
+   247→          </button>
+   248→        ))}
+   249→      </div>
+   250→
+   251→      {/* Quick links */}
+   252→      <MatteCard>
+   253→        <h3 className="font-display text-lg tracking-tight mb-3">Quick links</h3>
+   254→        <div className="grid sm:grid-cols-2 gap-2">
+   255→          {([
+   256→            { tab: "levels", label: "Browse the 30-week curriculum", icon: Layers },
+   257→            { tab: "classes", label: "Manage classes & assignments", icon: School },
+   258→            { tab: "team", label: "View teaching team & contacts", icon: Users },
+   259→            { tab: "library", label: "Resource library", icon: LibraryIcon },
+   260→          ] as const).map((q) => (
+   261→            <button
+   262→              key={q.tab}
+   263→              onClick={() => onNavigate(q.tab)}
+   264→              className="tap flex items-center gap-3 p-3 rounded-xl hover:bg-secondary text-left"
+   265→            >
+   266→              <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center shrink-0">
+   267→                <q.icon className="w-4 h-4" />
+   268→              </div>
+   269→              <div className="flex-1 min-w-0 text-sm font-medium truncate">{q.label}</div>
+   270→              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+   271→            </button>
+   272→          ))}
+   273→        </div>
+   274→      </MatteCard>
+   275→    </div>
+   276→  );
+   277→}
+   278→
+   279→// ============================================================
+   280→// LEVELS + WEEKS
+   281→// ============================================================
+   282→function LevelsTab() {
+   283→  const [levels, setLevels] = React.useState<Level[]>([]);
+   284→  const [loading, setLoading] = React.useState(true);
+   285→  const [expandedId, setExpandedId] = React.useState<string | null>(null);
+   286→
+   287→  const load = React.useCallback(() => {
+   288→    setLoading(true);
+   289→    fetch("/api/companion/levels")
+   290→      .then((r) => r.json())
+   291→      .then((d) => setLevels(d.levels || []))
+   292→      .finally(() => setLoading(false));
+   293→  }, []);
+   294→  React.useEffect(() => load(), [load]);
+   295→
+   296→  if (loading) {
+   297→    return (
+   298→      <div className="text-center py-16">
+   299→        <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
+   300→      </div>
+   301→    );
+   302→  }
+   303→
+   304→  return (
+   305→    <div className="space-y-4">
+   306→      <div>
+   307→        <h2 className="font-display text-xl tracking-tight">Levels</h2>
+   308→        <p className="text-sm text-muted-foreground">
+   309→          {levels.length} levels · click a level to expand its weekly curriculum.
+   310→        </p>
+   311→      </div>
+   312→
+   313→      {levels.length === 0 ? (
+   314→        <MatteCard className="text-center py-12">
+   315→          <Layers className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+   316→          <p className="text-muted-foreground">No levels configured yet.</p>
+   317→        </MatteCard>
+   318→      ) : (
+   319→        <div className="space-y-3">
+   320→          {levels.map((lvl) => (
+   321→            <LevelRow
+   322→              key={lvl.id}
+   323→              level={lvl}
+   324→              expanded={expandedId === lvl.id}
+   325→              onToggle={() => setExpandedId((id) => (id === lvl.id ? null : lvl.id))}
+   326→              onChanged={load}
+   327→            />
+   328→          ))}
+   329→        </div>
+   330→      )}
+   331→    </div>
+   332→  );
+   333→}
+   334→
+   335→function LevelRow({
+   336→  level,
+   337→  expanded,
+   338→  onToggle,
+   339→  onChanged,
+   340→}: {
+   341→  level: Level;
+   342→  expanded: boolean;
+   343→  onToggle: () => void;
+   344→  onChanged: () => void;
+   345→}) {
+   346→  return (
+   347→    <MatteCard className="p-0 overflow-hidden">
+   348→      <button
+   349→        onClick={onToggle}
+   350→        className="tap w-full text-left p-5 flex items-center gap-4 hover:bg-secondary/40"
+   351→      >
+   352→        <div className="w-11 h-11 rounded-xl bg-primary/8 flex items-center justify-center text-primary shrink-0">
+   353→          <Layers className="w-5 h-5" />
+   354→        </div>
+   355→        <div className="flex-1 min-w-0">
+   356→          <div className="flex items-center gap-2 flex-wrap">
+   357→            <span className="font-display text-lg">{level.label}</span>
+   358→            <Pill variant="muted">{level.cefr}</Pill>
+   359→            <Pill variant="outline">{level.weekCount} weeks</Pill>
+   360→          </div>
+   361→          <div className="text-xs text-muted-foreground mt-0.5">
+   362→            Key: <code className="text-foreground">{level.key}</code>
+   363→          </div>
+   364→        </div>
+   365→        {expanded ? (
+   366→          <ChevronDown className="w-4 h-4 text-muted-foreground" />
+   367→        ) : (
+   368→          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+   369→        )}
+   370→      </button>
+   371→      {expanded && <WeeksList level={level} onChanged={onChanged} />}
+   372→    </MatteCard>
+   373→  );
+   374→}
+   375→
+   376→function WeeksList({ level, onChanged }: { level: Level; onChanged: () => void }) {
+   377→  const [weeks, setWeeks] = React.useState<Week[]>([]);
+   378→  const [settings, setSettings] = React.useState<Record<string, string>>({});
+   379→  const [loading, setLoading] = React.useState(true);
+   380→  const [editing, setEditing] = React.useState<Week | null>(null);
+   381→  const [creating, setCreating] = React.useState(false);
+   382→
+   383→  const load = React.useCallback(() => {
+   384→    setLoading(true);
+   385→    Promise.all([
+   386→      fetch(`/api/companion/weeks?levelId=${level.id}`).then((r) => r.json()),
+   387→      fetch("/api/companion/settings").then((r) => r.json()),
+   388→    ])
+   389→      .then(([w, s]) => {
+   390→        setWeeks(w.weeks || []);
+   391→        setSettings(s.settings || {});
+   392→      })
+   393→      .finally(() => setLoading(false));
+   394→  }, [level.id]);
+   395→  React.useEffect(() => load(), [load]);
+   396→
+   397→  const copyWhatsApp = async (w: Week) => {
+   398→    const tpl = settings.tpl || "";
+   399→    if (!tpl) {
+   400→      toast.error("No WhatsApp template set in settings.");
+   401→      return;
+   402→    }
+   403→    const s1Start = settings.s1Start ? new Date(settings.s1Start) : null;
+   404→    const weekDate =
+   405→      s1Start && w.weekNumber
+   406→        ? format(addWeeks(s1Start, w.weekNumber - 1), "MMM d, yyyy")
+   407→        : "—";
+   408→    const links = w.urls.length > 0 ? w.urls.map((u) => `• ${u}`).join("\n") : "—";
+   409→    const msg = tpl
+   410→      .replace(/\{teacher\}/g, "")
+   411→      .replace(/\{level\}/g, level.label)
+   412→      .replace(/\{week\}/g, String(w.weekNumber))
+   413→      .replace(/\{date\}/g, weekDate)
+   414→      .replace(/\{theme\}/g, w.theme || "—")
+   415→      .replace(/\{obj\}/g, w.objectives || "—")
+   416→      .replace(/\{lang\}/g, w.language || "—")
+   417→      .replace(/\{act\}/g, w.activities || "—")
+   418→      .replace(/\{hw\}/g, w.homework || "—")
+   419→      .replace(/\{links\}/g, links)
+   420→      .replace(/\{coordinator\}/g, settings.coordinator || "");
+   421→    try {
+   422→      await navigator.clipboard.writeText(msg);
+   423→      toast.success("WhatsApp plan copied to clipboard.");
+   424→    } catch {
+   425→      toast.error("Could not copy — clipboard blocked by browser.");
+   426→    }
+   427→  };
+   428→
+   429→  if (loading) {
+   430→    return (
+   431→      <div className="px-5 pb-5 pt-1 border-t border-border text-center py-10">
+   432→        <Loader2 className="w-5 h-5 animate-spin mx-auto text-muted-foreground" />
+   433→      </div>
+   434→    );
+   435→  }
+   436→
+   437→  if (editing || creating) {
+   438→    return (
+   439→      <div className="px-5 pb-5 pt-4 border-t border-border">
+   440→        <WeekEditor
+   441→          week={creating ? null : editing}
+   442→          levelId={level.id}
+   443→          existingNumbers={weeks.map((w) => w.weekNumber)}
+   444→          onClose={() => {
+   445→            setEditing(null);
+   446→            setCreating(false);
+   447→          }}
+   448→          onSaved={() => {
+   449→            setEditing(null);
+   450→            setCreating(false);
+   451→            load();
+   452→            onChanged();
+   453→          }}
+   454→        />
+   455→      </div>
+   456→    );
+   457→  }
+   458→
+   459→  return (
+   460→    <div className="px-5 pb-5 pt-4 border-t border-border space-y-3">
+   461→      <div className="flex items-center justify-between gap-2">
+   462→        <h3 className="font-display text-base tracking-tight">
+   463→          {weeks.length} week{weeks.length !== 1 ? "s" : ""}
+   464→        </h3>
+   465→        <Button
+   466→          size="sm"
+   467→          variant="outline"
+   468→          className="rounded-full bg-transparent"
+   469→          onClick={() => setCreating(true)}
+   470→        >
+   471→          <Plus className="w-3.5 h-3.5" /> New week
+   472→        </Button>
+   473→      </div>
+   474→
+   475→      {weeks.length === 0 ? (
+   476→        <p className="text-sm text-muted-foreground py-6 text-center">
+   477→          No weeks yet. Add the first one.
+   478→        </p>
+   479→      ) : (
+   480→        <div className="grid gap-3">
+   481→          {weeks.map((w) => (
+   482→            <WeekCard
+   483→              key={w.id}
+   484→              week={w}
+   485→              onEdit={() => setEditing(w)}
+   486→              onCopy={() => copyWhatsApp(w)}
+   487→              onDelete={async () => {
+   488→                await fetch(`/api/companion/weeks?id=${w.id}`, { method: "DELETE" });
+   489→                toast.success("Week deleted.");
+   490→                load();
+   491→                onChanged();
+   492→              }}
+   493→            />
+   494→          ))}
+   495→        </div>
+   496→      )}
+   497→    </div>
+   498→  );
+   499→}
+   500→
+   501→function WeekCard({
+   502→  week,
+   503→  onEdit,
+   504→  onCopy,
+   505→  onDelete,
+   506→}: {
+   507→  week: Week;
+   508→  onEdit: () => void;
+   509→  onCopy: () => void;
+   510→  onDelete: () => void;
+   511→}) {
+   512→  return (
+   513→    <div className="rounded-xl border border-border/70 bg-card p-4">
+   514→      <div className="flex items-start justify-between gap-3 mb-3">
+   515→        <div className="flex items-center gap-3 min-w-0">
+   516→          <div className="w-10 h-10 rounded-lg bg-accent/12 text-accent flex items-center justify-center font-display text-base shrink-0">
+   517→            {week.weekNumber}
+   518→          </div>
+   519→          <div className="min-w-0">
+   520→            <div className="font-medium truncate">{week.theme || `Week ${week.weekNumber}`}</div>
+   521→            <div className="text-xs text-muted-foreground">Week {week.weekNumber}</div>
+   522→          </div>
+   523→        </div>
+   524→        <div className="flex items-center gap-1 shrink-0">
+   525→          <button
+   526→            onClick={onCopy}
+   527→            className="tap w-8 h-8 rounded-lg hover:bg-secondary flex items-center justify-center"
+   528→            title="Copy WhatsApp plan"
+   529→          >
+   530→            <Copy className="w-3.5 h-3.5" />
+   531→          </button>
+   532→          <button
+   533→            onClick={onEdit}
+   534→            className="tap w-8 h-8 rounded-lg hover:bg-secondary flex items-center justify-center"
+   535→            title="Edit week"
+   536→          >
+   537→            <Pencil className="w-3.5 h-3.5" />
+   538→          </button>
+   539→          <button
+   540→            onClick={onDelete}
+   541→            className="tap w-8 h-8 rounded-lg hover:bg-rose-500/10 text-rose-600 flex items-center justify-center"
+   542→            title="Delete week"
+   543→          >
+   544→            <Trash2 className="w-3.5 h-3.5" />
+   545→          </button>
+   546→        </div>
+   547→      </div>
+   548→      <div className="grid sm:grid-cols-2 gap-3 text-xs">
+   549→        <Field label="Objectives" value={week.objectives} />
+   550→        <Field label="Key language" value={week.language} />
+   551→        <Field label="Resources" value={week.resources} />
+   552→        <Field label="Activities" value={week.activities} />
+   553→        <Field label="Homework" value={week.homework} />
+   554→        {week.urls.length > 0 && (
+   555→          <div>
+   556→            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Links</div>
+   557→            <div className="flex flex-col gap-1">
+   558→              {week.urls.map((u, i) => (
+   559→                <a
+   560→                  key={i}
+   561→                  href={u}
+   562→                  target="_blank"
+   563→                  rel="noopener noreferrer"
+   564→                  className="text-primary hover:underline truncate flex items-center gap-1"
+   565→                >
+   566→                  <ExternalLink className="w-3 h-3 shrink-0" />
+   567→                  <span className="truncate">{u}</span>
+   568→                </a>
+   569→              ))}
+   570→            </div>
+   571→          </div>
+   572→        )}
+   573→      </div>
+   574→    </div>
+   575→  );
+   576→}
+   577→
+   578→function Field({ label, value }: { label: string; value: string }) {
+   579→  if (!value) return null;
+   580→  return (
+   581→    <div>
+   582→      <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{label}</div>
+   583→      <div className="text-foreground/90 leading-relaxed pretty">{value}</div>
+   584→    </div>
+   585→  );
+   586→}
+   587→
+   588→function WeekEditor({
+   589→  week,
+   590→  levelId,
+   591→  existingNumbers,
+   592→  onClose,
+   593→  onSaved,
+   594→}: {
+   595→  week: Week | null;
+   596→  levelId: string;
+   597→  existingNumbers: number[];
+   598→  onClose: () => void;
+   599→  onSaved: () => void;
+   600→}) {
+   601→  const [form, setForm] = React.useState({
+   602→    weekNumber: week?.weekNumber ?? existingNumbers.length + 1,
+   603→    theme: week?.theme ?? "",
+   604→    objectives: week?.objectives ?? "",
+   605→    language: week?.language ?? "",
+   606→    resources: week?.resources ?? "",
+   607→    urlsText: week?.urls.join("\n") ?? "",
+   608→    activities: week?.activities ?? "",
+   609→    homework: week?.homework ?? "",
+   610→  });
+   611→  const [saving, setSaving] = React.useState(false);
+   612→  const set = (k: keyof typeof form, v: string | number) =>
+   613→    setForm((f) => ({ ...f, [k]: v }));
+   614→
+   615→  const save = async () => {
+   616→    setSaving(true);
+   617→    try {
+   618→      const urls = form.urlsText
+   619→        .split("\n")
+   620→        .map((u) => u.trim())
+   621→        .filter(Boolean);
+   622→      const body = {
+   623→        ...(week ? { id: week.id } : { levelId }),
+   624→        weekNumber: Number(form.weekNumber),
+   625→        theme: form.theme,
+   626→        objectives: form.objectives,
+   627→        language: form.language,
+   628→        resources: form.resources,
+   629→        urls,
+   630→        activities: form.activities,
+   631→        homework: form.homework,
+   632→      };
+   633→      const res = await fetch("/api/companion/weeks", {
+   634→        method: week ? "PATCH" : "POST",
+   635→        headers: { "Content-Type": "application/json" },
+   636→        body: JSON.stringify(body),
+   637→      });
+   638→      if (!res.ok) {
+   639→        const e = await res.json().catch(() => ({}));
+   640→        throw new Error(e.error || "Save failed");
+   641→      }
+   642→      toast.success(week ? "Week updated." : "Week created.");
+   643→      onSaved();
+   644→    } catch (e) {
+   645→      toast.error(e instanceof Error ? e.message : "Save failed.");
+   646→    } finally {
+   647→      setSaving(false);
+   648→    }
+   649→  };
+   650→
+   651→  return (
+   652→    <div>
+   653→      <div className="flex items-center justify-between mb-4">
+   654→        <h3 className="font-display text-lg tracking-tight">
+   655→          {week ? `Edit week ${week.weekNumber}` : "New week"}
+   656→        </h3>
+   657→        <button
+   658→          onClick={onClose}
+   659→          className="tap w-8 h-8 rounded-lg hover:bg-secondary flex items-center justify-center"
+   660→        >
+   661→          <X className="w-4 h-4" />
+   662→        </button>
+   663→      </div>
+   664→      <div className="space-y-3">
+   665→        <div className="grid sm:grid-cols-[120px_1fr] gap-3">
+   666→          <div>
+   667→            <Label className="text-sm font-medium mb-1.5 block">Week #</Label>
+   668→            <Input
+   669→              type="number"
+   670→              min={1}
+   671→              value={form.weekNumber}
+   672→              onChange={(e) => set("weekNumber", e.target.value)}
+   673→            />
+   674→          </div>
+   675→          <div>
+   676→            <Label className="text-sm font-medium mb-1.5 block">Theme</Label>
+   677→            <Input value={form.theme} onChange={(e) => set("theme", e.target.value)} placeholder="Week theme" />
+   678→          </div>
+   679→        </div>
+   680→        <div>
+   681→          <Label className="text-sm font-medium mb-1.5 block">Objectives</Label>
+   682→          <Textarea
+   683→            rows={2}
+   684→            value={form.objectives}
+   685→            onChange={(e) => set("objectives", e.target.value)}
+   686→            placeholder="By the end of the week, students can…"
+   687→          />
+   688→        </div>
+   689→        <div>
+   690→          <Label className="text-sm font-medium mb-1.5 block">Key language</Label>
+   691→          <Textarea
+   692→            rows={2}
+   693→            value={form.language}
+   694→            onChange={(e) => set("language", e.target.value)}
+   695→            placeholder="Vocabulary, structures, phrases"
+   696→          />
+   697→        </div>
+   698→        <div>
+   699→          <Label className="text-sm font-medium mb-1.5 block">Resources</Label>
+   700→          <Textarea
+   701→            rows={2}
+   702→            value={form.resources}
+   703→            onChange={(e) => set("resources", e.target.value)}
+   704→            placeholder="Flashcards, songs, books…"
+   705→          />
+   706→        </div>
+   707→        <div>
+   708→          <Label className="text-sm font-medium mb-1.5 block">Links (one per line)</Label>
+   709→          <Textarea
+   710→            rows={3}
+   711→            value={form.urlsText}
+   712→            onChange={(e) => set("urlsText", e.target.value)}
+   713→            placeholder="https://drive.google.com/…"
+   714→          />
+   715→        </div>
+   716→        <div>
+   717→          <Label className="text-sm font-medium mb-1.5 block">Activities</Label>
+   718→          <Textarea
+   719→            rows={2}
+   720→            value={form.activities}
+   721→            onChange={(e) => set("activities", e.target.value)}
+   722→            placeholder="In-class activities"
+   723→          />
+   724→        </div>
+   725→        <div>
+   726→          <Label className="text-sm font-medium mb-1.5 block">Homework</Label>
+   727→          <Textarea
+   728→            rows={2}
+   729→            value={form.homework}
+   730→            onChange={(e) => set("homework", e.target.value)}
+   731→            placeholder="Take-home task"
+   732→          />
+   733→        </div>
+   734→        <div className="flex justify-end gap-2 pt-3 border-t border-border">
+   735→          <Button variant="outline" onClick={onClose} className="rounded-full bg-transparent">
+   736→            Cancel
+   737→          </Button>
+   738→          <Button onClick={save} disabled={saving || !form.weekNumber} className="rounded-full">
+   739→            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+   740→            {week ? "Save changes" : "Create week"}
+   741→          </Button>
+   742→        </div>
+   743→      </div>
+   744→    </div>
+   745→  );
+   746→}
+   747→
+   748→// ============================================================
+   749→// CLASSES
+   750→// ============================================================
+   751→function ClassesTab() {
+   752→  const [classes, setClasses] = React.useState<ClassItem[]>([]);
+   753→  const [levels, setLevels] = React.useState<Level[]>([]);
+   754→  const [team, setTeam] = React.useState<TeamMember[]>([]);
+   755→  const [loading, setLoading] = React.useState(true);
+   756→  const [editing, setEditing] = React.useState<ClassItem | null>(null);
+   757→  const [creating, setCreating] = React.useState(false);
+   758→  const { data: session } = useSession();
+   759→  const userRole = (session?.user as { role?: string } | undefined)?.role;
+   760→
+   761→  const load = React.useCallback(() => {
+   762→    setLoading(true);
+   763→    Promise.all([
+   764→      fetch("/api/companion/classes").then((r) => r.json()),
+   765→      fetch("/api/companion/levels").then((r) => r.json()),
+   766→      fetch("/api/companion/team").then((r) => r.json()),
+   767→    ])
+   768→      .then(([c, l, t]) => {
+   769→        setClasses(c.classes || []);
+   770→        setLevels(l.levels || []);
+   771→        setTeam(t.team || []);
+   772→      })
+   773→      .finally(() => setLoading(false));
+   774→  }, []);
+   775→  React.useEffect(() => load(), [load]);
+   776→
+   777→  const del = async (id: string) => {
+   778→    setClasses((a) => a.filter((x) => x.id !== id));
+   779→    await fetch(`/api/companion/classes?id=${id}`, { method: "DELETE" });
+   780→    toast.success("Class deleted.");
+   781→  };
+   782→
+   783→  if (creating || editing) {
+   784→    return (
+   785→      <ClassEditor
+   786→        cls={editing}
+   787→        levels={levels}
+   788→        team={team}
+   789→        onClose={() => {
+   790→          setCreating(false);
+   791→          setEditing(null);
+   792→        }}
+   793→        onSaved={() => {
+   794→          setCreating(false);
+   795→          setEditing(null);
+   796→          load();
+   797→        }}
+   798→      />
+   799→    );
+   800→  }
+   801→
+   802→  if (loading) {
+   803→    return (
+   804→      <div className="text-center py-16">
+   805→        <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
+   806→      </div>
+   807→    );
+   808→  }
+   809→
+   810→  return (
+   811→    <div className="space-y-4">
+   812→      <div className="flex items-center justify-between gap-3">
+   813→        <div>
+   814→          <h2 className="font-display text-xl tracking-tight">Classes</h2>
+   815→          <p className="text-sm text-muted-foreground">
+   816→            {classes.length} class{classes.length !== 1 ? "es" : ""}
+   817→            {userRole === "TEACHER" ? " · showing your classes only" : ""}
+   818→          </p>
+   819→        </div>
+   820→        {userRole === "ADMIN" && (
+   821→          <Button onClick={() => setCreating(true)} size="sm" className="rounded-full">
+   822→            <Plus className="w-4 h-4" /> New class
+   823→          </Button>
+   824→        )}
+   825→      </div>
+   826→
+   827→      {classes.length === 0 ? (
+   828→        <MatteCard className="text-center py-12">
+   829→          <School className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+   830→          <p className="text-muted-foreground">No classes yet.</p>
+   831→        </MatteCard>
+   832→      ) : (
+   833→        <div className="grid sm:grid-cols-2 gap-3">
+   834→          {classes.map((c) => (
+   835→            <MatteCard key={c.id} className="p-4">
+   836→              <div className="flex items-start justify-between gap-3 mb-2">
+   837→                <div className="min-w-0">
+   838→                  <div className="flex items-center gap-2 flex-wrap">
+   839→                    <span className="font-medium truncate">{c.name || "Untitled class"}</span>
+   840→                    <Pill variant="muted">{c.levelKey}</Pill>
+   841→                    {!c.active && <Pill variant="outline">Inactive</Pill>}
+   842→                  </div>
+   843→                  <div className="text-xs text-muted-foreground mt-0.5">Teacher: {c.teacherId || "—"}</div>
+   844→                </div>
+   845→                {userRole === "ADMIN" && (
+   846→                  <div className="flex items-center gap-1 shrink-0">
+   847→                    <button
+   848→                      onClick={() => setEditing(c)}
+   849→                      className="tap w-8 h-8 rounded-lg hover:bg-secondary flex items-center justify-center"
+   850→                    >
+   851→                      <Pencil className="w-3.5 h-3.5" />
+   852→                    </button>
+   853→                    <button
+   854→                      onClick={() => del(c.id)}
+   855→                      className="tap w-8 h-8 rounded-lg hover:bg-rose-500/10 text-rose-600 flex items-center justify-center"
+   856→                    >
+   857→                      <Trash2 className="w-3.5 h-3.5" />
+   858→                    </button>
+   859→                  </div>
+   860→                )}
+   861→              </div>
+   862→              <div className="grid grid-cols-2 gap-2 text-xs">
+   863→                <div>
+   864→                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Schedule</div>
+   865→                  <div className="text-foreground/90">{c.schedule || "—"}</div>
+   866→                </div>
+   867→                <div>
+   868→                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Room</div>
+   869→                  <div className="text-foreground/90">{c.room || "—"}</div>
+   870→                </div>
+   871→                <div>
+   872→                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Students</div>
+   873→                  <div className="text-foreground/90 tnum">{c.students}</div>
+   874→                </div>
+   875→              </div>
+   876→            </MatteCard>
+   877→          ))}
+   878→        </div>
+   879→      )}
+   880→    </div>
+   881→  );
+   882→}
+   883→
+   884→function ClassEditor({
+   885→  cls,
+   886→  levels,
+   887→  team,
+   888→  onClose,
+   889→  onSaved,
+   890→}: {
+   891→  cls: ClassItem | null;
+   892→  levels: Level[];
+   893→  team: TeamMember[];
+   894→  onClose: () => void;
+   895→  onSaved: () => void;
+   896→}) {
+   897→  const [form, setForm] = React.useState({
+   898→    name: cls?.name ?? "",
+   899→    levelKey: cls?.levelKey ?? (levels[0]?.key ?? ""),
+   900→    teacherId: cls?.teacherId ?? "",
+   901→    schedule: cls?.schedule ?? "",
+   902→    room: cls?.room ?? "",
+   903→    students: cls?.students ?? 0,
+   904→    active: cls?.active ?? true,
+   905→  });
+   906→  const [saving, setSaving] = React.useState(false);
+   907→  const set = (k: keyof typeof form, v: string | number | boolean) =>
+   908→    setForm((f) => ({ ...f, [k]: v }));
+   909→
+   910→  const save = async () => {
+   911→    setSaving(true);
+   912→    try {
+   913→      const body = {
+   914→        ...(cls ? { id: cls.id } : {}),
+   915→        ...form,
+   916→      };
+   917→      const res = await fetch("/api/companion/classes", {
+   918→        method: cls ? "PATCH" : "POST",
+   919→        headers: { "Content-Type": "application/json" },
+   920→        body: JSON.stringify(body),
+   921→      });
+   922→      if (!res.ok) throw new Error("Save failed");
+   923→      toast.success(cls ? "Class updated." : "Class created.");
+   924→      onSaved();
+   925→    } catch {
+   926→      toast.error("Save failed.");
+   927→    } finally {
+   928→      setSaving(false);
+   929→    }
+   930→  };
+   931→
+   932→  return (
+   933→    <MatteCard>
+   934→      <div className="flex items-center justify-between mb-5">
+   935→        <h2 className="font-display text-xl tracking-tight">{cls ? "Edit class" : "New class"}</h2>
+   936→        <button onClick={onClose} className="tap w-8 h-8 rounded-lg hover:bg-secondary flex items-center justify-center">
+   937→          <X className="w-4 h-4" />
+   938→        </button>
+   939→      </div>
+   940→      <div className="space-y-4">
+   941→        <div className="grid sm:grid-cols-2 gap-4">
+   942→          <div>
+   943→            <Label className="text-sm font-medium mb-1.5 block">Name *</Label>
+   944→            <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Class name" />
+   945→          </div>
+   946→          <div>
+   947→            <Label className="text-sm font-medium mb-1.5 block">Level *</Label>
+   948→            <Select value={form.levelKey} onValueChange={(v) => set("levelKey", v)}>
+   949→              <SelectTrigger><SelectValue /></SelectTrigger>
+   950→              <SelectContent>
+   951→                {levels.map((l) => (
+   952→                  <SelectItem key={l.id} value={l.key}>{l.label} ({l.cefr})</SelectItem>
+   953→                ))}
+   954→              </SelectContent>
+   955→            </Select>
+   956→          </div>
+   957→          <div>
+   958→            <Label className="text-sm font-medium mb-1.5 block">Teacher</Label>
+   959→            <Select value={form.teacherId} onValueChange={(v) => set("teacherId", v)}>
+   960→              <SelectTrigger><SelectValue placeholder="Select teacher" /></SelectTrigger>
+   961→              <SelectContent>
+   962→                <SelectItem value="">— Unassigned —</SelectItem>
+   963→                {team.map((t) => (
+   964→                  <SelectItem key={t.id} value={t.name}>{t.name} · {t.role}</SelectItem>
+   965→                ))}
+   966→              </SelectContent>
+   967→            </Select>
+   968→          </div>
+   969→          <div>
+   970→            <Label className="text-sm font-medium mb-1.5 block">Room</Label>
+   971→            <Input value={form.room} onChange={(e) => set("room", e.target.value)} placeholder="Room 1" />
+   972→          </div>
+   973→          <div>
+   974→            <Label className="text-sm font-medium mb-1.5 block">Schedule</Label>
+   975→            <Input value={form.schedule} onChange={(e) => set("schedule", e.target.value)} placeholder="Mon & Wed · 18:00–20:00" />
+   976→          </div>
+   977→          <div>
+   978→            <Label className="text-sm font-medium mb-1.5 block">Students</Label>
+   979→            <Input
+   980→              type="number"
+   981→              min={0}
+   982→              value={form.students}
+   983→              onChange={(e) => set("students", Number(e.target.value))}
+   984→            />
+   985→          </div>
+   986→        </div>
+   987→        <label className="flex items-center gap-2 text-sm cursor-pointer">
+   988→          <input
+   989→            type="checkbox"
+   990→            checked={form.active}
+   991→            onChange={(e) => set("active", e.target.checked)}
+   992→            className="rounded"
+   993→          />
+   994→          Active class
+   995→        </label>
+   996→        <div className="flex justify-end gap-2 pt-3 border-t border-border">
+   997→          <Button variant="outline" onClick={onClose} className="rounded-full bg-transparent">
+   998→            Cancel
+   999→          </Button>
+  1000→          <Button onClick={save} disabled={saving || !form.name || !form.levelKey} className="rounded-full">
+  1001→            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+  1002→            {cls ? "Save changes" : "Create class"}
+  1003→          </Button>
+  1004→        </div>
+  1005→      </div>
+  1006→    </MatteCard>
+  1007→  );
+  1008→}
+  1009→
+  1010→// ============================================================
+  1011→// TEAM
+  1012→// ============================================================
+  1013→function TeamTab() {
+  1014→  const [team, setTeam] = React.useState<TeamMember[]>([]);
+  1015→  const [loading, setLoading] = React.useState(true);
+  1016→  const [editing, setEditing] = React.useState<TeamMember | null>(null);
+  1017→  const [creating, setCreating] = React.useState(false);
+  1018→  const { data: session } = useSession();
+  1019→  const userRole = (session?.user as { role?: string } | undefined)?.role;
+  1020→
+  1021→  const load = React.useCallback(() => {
+  1022→    setLoading(true);
+  1023→    fetch("/api/companion/team")
+  1024→      .then((r) => r.json())
+  1025→      .then((d) => setTeam(d.team || []))
+  1026→      .finally(() => setLoading(false));
+  1027→  }, []);
+  1028→  React.useEffect(() => load(), [load]);
+  1029→
+  1030→  const del = async (id: string) => {
+  1031→    setTeam((a) => a.filter((x) => x.id !== id));
+  1032→    await fetch(`/api/companion/team?id=${id}`, { method: "DELETE" });
+  1033→    toast.success("Team member removed.");
+  1034→  };
+  1035→
+  1036→  if (creating || editing) {
+  1037→    return (
+  1038→      <TeamEditor
+  1039→        member={editing}
+  1040→        onClose={() => {
+  1041→          setCreating(false);
+  1042→          setEditing(null);
+  1043→        }}
+  1044→        onSaved={() => {
+  1045→          setCreating(false);
+  1046→          setEditing(null);
+  1047→          load();
+  1048→        }}
+  1049→      />
+  1050→    );
+  1051→  }
+  1052→
+  1053→  if (loading) {
+  1054→    return (
+  1055→      <div className="text-center py-16">
+  1056→        <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
+  1057→      </div>
+  1058→    );
+  1059→  }
+  1060→
+  1061→  return (
+  1062→    <div className="space-y-4">
+  1063→      <div className="flex items-center justify-between gap-3">
+  1064→        <div>
+  1065→          <h2 className="font-display text-xl tracking-tight">Teaching team</h2>
+  1066→          <p className="text-sm text-muted-foreground">{team.length} members</p>
+  1067→        </div>
+  1068→        {userRole === "ADMIN" && (
+  1069→          <Button onClick={() => setCreating(true)} size="sm" className="rounded-full">
+  1070→            <Plus className="w-4 h-4" /> New member
+  1071→          </Button>
+  1072→        )}
+  1073→      </div>
+  1074→
+  1075→      {team.length === 0 ? (
+  1076→        <MatteCard className="text-center py-12">
+  1077→          <Users className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+  1078→          <p className="text-muted-foreground">No team members yet.</p>
+  1079→        </MatteCard>
+  1080→      ) : (
+  1081→        <div className="grid sm:grid-cols-2 gap-3">
+  1082→          {team.map((m) => {
+  1083→            const cc = ""; // cc is in settings; not loaded here for simplicity
+  1084→            const phone = String(m.phone || "").replace(/[^0-9]/g, "");
+  1085→            return (
+  1086→              <MatteCard key={m.id} className="p-4">
+  1087→                <div className="flex items-start justify-between gap-3 mb-2">
+  1088→                  <div className="flex items-center gap-3 min-w-0">
+  1089→                    <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center text-xs font-bold shrink-0">
+  1090→                      {m.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+  1091→                    </div>
+  1092→                    <div className="min-w-0">
+  1093→                      <div className="flex items-center gap-2 flex-wrap">
+  1094→                        <span className="font-medium truncate">{m.name}</span>
+  1095→                        <Pill variant="muted">{m.role}</Pill>
+  1096→                        {!m.active && <Pill variant="outline">Inactive</Pill>}
+  1097→                      </div>
+  1098→                      {m.levels.length > 0 && (
+  1099→                        <div className="text-xs text-muted-foreground mt-0.5 truncate">
+  1100→                          Levels: {m.levels.join(", ")}
+  1101→                        </div>
+  1102→                      )}
+  1103→                    </div>
+  1104→                  </div>
+  1105→                  {userRole === "ADMIN" && (
+  1106→                    <div className="flex items-center gap-1 shrink-0">
+  1107→                      <button
+  1108→                        onClick={() => setEditing(m)}
+  1109→                        className="tap w-8 h-8 rounded-lg hover:bg-secondary flex items-center justify-center"
+  1110→                      >
+  1111→                        <Pencil className="w-3.5 h-3.5" />
+  1112→                      </button>
+  1113→                      <button
+  1114→                        onClick={() => del(m.id)}
+  1115→                        className="tap w-8 h-8 rounded-lg hover:bg-rose-500/10 text-rose-600 flex items-center justify-center"
+  1116→                      >
+  1117→                        <Trash2 className="w-3.5 h-3.5" />
+  1118→                      </button>
+  1119→                    </div>
+  1120→                  )}
+  1121→                </div>
+  1122→                <div className="flex flex-wrap items-center gap-3 text-xs">
+  1123→                  {phone && (
+  1124→                    <a
+  1125→                      href={`https://wa.me/${cc}${phone}`}
+  1126→                      target="_blank"
+  1127→                      rel="noopener noreferrer"
+  1128→                      className="flex items-center gap-1.5 text-foreground/80 hover:text-foreground"
+  1129→                    >
+  1130→                      <Phone className="w-3.5 h-3.5 text-muted-foreground" />
+  1131→                      {m.phone}
+  1132→                    </a>
+  1133→                  )}
+  1134→                  {m.email && (
+  1135→                    <a
+  1136→                      href={`mailto:${m.email}`}
+  1137→                      className="flex items-center gap-1.5 text-foreground/80 hover:text-foreground"
+  1138→                    >
+  1139→                      <Mail className="w-3.5 h-3.5 text-muted-foreground" />
+  1140→                      {m.email}
+  1141→                    </a>
+  1142→                  )}
+  1143→                </div>
+  1144→              </MatteCard>
+  1145→            );
+  1146→          })}
+  1147→        </div>
+  1148→      )}
+  1149→    </div>
+  1150→  );
+  1151→}
+  1152→
+  1153→function TeamEditor({
+  1154→  member,
+  1155→  onClose,
+  1156→  onSaved,
+  1157→}: {
+  1158→  member: TeamMember | null;
+  1159→  onClose: () => void;
+  1160→  onSaved: () => void;
+  1161→}) {
+  1162→  const [form, setForm] = React.useState({
+  1163→    name: member?.name ?? "",
+  1164→    role: member?.role ?? "Volunteer Teacher",
+  1165→    phone: member?.phone ?? "",
+  1166→    email: member?.email ?? "",
+  1167→    levelsText: member?.levels.join(", ") ?? "",
+  1168→    active: member?.active ?? true,
+  1169→  });
+  1170→  const [saving, setSaving] = React.useState(false);
+  1171→  const set = (k: keyof typeof form, v: string | boolean) =>
+  1172→    setForm((f) => ({ ...f, [k]: v }));
+  1173→
+  1174→  const save = async () => {
+  1175→    setSaving(true);
+  1176→    try {
+  1177→      const levels = form.levelsText
+  1178→        .split(",")
+  1179→        .map((s) => s.trim())
+  1180→        .filter(Boolean);
+  1181→      const body = {
+  1182→        ...(member ? { id: member.id } : {}),
+  1183→        name: form.name,
+  1184→        role: form.role,
+  1185→        phone: form.phone || null,
+  1186→        email: form.email || null,
+  1187→        levels,
+  1188→        active: form.active,
+  1189→      };
+  1190→      const res = await fetch("/api/companion/team", {
+  1191→        method: member ? "PATCH" : "POST",
+  1192→        headers: { "Content-Type": "application/json" },
+  1193→        body: JSON.stringify(body),
+  1194→      });
+  1195→      if (!res.ok) throw new Error("Save failed");
+  1196→      toast.success(member ? "Member updated." : "Member added.");
+  1197→      onSaved();
+  1198→    } catch {
+  1199→      toast.error("Save failed.");
+  1200→    } finally {
+  1201→      setSaving(false);
+  1202→    }
+  1203→  };
+  1204→
+  1205→  return (
+  1206→    <MatteCard>
+  1207→      <div className="flex items-center justify-between mb-5">
+  1208→        <h2 className="font-display text-xl tracking-tight">
+  1209→          {member ? "Edit team member" : "New team member"}
+  1210→        </h2>
+  1211→        <button onClick={onClose} className="tap w-8 h-8 rounded-lg hover:bg-secondary flex items-center justify-center">
+  1212→          <X className="w-4 h-4" />
+  1213→        </button>
+  1214→      </div>
+  1215→      <div className="space-y-4">
+  1216→        <div className="grid sm:grid-cols-2 gap-4">
+  1217→          <div>
+  1218→            <Label className="text-sm font-medium mb-1.5 block">Name *</Label>
+  1219→            <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Full name" />
+  1220→          </div>
+  1221→          <div>
+  1222→            <Label className="text-sm font-medium mb-1.5 block">Role</Label>
+  1223→            <Input value={form.role} onChange={(e) => set("role", e.target.value)} placeholder="Coordinator / Volunteer Teacher" />
+  1224→          </div>
+  1225→          <div>
+  1226→            <Label className="text-sm font-medium mb-1.5 block">Phone</Label>
+  1227→            <Input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+212 6 12 34 56 78" />
+  1228→          </div>
+  1229→          <div>
+  1230→            <Label className="text-sm font-medium mb-1.5 block">Email</Label>
+  1231→            <Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="name@asoujda.ma" />
+  1232→          </div>
+  1233→        </div>
+  1234→        <div>
+  1235→          <Label className="text-sm font-medium mb-1.5 block">Levels (comma-separated keys)</Label>
+  1236→          <Input value={form.levelsText} onChange={(e) => set("levelsText", e.target.value)} placeholder="kids, teens" />
+  1237→        </div>
+  1238→        <label className="flex items-center gap-2 text-sm cursor-pointer">
+  1239→          <input
+  1240→            type="checkbox"
+  1241→            checked={form.active}
+  1242→            onChange={(e) => set("active", e.target.checked)}
+  1243→            className="rounded"
+  1244→          />
+  1245→          Active member
+  1246→        </label>
+  1247→        <div className="flex justify-end gap-2 pt-3 border-t border-border">
+  1248→          <Button variant="outline" onClick={onClose} className="rounded-full bg-transparent">
+  1249→            Cancel
+  1250→          </Button>
+  1251→          <Button onClick={save} disabled={saving || !form.name} className="rounded-full">
+  1252→            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+  1253→            {member ? "Save changes" : "Add member"}
+  1254→          </Button>
+  1255→        </div>
+  1256→      </div>
+  1257→    </MatteCard>
+  1258→  );
+  1259→}
+  1260→
+  1261→// ============================================================
+  1262→// LIBRARY
+  1263→// ============================================================
+  1264→function LibraryTab() {
+  1265→  const [items, setItems] = React.useState<LibraryItem[]>([]);
+  1266→  const [loading, setLoading] = React.useState(true);
+  1267→  const [creating, setCreating] = React.useState(false);
+  1268→  const { data: session } = useSession();
+  1269→  const userRole = (session?.user as { role?: string } | undefined)?.role;
+  1270→  const canEdit = userRole === "ADMIN" || userRole === "EDITOR";
+  1271→
+  1272→  const load = React.useCallback(() => {
+  1273→    setLoading(true);
+  1274→    fetch("/api/companion/library")
+  1275→      .then((r) => r.json())
+  1276→      .then((d) => setItems(d.items || []))
+  1277→      .finally(() => setLoading(false));
+  1278→  }, []);
+  1279→  React.useEffect(() => load(), [load]);
+  1280→
+  1281→  const del = async (id: string) => {
+  1282→    setItems((a) => a.filter((x) => x.id !== id));
+  1283→    await fetch(`/api/companion/library?id=${id}`, { method: "DELETE" });
+  1284→    toast.success("Library item removed.");
+  1285→  };
+  1286→
+  1287→  if (creating) {
+  1288→    return (
+  1289→      <LibraryEditor
+  1290→        onClose={() => setCreating(false)}
+  1291→        onSaved={() => {
+  1292→          setCreating(false);
+  1293→          load();
+  1294→        }}
+  1295→      />
+  1296→    );
+  1297→  }
+  1298→
+  1299→  if (loading) {
+  1300→    return (
+  1301→      <div className="text-center py-16">
+  1302→        <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
+  1303→      </div>
+  1304→    );
+  1305→  }
+  1306→
+  1307→  // Group by category
+  1308→  const byCat = items.reduce<Record<string, LibraryItem[]>>((acc, it) => {
+  1309→    const c = it.category || "general";
+  1310→    if (!acc[c]) acc[c] = [];
+  1311→    acc[c].push(it);
+  1312→    return acc;
+  1313→  }, {});
+  1314→  const categories = Object.keys(byCat).sort();
+  1315→
+  1316→  return (
+  1317→    <div className="space-y-6">
+  1318→      <div className="flex items-center justify-between gap-3">
+  1319→        <div>
+  1320→          <h2 className="font-display text-xl tracking-tight">Resource library</h2>
+  1321→          <p className="text-sm text-muted-foreground">{items.length} items in {categories.length} categor{categories.length !== 1 ? "ies" : "y"}</p>
+  1322→        </div>
+  1323→        {canEdit && (
+  1324→          <Button onClick={() => setCreating(true)} size="sm" className="rounded-full">
+  1325→            <Plus className="w-4 h-4" /> New item
+  1326→          </Button>
+  1327→        )}
+  1328→      </div>
+  1329→
+  1330→      {items.length === 0 ? (
+  1331→        <MatteCard className="text-center py-12">
+  1332→          <LibraryIcon className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+  1333→          <p className="text-muted-foreground">No library items yet.</p>
+  1334→        </MatteCard>
+  1335→      ) : (
+  1336→        <div className="space-y-6">
+  1337→          {categories.map((cat) => (
+  1338→            <div key={cat}>
+  1339→              <h3 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">{cat}</h3>
+  1340→              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+  1341→                {byCat[cat].map((it) => (
+  1342→                  <MatteCard key={it.id} className="p-4 flex flex-col gap-2">
+  1343→                    <div className="flex items-start justify-between gap-2">
+  1344→                      <a
+  1345→                        href={it.url}
+  1346→                        target="_blank"
+  1347→                        rel="noopener noreferrer"
+  1348→                        className="font-medium hover:text-primary truncate flex items-center gap-1.5 min-w-0"
+  1349→                      >
+  1350→                        <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+  1351→                        <span className="truncate">{it.name}</span>
+  1352→                      </a>
+  1353→                      {canEdit && (
+  1354→                        <button
+  1355→                          onClick={() => del(it.id)}
+  1356→                          className="tap w-7 h-7 rounded-lg hover:bg-rose-500/10 text-rose-600 flex items-center justify-center shrink-0"
+  1357→                        >
+  1358→                          <Trash2 className="w-3 h-3" />
+  1359→                        </button>
+  1360→                      )}
+  1361→                    </div>
+  1362→                    {it.notes && (
+  1363→                      <p className="text-xs text-muted-foreground leading-relaxed pretty">{it.notes}</p>
+  1364→                    )}
+  1365→                  </MatteCard>
+  1366→                ))}
+  1367→              </div>
+  1368→            </div>
+  1369→          ))}
+  1370→        </div>
+  1371→      )}
+  1372→    </div>
+  1373→  );
+  1374→}
+  1375→
+  1376→function LibraryEditor({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+  1377→  const [form, setForm] = React.useState({
+  1378→    name: "",
+  1379→    category: "general",
+  1380→    url: "",
+  1381→    notes: "",
+  1382→  });
+  1383→  const [saving, setSaving] = React.useState(false);
+  1384→  const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  1385→
+  1386→  const save = async () => {
+  1387→    setSaving(true);
+  1388→    try {
+  1389→      const res = await fetch("/api/companion/library", {
+  1390→        method: "POST",
+  1391→        headers: { "Content-Type": "application/json" },
+  1392→        body: JSON.stringify(form),
+  1393→      });
+  1394→      if (!res.ok) throw new Error("Save failed");
+  1395→      toast.success("Library item added.");
+  1396→      onSaved();
+  1397→    } catch {
+  1398→      toast.error("Save failed.");
+  1399→    } finally {
+  1400→      setSaving(false);
+  1401→    }
+  1402→  };
+  1403→
+  1404→  return (
+  1405→    <MatteCard>
+  1406→      <div className="flex items-center justify-between mb-5">
+  1407→        <h2 className="font-display text-xl tracking-tight">New library item</h2>
+  1408→        <button onClick={onClose} className="tap w-8 h-8 rounded-lg hover:bg-secondary flex items-center justify-center">
+  1409→          <X className="w-4 h-4" />
+  1410→        </button>
+  1411→      </div>
+  1412→      <div className="space-y-4">
+  1413→        <div>
+  1414→          <Label className="text-sm font-medium mb-1.5 block">Name *</Label>
+  1415→          <Input value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Resource name" />
+  1416→        </div>
+  1417→        <div className="grid sm:grid-cols-2 gap-4">
+  1418→          <div>
+  1419→            <Label className="text-sm font-medium mb-1.5 block">Category</Label>
+  1420→            <Input value={form.category} onChange={(e) => set("category", e.target.value)} placeholder="general, songs, flashcards…" />
+  1421→          </div>
+  1422→          <div>
+  1423→            <Label className="text-sm font-medium mb-1.5 block">URL *</Label>
+  1424→            <Input value={form.url} onChange={(e) => set("url", e.target.value)} placeholder="https://…" />
+  1425→          </div>
+  1426→        </div>
+  1427→        <div>
+  1428→          <Label className="text-sm font-medium mb-1.5 block">Notes</Label>
+  1429→          <Textarea
+  1430→            rows={3}
+  1431→            value={form.notes}
+  1432→            onChange={(e) => set("notes", e.target.value)}
+  1433→            placeholder="Optional description"
+  1434→          />
+  1435→        </div>
+  1436→        <div className="flex justify-end gap-2 pt-3 border-t border-border">
+  1437→          <Button variant="outline" onClick={onClose} className="rounded-full bg-transparent">
+  1438→            Cancel
+  1439→          </Button>
+  1440→          <Button onClick={save} disabled={saving || !form.name || !form.url} className="rounded-full">
+  1441→            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+  1442→            Add item
+  1443→          </Button>
+  1444→        </div>
+  1445→      </div>
+  1446→    </MatteCard>
+  1447→  );
+  1448→}
+  1449→

@@ -1,0 +1,319 @@
+     1→# American Space Oujda — Rebuild Worklog
+     2→
+     3→Source: https://sites.google.com/view/espaceamericainoujda/accueil/teacher-volunteer-intern-trainer
+     4→
+     5→---
+     6→Task ID: 0
+     7→Agent: main
+     8→Task: Plan and bootstrap the rebuild of the American Space Oujda site
+     9→
+    10→Work Log:
+    11→- Fetched original Google Sites page (Teacher-Volunteer-Intern-Trainer hub) and home page.
+    12→- Extracted site structure: Home, About, Activities, Events, Clubs, Album, Books, Library, Certificates, Internal Regulations, Moroccan-American Relations, Registration, Membership, Comments/Suggestions, Links, Teacher/Volunteer/Intern/Trainer (with sub-page "Teacher under development").
+    13→- Captured contact info: espaceamericainoujda@gmail.com, Mohammed VI Street, Oujda.
+    14→- Confirmed scope with user: whole-site rebuild, English-only, modern civic + iOS-Apple aesthetic (matte, symmetric, elegant, clear), all features (application form, role pages, events calendar, photo album, admin dashboard, search), all original nav preserved.
+    15→
+    16→Stage Summary:
+    17→- Sandbox constraint: only `/` route is user-visible. Entire site must be a SPA with hash-based client routing.
+    18→- Stack: Next.js 16 + TS + Tailwind 4 + shadcn/ui + Prisma(SQLite) + Zustand + Framer Motion.
+    19→- Design tokens: deep navy primary, warm Moroccan accent (used sparingly), generous whitespace, large radius, matte (no heavy gradients).
+    20→
+    21→---
+    22→Task ID: 1
+    23→Agent: main
+    24→Task: Build the entire American Space Oujda site from scratch
+    25→
+    26→Work Log:
+    27→- Set up iOS-inspired design system in globals.css (warm off-white, deep navy primary, warm Moroccan accent, large radius, matte elevations, frosted header).
+    28→- Defined Prisma schema: Application, Event, GalleryItem, Comment, Membership, CourseRegistration, AdminUser. Pushed to SQLite.
+    29→- Seeded DB: 10 events, 12 gallery items, 4 sample applications, 1 admin user.
+    30→- Built hash-based SPA router (Zustand store) since sandbox only exposes `/`.
+    31→- Built shell: frosted sticky header with logo, primary nav, search button (⌘K), theme toggle, mobile drawer; sticky footer with hours + nav + contact.
+    32→- Built 19 pages: Home, About, Relations, Activities, Events, Clubs, Album (with lightbox), Books, Library, Certificates, Regulations, Registration (form), Membership (form), Links, Comments (form), TVT hub, 4 role pages (Teacher/Volunteer/Intern/Trainer), Apply (multi-section form), Search, Admin.
+    33→- Built API routes: events (GET/POST), applications (GET/POST with zod validation), gallery, comments, membership, courses, admin/login, admin/applications (PATCH/DELETE).
+    34→- Built admin dashboard with login, applications table (filter by role + status, expand to view details, change status, delete), events list, comments list.
+    35→
+    36→Self-verification (agent-browser):
+    37→- Home loads, all sections render (hero, programs grid, events preview, TVT CTA, relations timeline, visit CTA, footer).
+    38→- Navigation works (hash changes, page remounts, scroll-to-top, document title updates).
+    39→- Apply form: filled + submitted → success page renders → application appears in admin dashboard.
+    40→- Admin login: admin@asoujda.ma / admin123 → dashboard with stats and application list.
+    41→- Search dialog: ⌘K opens, filters nav items live, Enter goes to full search page.
+    42→- Album: lightbox opens on click, ESC closes, arrow keys navigate.
+    43→- Mobile viewport (390x844): hamburger menu opens with full nav drawer.
+    44→- No console errors, no lint errors, dev server clean.
+    45→
+    46→Stage Summary:
+    47→- All 16 pages built and verified in the browser.
+    48→- All 4 forms (Application, Registration, Membership, Comments) submit to Prisma DB and show success state.
+    49→- Admin dashboard reads from DB and allows status updates + deletes.
+    50→- Site is responsive, accessible (semantic HTML, ARIA labels, keyboard nav), supports light/dark theme.
+    51→- Preview link: https://preview-{bot-id}.space-z.ai/ (replace {bot-id} at runtime)
+    52→
+    53→---
+    54→Task ID: 2
+    55→Agent: main
+    56→Task: Add real authentication, three role-based dashboards, and Cloudflare deployment guide
+    57→
+    58→Work Log:
+    59→- Extended Prisma schema with: User (role + bcrypt hash), Account/Session/VerificationToken (NextAuth), Course, Enrollment, Attendance, Grade, Report, SiteSetting (mini-CMS). Pushed to SQLite.
+    60→- Installed next-auth@4.24.11 + bcryptjs. Initial install of v5 beta caused import path issues; downgraded to v4 stable.
+    61→- Created NextAuth credentials provider (src/lib/auth.ts) with bcrypt password hashing and JWT sessions.
+    62→- Created permission helpers (src/lib/permissions.ts): getCurrentUser, requireRole, withRole — used by all protected API routes.
+    63→- Built login form (src/components/auth/login-form.tsx) with show/hide password, demo account buttons for admin/teacher/editor, role-aware redirect.
+    64→- Wrapped app in SessionProvider (src/components/auth/session-provider.tsx + layout.tsx).
+    65→- Updated SiteHeader to show "Sign in" or "Dashboard" button based on session; updated SiteFooter similarly with sign-out.
+    66→- Extended hash router with routes for: /#/login, /#/admin/<tab>, /#/teacher/<tab>, /#/editor/<tab>.
+    67→- Built reusable DashboardLayout (src/components/dashboard/layout.tsx) with sidebar nav, mobile drawer, top bar with sign-out + view-site buttons.
+    68→- Built Admin dashboard (src/components/dashboard/admin.tsx) with 10 tabs:
+    69→  - Overview, Applications, Events (full CRUD), Gallery (full CRUD), Courses (full CRUD), Members (read), Registrations (read), Comments (read), Site Settings (mini-CMS), Users (full CRUD with role assignment + password reset).
+    70→- Built Teacher dashboard (src/components/dashboard/teacher.tsx) with 4 tabs:
+    71→  - My Courses (list + student roster per course),
+    72→  - Attendance (mark present/absent/late/excused per date per student, with notes; saves to DB),
+    73→  - Marks (add assignment/exam scores with weight + max score; auto-calculates weighted average per student),
+    74→  - Reports (submit periodic course reports with summary, challenges, recommendations).
+    75→- Built Editor dashboard (src/components/dashboard/editor.tsx) with 3 tabs: Events, Gallery, Site Settings (reuses admin's tab components).
+    76→- Built 8 new API routes: courses, enrollments, attendance (with batch upsert), grades, reports, users (CRUD), settings (PUT/DELETE), courses/registrations (GET). All enforce role-based access via withRole().
+    77→- Updated existing events/gallery routes to require ADMIN/EDITOR for POST/PATCH/DELETE; applications/admin route now requires ADMIN.
+    78→- Seeded 3 users (admin@asoujda.ma/admin123, sarah.benali@asoujda.ma/teacher123, editor@asoujda.ma/editor123) + 3 courses (each with 5 enrolled students) + 8 site settings.
+    79→- Added NEXTAUTH_URL and NEXTAUTH_SECRET to .env (fixed session cookie not being set).
+    80→- Created DEPLOY.md with full Cloudflare Pages deployment guide (D1 vs Turso swap, env vars, troubleshooting) and wrangler.toml template.
+    81→
+    82→Self-verification (agent-browser):
+    83→- Admin login → redirected to /#/admin → all 10 tabs visible → attendance marking verified → event editor opens.
+    84→- Teacher login (Sarah Benali) → redirected to /#/teacher → sees her 3 courses + 15 enrolled students → marked Khadija E. ABSENT with "Sick leave" note → saved to DB (verified via Prisma query).
+    85→- Editor login → redirected to /#/editor → sees 3-tab sidebar (Events, Gallery, Site Settings) → Site Settings tab loads all editable fields (Contact, Hours, Home page hero).
+    86→- Editor trying to access /#/admin → auto-redirected back to /#/editor (role enforcement works).
+    87→- Sign out works from any dashboard.
+    88→- Lint clean. Dev server responding 200 with no console errors.
+    89→
+    90→Stage Summary:
+    91→- Three working role-based dashboards (admin/teacher/editor) with real NextAuth credentials auth.
+    92→- Teachers can: view their courses + rosters, mark attendance, enter marks (with weighted averages), submit periodic reports.
+    93→- Admins can: full CRUD on events/gallery/courses/users + read on applications/members/registrations/comments + edit site text content via mini-CMS.
+    94→- Editors can: manage events/gallery + edit site text content.
+    95→- Demo accounts: admin@asoujda.ma/admin123, sarah.benali@asoujda.ma/teacher123, editor@asoujda.ma/editor123.
+    96→- Deployment guide at /DEPLOY.md walks through Cloudflare Pages setup with D1 or Turso database swap.
+    97→
+    98→---
+    99→Task ID: 3
+   100→Agent: main
+   101→Task: Prepare project for Cloudflare Pages deployment + write step-by-step guide
+   102→
+   103→Work Log:
+   104→- Installed @prisma/adapter-libsql + @libsql/client for edge runtime compatibility.
+   105→- Installed @cloudflare/next-on-pages (dev dependency) for Cloudflare Pages build.
+   106→- Updated prisma/schema.prisma to enable previewFeatures = ["driverAdapters"].
+   107→- Rewrote src/lib/db.ts to detect environment: if DATABASE_URL starts with libsql:// or https://, use the PrismaLibSQL adapter; otherwise fall back to plain PrismaClient with local SQLite. This lets the same code run in both dev and production with only an env var swap.
+   108→- Updated next.config.ts with serverExternalPackages for @prisma/client, @libsql/client, @prisma/adapter-libsql, bcryptjs.
+   109→- Added build:cloudflare and pages:build scripts to package.json.
+   110→- Created .env.example documenting both local and production env vars.
+   111→- Updated .gitignore to exclude .wrangler/, .dev.vars, /db/*.db, while keeping .env.example committed.
+   112→- Created scripts/seed-turso.ts — production seed script that creates 3 users (admin/teacher/editor), 3 courses with 5 enrollments each, 8 site settings, 5 sample events, and 6 gallery items, all against a Turso libSQL database.
+   113→- Rewrote DEPLOY.md as a 9-step beginner-friendly guide: GitHub account → Turso account + database → push schema → push code to GitHub → configure Cloudflare Pages (with exact build settings + env vars) → seed production DB → verify live site → optional custom domain → migrate from Google Sites. Includes troubleshooting section and quick reference table.
+   114→- Updated wrangler.toml to be a minimal optional config (not required for @cloudflare/next-on-pages).
+   115→- Fixed auth.ts: removed pages.signIn config that was pointing to /#admin (NextAuth doesn't handle hash routes well) — signIn() is called with redirect:false from our custom form so this works fine.
+   116→- Verified end-to-end: local dev still works (home 200, events API 200, auth API 200), login as admin works (redirects to /#/admin, session shows ADMIN role), lint clean.
+   117→
+   118→Stage Summary:
+   119→- Project is now deployment-ready for Cloudflare Pages + Turso.
+   120→- Single codebase runs in both environments — only env vars differ.
+   121→- DEPLOY.md provides a complete beginner-friendly walkthrough.
+   122→- scripts/seed-turso.ts handles production database seeding.
+   123→- All demo credentials work: admin@asoujda.ma/admin123, sarah.benali@asoujda.ma/teacher123, editor@asoujda.ma/editor123.
+   124→
+   125→---
+   126→Task ID: 2-migrate-api
+   127→Agent: sub-agent (general-purpose)
+   128→Task: Migrate ALL Prisma-based API routes to use the direct libSQL client at @/lib/sql (bypass Prisma entirely on Vercel)
+   129→
+   130→Work Log:
+   131→- Read /home/z/my-project/src/lib/sql.ts (getDb + row helpers) and src/lib/content-handlers.ts (established requireRole pattern) to understand the target pattern.
+   132→- Read prisma/schema.prisma for the full table layout (User, Event, GalleryItem, Application, Comment, Membership, CourseRegistration, Course, Enrollment, Attendance, Grade, Report, SiteSetting, Club, SiteLink, PageContent).
+   133→- Read all 15 existing Prisma-based API routes and src/lib/permissions.ts (withRole / getCurrentUser) to understand the business logic and permission rules that had to be preserved.
+   134→- Extended src/lib/sql.ts with new named exports:
+   135→  - AuthUser type, RequireRoleResult type
+   136→  - getCurrentUser() — looks up the user from the NextAuth session + DB, returns null if not signed in / inactive.
+   137→  - requireRole(roles) — returns `{ ok: true; user: AuthUser }` or `{ ok: false; response: Response }` (401 UNAUTHORIZED or 403 FORBIDDEN). Mirrors the discriminated-union pattern used in content-handlers.ts.
+   138→  - Re-exported InValue type (from @libsql/client) so routes can type dynamic args arrays without reaching into @libsql/client directly.
+   139→- Updated src/lib/content-handlers.ts to import requireRole from @/lib/sql instead of defining it locally — removed the local helper and the now-unused next-auth / auth imports.
+   140→- Deleted src/lib/permissions.ts (orphaned after migration — no caller remained). The new requireRole/getCurrentUser in sql.ts fully replaces it.
+   141→- Migrated all 14 API routes to use `import { getDb, row, requireRole, ... } from "@/lib/sql"` and raw SQL via `db.execute({ sql, args })`:
+   142→  1. src/app/api/events/route.ts — GET (filtered list with limit/category/featured/upcoming), POST/PATCH/DELETE (ADMIN+EDITOR). PATCH builds a dynamic SET clause.
+   143→  2. src/app/api/gallery/route.ts — GET (filtered by category), POST/DELETE (ADMIN+EDITOR).
+   144→  3. src/app/api/applications/route.ts — GET (ADMIN), POST (public, zod validation preserved).
+   145→  4. src/app/api/admin/applications/route.ts — PATCH (status + notes), DELETE (ADMIN).
+   146→  5. src/app/api/comments/route.ts — GET (ADMIN), POST (public). Original GET was public; tightened to admin-only per task description.
+   147→  6. src/app/api/membership/route.ts — GET (ADMIN), POST (public).
+   148→  7. src/app/api/courses/route.ts — GET (public, with LEFT JOIN User for teacher + subquery for enrollmentCount, normalized back into the { ...course, teacher, _count: { enrollments } } shape so the frontend keeps working), POST (ADMIN).
+   149→  8. src/app/api/courses/registrations/route.ts — GET (ADMIN).
+   150→  9. src/app/api/enrollments/route.ts — GET (teachers see only own courses' enrollments via JOIN Course; supports courseId/teacherId filters; preserves original permissive behavior for admins/unauth), POST/DELETE (ADMIN+TEACHER with course-ownership check).
+   151→  10. src/app/api/attendance/route.ts — GET (courseId required; teachers verified against course ownership), POST (ADMIN+TEACHER; batch upsert via INSERT … ON CONFLICT(courseId, date, studentEmail) DO UPDATE).
+   152→  11. src/app/api/grades/route.ts — GET (courseId required; teacher ownership check), POST/DELETE (ADMIN+TEACHER with ownership check via JOIN Course).
+   153→  12. src/app/api/reports/route.ts — GET (teachers see only own reports via JOIN; admins see all with teacher info), POST (ADMIN+TEACHER; uses session user.id as teacherId), DELETE (ADMIN+TEACHER; teachers can only delete own reports).
+   154→  13. src/app/api/users/route.ts — GET/POST/PATCH/DELETE (ADMIN only). GET uses subqueries for coursesTaught + reports counts and normalizes _count shape. POST/PATCH hash passwords with bcrypt (12 rounds). DELETE blocks self-deletion via adminUser.id check.
+   155→  14. src/app/api/settings/route.ts — GET (public, returns flat key→value map), PUT (ADMIN+EDITOR, upsert via ON CONFLICT(key) DO UPDATE), DELETE (ADMIN+EDITOR).
+   156→- Removed src/app/api/admin/login/route.ts and the now-empty src/app/api/admin/login/ directory — auth is handled by NextAuth at /api/auth/[...nextauth].
+   157→- Boolean handling: SQLite stores booleans as 0/1 — wrote 1/0 on INSERT/UPDATE and converted back with `!!value` / `Number(x) === 1` on read.
+   158→- ID generation: all new rows use `"<prefix>_" + Math.random().toString(36).slice(2, 12)` (evt_, gal_, app_, cmt_, mem_, crs_, enr_, att_, grd_, rpt_, usr_) as instructed.
+   159→- Date handling: all DateTime columns written as `new Date().toISOString()`; dates coming from the client are normalized through `new Date(...).toISOString()` before insert.
+   160→- Preserved the exact response shapes from the Prisma versions (events, items, applications, comments, members, courses with teacher + _count, enrollments with course, attendance, grades, reports with course + teacher, users with _count, settings as flat map) so no frontend changes are needed.
+   161→- Preserved all permission rules: ADMIN-only for users / applications / comments / membership / courses registrations, ADMIN+EDITOR for events / gallery / settings, ADMIN+TEACHER for enrollments / attendance / grades / reports with per-teacher ownership enforcement on courses.
+   162→
+   163→Lint / type-check:
+   164→- `bun run lint` → clean (exit 0, no errors).
+   165→- `bunx tsc --noEmit` → no errors in any migrated file. The remaining tsc errors are all pre-existing in unrelated files (src/lib/auth-db.ts which we were told not to touch, src/lib/db.ts which is the Prisma module itself, src/app/page.tsx, src/components/site/pages/info.tsx, scripts/seed-turso.ts, examples/, skills/).
+   166→- Initial lint pass surfaced two issues that were fixed:
+   167→  - settings/route.ts had a variable shadowing `row` inside the GET loop — renamed loop variable to `raw`.
+   168→  - settings/route.ts was missing the `row` import — added it.
+   169→- Initial tsc pass surfaced `unknown[] not assignable to InArgs` errors in events/route.ts (2 sites) and users/route.ts (1 site) where dynamic SET clauses were built. Fixed by typing the args arrays as `InValue[]` (re-exported from sql.ts).
+   170→
+   171→Verification:
+   172→- `grep -r 'from "@/lib/db"'` → 0 matches anywhere in the project.
+   173→- `grep -r 'from "@/lib/permissions"'` → 0 matches.
+   174→- `grep -r '@prisma/client\|PrismaClient' src/app/api/` → 0 matches. The NextAuth route, content-handlers.ts, auth-db.ts, and auth.ts were not touched.
+   175→- All 14 migrated API routes import `requireRole` and/or `getCurrentUser` from `@/lib/sql`.
+   176→
+   177→Stage Summary:
+   178→- All 14 Prisma-based API routes are now backed by direct libSQL via `getDb().execute({ sql, args })` and the shared `requireRole` / `getCurrentUser` helpers in `src/lib/sql.ts`.
+   179→- The `requireRole` helper was extracted into `src/lib/sql.ts` (replacing the local copy in content-handlers.ts and the old withRole helper in the now-deleted `src/lib/permissions.ts`).
+   180→- The legacy `src/app/api/admin/login/route.ts` was removed (NextAuth handles auth).
+   181→- No file in the project still imports from `@/lib/db`. `src/lib/db.ts` still exists (it's the Prisma client wrapper) but is unreferenced and can be deleted in a follow-up cleanup.
+   182→- `bun run lint` is clean; the migration preserves all HTTP status codes, response shapes, and permission rules so the existing admin/teacher/editor dashboards continue to work without frontend changes.
+   183→
+   184→---
+   185→Task ID: 3-companion
+   186→Agent: sub-agent (general-purpose)
+   187→Task: Build the ELTASO Companion integration (curriculum management tool for coordinators and teachers)
+   188→
+   189→Work Log:
+   190→- Read worklog.md, src/lib/sql.ts (getDb/row/requireRole/getCurrentUser), src/store/router.ts, src/lib/auth.ts, src/components/dashboard/{layout,admin,teacher}.tsx, src/components/site/{primitives,shell}.tsx, src/app/page.tsx, and existing API routes (settings, courses, events) to understand the established patterns.
+   191→- Inspected the local SQLite DB (file:db/custom.db) via @libsql/client to confirm the 7 Companion tables exist (CompanionSetting, CompanionLevel, CompanionWeek, CompanionClass, CompanionTeamMember, CompanionLibraryItem, CompanionNote) and inspected their schemas and seeded data (4 levels, 30 weeks/level, 8 classes, 10 team members, 13 library items, settings with s1Start=2026-10-05, s2Start=2027-02-08, s1Weeks=15, coordinator=Khalid, tpl WhatsApp template).
+   192→
+   193→- Created 7 API route files under src/app/api/companion/:
+   194→  1. overview/route.ts — GET (any auth user). Returns settings flat map, counts (levels/classes/team/library), and current term+week computed from s1Start + s1Weeks + s2Start. Logic: today < s1Start → "before" with "Starts in N days" label; today in [s1Start, s1Start+s1Weeks weeks) → "S1" + week N; today in [s1End, s2Start) → "break" with "Winter break"; today in [s2Start, s2Start+30 weeks) → "S2" + week N; else "complete".
+   195→  2. levels/route.ts — GET (any auth) returns levels with weekCount subquery. POST/PATCH/DELETE (ADMIN only). POST generates lvl_ prefix IDs. DELETE cascades weeks first.
+   196→  3. weeks/route.ts — GET (any auth; ?levelId=X filter). POST/PATCH/DELETE (ADMIN+TEACHER). Parses JSON urls string into array on read; serializes back on write. Catches UNIQUE(levelId, weekNumber) constraint and returns 409.
+   197→  4. classes/route.ts — GET (any auth; TEACHER sees only classes where teacherId = user.id OR teacherId = user.name). POST/PATCH/DELETE (ADMIN only). Generates cls_ prefix IDs.
+   198→  5. team/route.ts — GET (any auth). POST/PATCH/DELETE (ADMIN only). Parses JSON levels string into array on read; serializes on write. Generates tm_ prefix IDs.
+   199→  6. library/route.ts — GET (any auth). POST/DELETE (ADMIN+EDITOR). Generates lib_ prefix IDs.
+   200→  7. settings/route.ts — GET (any auth) returns flat key→value map. PUT (ADMIN only) accepts a partial {key: value} object and upserts each key via ON CONFLICT(key) DO UPDATE.
+   201→  - All routes use the discriminated-union requireRole pattern (returns 401 UNAUTHORIZED for no session, 403 FORBIDDEN for wrong role) from @/lib/sql. No 500s for unauthenticated requests.
+   202→
+   203→- Extended src/store/router.ts: added `CompanionTab = "overview" | "levels" | "classes" | "team" | "library"` type, `{ name: "companion" }` and `{ name: "companion-tab"; tab: CompanionTab }` route variants, parser case for "companion" and "companion/<tab>", and routeToHash case for "companion-tab".
+   204→
+   205→- Created src/components/dashboard/companion.tsx exporting `CompanionDashboard({ initialTab })`. Uses DashboardLayout with 5 tabs:
+   206→  - Overview: greeting with coordinator name from settings, "Now" chip showing current week label (e.g. "S1 · Week 1"), 4 stat cards (levels, classes, team, library) that navigate on click, and a quick-links card.
+   207→  - Levels: list of levels (MatteCard) with label, CEFR pill, week count pill. Click to expand → fetches weeks for that level via /api/companion/weeks?levelId=X and /api/companion/settings (for tpl template). Renders each week as a card with theme, objectives, language, resources, links (external), activities, homework. Each week has Copy/Pencil/Trash buttons. "Copy WhatsApp plan" uses date-fns addWeeks + format to compute the week date, fills in the {teacher}/{level}/{week}/{date}/{theme}/{obj}/{lang}/{act}/{hw}/{links}/{coordinator} placeholders in the tpl string, and writes to clipboard. Admin+teacher can edit via the WeekEditor (multi-field form with urls as newline-separated text). New week form auto-suggests weekNumber = existingCount + 1.
+   208→  - Classes: grid of class cards. Admin sees New class button + edit/delete icons. Teachers see only their own classes (enforced by API). ClassEditor form has name, level (Select from levels), teacher (Select from team), schedule, room, students, active checkbox.
+   209→  - Team: grid of team member cards with avatar, name, role pill, levels, phone (with WhatsApp wa.me link), email (mailto). Admin can add/edit/delete via TeamEditor.
+   210→  - Library: items grouped by category, rendered as a grid. Each item links out (target=_blank). Admin+editor see New item + delete buttons. LibraryEditor form for name, category, url, notes.
+   211→  - Auth guard: unauthenticated users are redirected to login. Role gating: teachers can edit weeks but not classes/team/library; admins can edit everything; editors can add/delete library items only.
+   212→
+   213→- Wired CompanionDashboard into src/app/page.tsx PageRouter: imported CompanionDashboard, added "companion"/"companion-tab" cases (initialTab = route.tab when companion-tab, else "overview"), added "companion" entry to the title map.
+   214→
+   215→- Added Companion to site navigation in src/components/site/shell.tsx:
+   216→  - Imported BookOpen icon.
+   217→  - Added `{ label: "Companion", route: { name: "companion" }, authOnly: true }` to PRIMARY_NAV (between "Courses" and "Join Us").
+   218→  - Desktop nav filters out authOnly items when there is no session (signed-out users don't see Companion).
+   219→  - Mobile drawer: added a Companion entry (also gated by `session`) below the NAV_ITEMS list, with the BookOpen icon in accent color.
+   220→  - Note: the footer Explore/Programs sections use the static NAV_ITEMS list, so Companion is intentionally not added there (it's a staff-only tool, not a public page).
+   221→
+   222→- Added a "companion" tab to the Teacher dashboard (src/components/dashboard/teacher.tsx): added BookOpen + ArrowRight icons, added the tab to TABS, changed the onTabChange handler to intercept "companion" clicks and navigate to { name: "companion" } instead of going to teacher-tab. Added a CompanionLinkTab component that renders a MatteCard CTA button. Changed the `tab` state type to `TeacherTab | "companion"` so the JSX `{tab === "companion" && ...}` check type-checks.
+   223→
+   224→- Added a "companion" tab to the Admin dashboard (src/components/dashboard/admin.tsx): added the tab to TABS, refactored onTabChange into a function that intercepts "companion" and navigates to { name: "companion" } (otherwise navigates to admin-tab). Added a CompanionLinkTab component. Changed the `tab` state type to `AdminTab | "companion"`.
+   225→
+   226→- Quality: all UI uses shadcn/ui components (Button, Input, Textarea, Label, Select, Dialog) from @/components/ui/, MatteCard + Pill from @/components/site/primitives, lucide-react icons, sonner toast, date-fns for date math. iOS-inspired styling (rounded cards, hairline borders, accent-tinted icons, frosted sections). Mobile responsive via the existing DashboardLayout grid.
+   227→
+   228→Lint / type-check:
+   229→- `bun run lint` → clean (exit 0, no errors).
+   230→- `bunx tsc --noEmit` → no errors in any new or modified file. The only remaining tsc errors are pre-existing and unrelated (src/app/page.tsx line 70 ApplyPage presetRole type mismatch — exists on HEAD; src/lib/auth-db.ts, src/lib/db.ts, etc.).
+   231→
+   232→Verification:
+   233→- `curl http://localhost:3000/api/companion/overview` (no auth) → 401 ✓
+   234→- `curl http://localhost:3000/api/companion/levels` (no auth) → 401 ✓
+   235→- All 7 Companion endpoints return 401 when unauthenticated (no 500s).
+   236→- Logged in as admin (admin@asoujda.ma): all 7 GET endpoints return 200 with correct seeded data. Overview correctly computes current = { term: "S1", weekNumber: 1, label: "S1 · Week 1" } given today is Oct 6 2026 and s1Start is Oct 5 2026. POST library → 201, PUT settings → 200, DELETE library → 200.
+   237→- Logged in as teacher (sarah.benali@asoujda.ma): GET classes returns 0 (Sarah doesn't match any CompanionClass.teacherId in the seed data — expected). POST class → 403 FORBIDDEN ✓. GET weeks → 200 ✓ (admin+teacher allowed). POST library → 403 FORBIDDEN ✓ (admin+editor only).
+   238→- Home page loads 200, /api/events still 200 (no regressions).
+   239→- `bun run lint` clean after all changes.
+   240→
+   241→Files created:
+   242→- src/app/api/companion/overview/route.ts
+   243→- src/app/api/companion/levels/route.ts
+   244→- src/app/api/companion/weeks/route.ts
+   245→- src/app/api/companion/classes/route.ts
+   246→- src/app/api/companion/team/route.ts
+   247→- src/app/api/companion/library/route.ts
+   248→- src/app/api/companion/settings/route.ts
+   249→- src/components/dashboard/companion.tsx
+   250→
+   251→Files modified:
+   252→- src/store/router.ts (added CompanionTab + companion routes + parser + routeToHash)
+   253→- src/app/page.tsx (imported CompanionDashboard, added PageRouter cases, added title entry)
+   254→- src/components/site/shell.tsx (added BookOpen icon, added Companion to PRIMARY_NAV with authOnly flag, filter authOnly for desktop nav, added Companion entry to mobile drawer when signed in)
+   255→- src/components/dashboard/teacher.tsx (added BookOpen + ArrowRight icons, added companion tab, refactored onTabChange to navigate to companion route, added CompanionLinkTab, widened tab state type)
+   256→- src/components/dashboard/admin.tsx (added companion tab, refactored onTabChange to navigate to companion route, added CompanionLinkTab, widened tab state type)
+   257→
+   258→Stage Summary:
+   259→- ELTASO Companion is fully integrated: 7 authenticated API routes, a 5-tab dashboard (Overview/Levels/Classes/Team/Library), hash routing at /#/companion and /#/companion/<tab>, role-aware navigation (signed-out users don't see the link; signed-in users see it in header + mobile drawer + as a tab inside both the admin and teacher dashboards).
+   260→- Curriculum data (4 levels, 30 weeks each, 8 classes, 10 team members, 13 library items) renders correctly. The "Copy WhatsApp plan" button generates a formatted message using the configured tpl template and the week's date (computed from s1Start + week number via date-fns).
+   261→- Permissions are enforced server-side: admins can edit everything; teachers can edit weeks (POST/PATCH/DELETE on /api/companion/weeks) and see only their own classes; editors can add/delete library items; everyone else (including signed-out) gets 401/403.
+   262→- `bun run lint` is clean. All Companion endpoints return 401 (not 500) when unauthenticated, satisfying the verification requirements.
+   263→
+   264→---
+   265→Task ID: 4-library
+   266→Agent: sub-agent (general-purpose)
+   267→Task: Build the Library Staff Dashboard (book catalogue management, member registration, loan tracking)
+   268→
+   269→Work Log:
+   270→- Read worklog.md, src/lib/sql.ts (getDb/row/requireRole/getCurrentUser/InValue), src/lib/auth.ts (NextAuth role augmentation), src/store/router.ts (library-dashboard route + parser already added by previous task), src/components/dashboard/layout.tsx (DashboardLayout with sidebar tabs), src/components/dashboard/companion.tsx (reference patterns), src/components/site/primitives.tsx (MatteCard/Pill/SectionHeader), src/app/page.tsx (PageRouter + title map), and src/app/api/{events,users}/route.ts (requireRole + dynamic SET-clause patterns).
+   271→- Inspected the local SQLite DB (file:db/custom.db) via @libsql/client to confirm the 3 library tables exist with the expected schemas: LibraryBook(id, title, author, isbn, deweyCode, category, copies, available, location, notes, createdAt, updatedAt) — 8 seeded rows; LibraryMember(id, asoNumber UNIQUE, fullName, email, phone, cniNumber, birthDate, address, photoUrl, status, joinedAt, createdAt, updatedAt) — 1 seeded row with asoNumber="ASO-0001"; LibraryLoan(id, bookId, memberId, borrowedAt, dueAt, returnedAt, status, notes, createdAt) — 0 seeded rows.
+   272→
+   273→- Created 4 API route files under src/app/api/library/:
+   274→  1. books/route.ts — GET (ADMIN+LIBRARY; optional ?search= filter on title/author/isbn/deweyCode/category, ordered by title). POST (creates new book, available starts at full copies, generates bk_ prefixed id). PATCH (dynamic SET clause; copies update also clamps available via `available = MIN(available, ?)`). DELETE (?id=).
+   275→  2. members/route.ts — GET (ADMIN+LIBRARY; optional ?search= filter on asoNumber/fullName/phone/cniNumber/email, ordered by joinedAt DESC). POST (registers new member; asoNumber auto-generated as "ASO-" + 4-digit zero-padded sequence by finding the highest existing number and incrementing — helper `nextAsoNumber(db)`; status starts ACTIVE; generates mem_ prefixed id). PATCH (id + optional fields incl. status: ACTIVE/SUSPENDED/EXPIRED with validation). DELETE (?id=).
+   276→  3. loans/route.ts — GET (ADMIN+LIBRARY; LEFT JOINs LibraryBook + LibraryMember so each loan row carries bookTitle/bookAuthor/bookIsbn/memberAsoNumber/memberName/memberPhone; optional ?status=ACTIVE|RETURNED|OVERDUE (OVERDUE = active + dueAt<now) and ?memberId= filters; computes an `effectiveStatus` field where ACTIVE loans past dueAt are exposed as OVERDUE so the UI can colour them red without changing the stored status). POST (creates a loan: validates book exists + has available>0, validates member exists + is ACTIVE, enforces 1-book-at-a-time rule (blocks if memberId already has an ACTIVE loan — 409), dueAt = borrowedAt + 14 days via Date math, atomically decrements LibraryBook.available). PATCH (?id= returns a loan: sets returnedAt=now + status=RETURNED, increments LibraryBook.available with `MIN(available+1, copies)` cap so it can't exceed copies; refuses if already RETURNED). DELETE (?id=, no stock adjustment — caller should PATCH-return first).
+   277→  4. stats/route.ts — GET (ADMIN+LIBRARY; returns totalBooks, availableBooks=SUM(available), totalMembers, activeMembers (status=ACTIVE), activeLoans (status=ACTIVE), overdueLoans (status=ACTIVE + dueAt<now)).
+   278→
+   279→- All 4 routes use the discriminated-union `requireRole(["ADMIN", "LIBRARY"])` pattern from @/lib/sql — unauthenticated requests return 401 with `{"error":"UNAUTHORIZED"}`; wrong-role sessions return 403 with `{"error":"FORBIDDEN"}`. No 500s for unauthenticated requests.
+   280→
+   281→- Created src/components/dashboard/library.tsx exporting `LibraryDashboard()`. Uses DashboardLayout with 4 sidebar tabs:
+   282→  - Overview: greeting card with library snapshot, 5 stat cards (Total books / Available copies / Members / Active loans / Overdue) that navigate to the relevant tab on click, a Quick actions card (3 links), and a Recent loans card (last 5 loans with status badge).
+   283→  - Books: search bar (250ms debounce, filters by title/author/ISBN/Dewey/category via the API), Add-book button, and a list of MatteCard rows showing title, category pill, availability pill (green/amber/red), author + Dewey + ISBN, and per-row Edit + Delete buttons. BookEditor dialog with all 8 fields.
+   284→  - Members: search bar (filters by ASO number/name/phone/CNI/email), Register-member button, and a list of rows prominently featuring the ASO card number (mono font, primary-tinted background, "ASO card number" label), name, status badge, phone/CNI/joined date, and per-row Suspend/Reactivate (cycles ACTIVE↔SUSPENDED via PATCH) + Edit + Delete buttons. MemberEditor dialog includes a prominent amber info box reminding staff: "The member must bring, in person: 1) A photocopy of their CNI, 2) Two passport-size photos. Their ASO library card will be issued in person." ASO number is auto-generated server-side and shown in the success toast.
+   285→  - Loans: filter pills (All / Active / Overdue / Returned), New-loan button, and a list of rows showing book title, status badge (Active=violet / Returned=emerald / Overdue=red), member name + ASO number (prominent mono), borrowed date, due date, and a human-readable "Due in N days" / "N days overdue" / "Returned ..." line. Overdue rows render with red-tinted border + background. Each non-returned loan has a "Return" button (PATCH). NewLoanDialog fetches available books (available>0) and active members, lets the user pick both via Select dropdowns, and shows the computed due date ("Due on <date> (14 days from today)") before submit.
+   286→  - Auth guard: useSession() check — if status loading or no session, show Loader2 spinner; on session resolution, redirect unauthenticated → { name: "login" }; wrong-role TEACHER → { name: "teacher" }, EDITOR → { name: "editor" }, other → { name: "home" }; double-checks role on render and shows spinner if not allowed while the navigate effect kicks in.
+   287→  - UI: shadcn/ui (Button, Input, Textarea, Label, Select, Dialog), MatteCard + Pill from @/components/site/primitives, lucide-react icons (BookOpen, Users, ArrowRightLeft, Plus, Trash2, Pencil, Search, Loader2, Save, X, ChevronRight, AlertCircle, CheckCircle2, CalendarClock, BookMarked, Info, Ban, RotateCcw, UserPlus, Library), sonner toast, date-fns (format, addDays, differenceInCalendarDays, parseISO). iOS-inspired matte styling with hairline borders, rounded cards, accent-tinted icons, prominent ASO number chip. Mobile responsive via DashboardLayout's grid.
+   288→
+   289→- Wired LibraryDashboard into src/app/page.tsx: imported `LibraryDashboard` from "@/components/dashboard/library", added `case "library-dashboard": return <LibraryDashboard />;` to the PageRouter switch, and added `"library-dashboard": "Library · American Space Oujda"` to the document-title map.
+   290→
+   291→Lint / type-check:
+   292→- `bun run lint` → clean (exit 0, no errors).
+   293→
+   294→Verification:
+   295→- `curl http://localhost:3000/api/library/stats` (no auth) → 401 ✓
+   296→- `curl http://localhost:3000/api/library/books` (no auth) → 401 ✓
+   297→- `curl http://localhost:3000/api/library/members` (no auth) → 401 ✓
+   298→- `curl http://localhost:3000/api/library/loans` (no auth) → 401 ✓
+   299→- All 4 endpoints return `{"error":"UNAUTHORIZED"}` body (not 500).
+   300→- Logged in as admin (admin@asoujda.ma): GET /api/library/stats → 200 with `{totalBooks:8, availableBooks:14, totalMembers:1, activeMembers:1, activeLoans:0, overdueLoans:0}`. GET /api/library/books → 200 with 8 books. GET /api/library/members → 200 with the seeded ASO-0001 member. GET /api/library/loans → 200 with `[]`.
+   301→- End-to-end loan lifecycle: POST /api/library/loans { bookId, memberId } → 201 with dueAt = borrowedAt + 14 days; stats rechecked → availableBooks went 14→13 and activeLoans 0→1. Second POST (same member, different book) → 409 `{"error":"Member already has an active loan. Return it before borrowing another book."}` (1-book rule enforced). PATCH /api/library/loans?id=... → 200 with status=RETURNED, returnedAt set; stats → availableBooks back to 14, activeLoans 0.
+   302→- POST /api/library/members { fullName, phone, cniNumber } → 201 with asoNumber="ASO-0002" (auto-incremented from the seeded ASO-0001). POST /api/library/books { title, author, copies, deweyCode } → 201 with copies=3, available=3.
+   303→- Smoke-test data cleaned up via a direct libSQL script (deleted the Test User member + Test Book created during verification) — DB restored to the seeded state.
+   304→- Home page loads 200 with no regressions.
+   305→
+   306→Files created:
+   307→- src/app/api/library/books/route.ts
+   308→- src/app/api/library/members/route.ts
+   309→- src/app/api/library/loans/route.ts
+   310→- src/app/api/library/stats/route.ts
+   311→- src/components/dashboard/library.tsx
+   312→
+   313→Files modified:
+   314→- src/app/page.tsx (imported LibraryDashboard, added PageRouter case, added "library-dashboard" entry to the title map)
+   315→
+   316→Stage Summary:
+   317→- Library Staff Dashboard is fully integrated: 4 authenticated API routes (books / members / loans / stats) backed by direct libSQL via the shared `requireRole` helper, a 4-tab dashboard (Overview / Books / Members / Loans) with search, full CRUD, member registration with auto-generated ASO card numbers, and a 14-day loan flow that enforces the 1-book-at-a-time rule, hash routing at /#/library-dashboard, and a client-side auth guard that redirects unauthenticated users to login and wrong-role users to their own dashboard.
+   318→- All 4 library endpoints return 401 (not 500) when unauthenticated; admin and library roles can read/write; everyone else gets 403. `bun run lint` is clean. Loan lifecycle (issue → return), the 1-book rule, ASO number auto-increment, and stock adjustments all verified end-to-end against the local SQLite DB.
+   319→

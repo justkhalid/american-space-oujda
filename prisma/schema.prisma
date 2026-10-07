@@ -21,6 +21,7 @@ enum Role {
   ADMIN
   TEACHER
   EDITOR
+  LIBRARY
 }
 
 model User {

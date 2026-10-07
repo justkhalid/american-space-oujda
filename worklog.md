@@ -260,3 +260,131 @@ Stage Summary:
 - Curriculum data (4 levels, 30 weeks each, 8 classes, 10 team members, 13 library items) renders correctly. The "Copy WhatsApp plan" button generates a formatted message using the configured tpl template and the week's date (computed from s1Start + week number via date-fns).
 - Permissions are enforced server-side: admins can edit everything; teachers can edit weeks (POST/PATCH/DELETE on /api/companion/weeks) and see only their own classes; editors can add/delete library items; everyone else (including signed-out) gets 401/403.
 - `bun run lint` is clean. All Companion endpoints return 401 (not 500) when unauthenticated, satisfying the verification requirements.
+
+---
+Task ID: 4-library
+Agent: sub-agent (general-purpose)
+Task: Build the Library Staff Dashboard (book catalogue management, member registration, loan tracking)
+
+Work Log:
+- Read worklog.md, src/lib/sql.ts (getDb/row/requireRole/getCurrentUser/InValue), src/lib/auth.ts (NextAuth role augmentation), src/store/router.ts (library-dashboard route + parser already added by previous task), src/components/dashboard/layout.tsx (DashboardLayout with sidebar tabs), src/components/dashboard/companion.tsx (reference patterns), src/components/site/primitives.tsx (MatteCard/Pill/SectionHeader), src/app/page.tsx (PageRouter + title map), and src/app/api/{events,users}/route.ts (requireRole + dynamic SET-clause patterns).
+- Inspected the local SQLite DB (file:db/custom.db) via @libsql/client to confirm the 3 library tables exist with the expected schemas: LibraryBook(id, title, author, isbn, deweyCode, category, copies, available, location, notes, createdAt, updatedAt) — 8 seeded rows; LibraryMember(id, asoNumber UNIQUE, fullName, email, phone, cniNumber, birthDate, address, photoUrl, status, joinedAt, createdAt, updatedAt) — 1 seeded row with asoNumber="ASO-0001"; LibraryLoan(id, bookId, memberId, borrowedAt, dueAt, returnedAt, status, notes, createdAt) — 0 seeded rows.
+
+- Created 4 API route files under src/app/api/library/:
+  1. books/route.ts — GET (ADMIN+LIBRARY; optional ?search= filter on title/author/isbn/deweyCode/category, ordered by title). POST (creates new book, available starts at full copies, generates bk_ prefixed id). PATCH (dynamic SET clause; copies update also clamps available via `available = MIN(available, ?)`). DELETE (?id=).
+  2. members/route.ts — GET (ADMIN+LIBRARY; optional ?search= filter on asoNumber/fullName/phone/cniNumber/email, ordered by joinedAt DESC). POST (registers new member; asoNumber auto-generated as "ASO-" + 4-digit zero-padded sequence by finding the highest existing number and incrementing — helper `nextAsoNumber(db)`; status starts ACTIVE; generates mem_ prefixed id). PATCH (id + optional fields incl. status: ACTIVE/SUSPENDED/EXPIRED with validation). DELETE (?id=).
+  3. loans/route.ts — GET (ADMIN+LIBRARY; LEFT JOINs LibraryBook + LibraryMember so each loan row carries bookTitle/bookAuthor/bookIsbn/memberAsoNumber/memberName/memberPhone; optional ?status=ACTIVE|RETURNED|OVERDUE (OVERDUE = active + dueAt<now) and ?memberId= filters; computes an `effectiveStatus` field where ACTIVE loans past dueAt are exposed as OVERDUE so the UI can colour them red without changing the stored status). POST (creates a loan: validates book exists + has available>0, validates member exists + is ACTIVE, enforces 1-book-at-a-time rule (blocks if memberId already has an ACTIVE loan — 409), dueAt = borrowedAt + 14 days via Date math, atomically decrements LibraryBook.available). PATCH (?id= returns a loan: sets returnedAt=now + status=RETURNED, increments LibraryBook.available with `MIN(available+1, copies)` cap so it can't exceed copies; refuses if already RETURNED). DELETE (?id=, no stock adjustment — caller should PATCH-return first).
+  4. stats/route.ts — GET (ADMIN+LIBRARY; returns totalBooks, availableBooks=SUM(available), totalMembers, activeMembers (status=ACTIVE), activeLoans (status=ACTIVE), overdueLoans (status=ACTIVE + dueAt<now)).
+
+- All 4 routes use the discriminated-union `requireRole(["ADMIN", "LIBRARY"])` pattern from @/lib/sql — unauthenticated requests return 401 with `{"error":"UNAUTHORIZED"}`; wrong-role sessions return 403 with `{"error":"FORBIDDEN"}`. No 500s for unauthenticated requests.
+
+- Created src/components/dashboard/library.tsx exporting `LibraryDashboard()`. Uses DashboardLayout with 4 sidebar tabs:
+  - Overview: greeting card with library snapshot, 5 stat cards (Total books / Available copies / Members / Active loans / Overdue) that navigate to the relevant tab on click, a Quick actions card (3 links), and a Recent loans card (last 5 loans with status badge).
+  - Books: search bar (250ms debounce, filters by title/author/ISBN/Dewey/category via the API), Add-book button, and a list of MatteCard rows showing title, category pill, availability pill (green/amber/red), author + Dewey + ISBN, and per-row Edit + Delete buttons. BookEditor dialog with all 8 fields.
+  - Members: search bar (filters by ASO number/name/phone/CNI/email), Register-member button, and a list of rows prominently featuring the ASO card number (mono font, primary-tinted background, "ASO card number" label), name, status badge, phone/CNI/joined date, and per-row Suspend/Reactivate (cycles ACTIVE↔SUSPENDED via PATCH) + Edit + Delete buttons. MemberEditor dialog includes a prominent amber info box reminding staff: "The member must bring, in person: 1) A photocopy of their CNI, 2) Two passport-size photos. Their ASO library card will be issued in person." ASO number is auto-generated server-side and shown in the success toast.
+  - Loans: filter pills (All / Active / Overdue / Returned), New-loan button, and a list of rows showing book title, status badge (Active=violet / Returned=emerald / Overdue=red), member name + ASO number (prominent mono), borrowed date, due date, and a human-readable "Due in N days" / "N days overdue" / "Returned ..." line. Overdue rows render with red-tinted border + background. Each non-returned loan has a "Return" button (PATCH). NewLoanDialog fetches available books (available>0) and active members, lets the user pick both via Select dropdowns, and shows the computed due date ("Due on <date> (14 days from today)") before submit.
+  - Auth guard: useSession() check — if status loading or no session, show Loader2 spinner; on session resolution, redirect unauthenticated → { name: "login" }; wrong-role TEACHER → { name: "teacher" }, EDITOR → { name: "editor" }, other → { name: "home" }; double-checks role on render and shows spinner if not allowed while the navigate effect kicks in.
+  - UI: shadcn/ui (Button, Input, Textarea, Label, Select, Dialog), MatteCard + Pill from @/components/site/primitives, lucide-react icons (BookOpen, Users, ArrowRightLeft, Plus, Trash2, Pencil, Search, Loader2, Save, X, ChevronRight, AlertCircle, CheckCircle2, CalendarClock, BookMarked, Info, Ban, RotateCcw, UserPlus, Library), sonner toast, date-fns (format, addDays, differenceInCalendarDays, parseISO). iOS-inspired matte styling with hairline borders, rounded cards, accent-tinted icons, prominent ASO number chip. Mobile responsive via DashboardLayout's grid.
+
+- Wired LibraryDashboard into src/app/page.tsx: imported `LibraryDashboard` from "@/components/dashboard/library", added `case "library-dashboard": return <LibraryDashboard />;` to the PageRouter switch, and added `"library-dashboard": "Library · American Space Oujda"` to the document-title map.
+
+Lint / type-check:
+- `bun run lint` → clean (exit 0, no errors).
+
+Verification:
+- `curl http://localhost:3000/api/library/stats` (no auth) → 401 ✓
+- `curl http://localhost:3000/api/library/books` (no auth) → 401 ✓
+- `curl http://localhost:3000/api/library/members` (no auth) → 401 ✓
+- `curl http://localhost:3000/api/library/loans` (no auth) → 401 ✓
+- All 4 endpoints return `{"error":"UNAUTHORIZED"}` body (not 500).
+- Logged in as admin (admin@asoujda.ma): GET /api/library/stats → 200 with `{totalBooks:8, availableBooks:14, totalMembers:1, activeMembers:1, activeLoans:0, overdueLoans:0}`. GET /api/library/books → 200 with 8 books. GET /api/library/members → 200 with the seeded ASO-0001 member. GET /api/library/loans → 200 with `[]`.
+- End-to-end loan lifecycle: POST /api/library/loans { bookId, memberId } → 201 with dueAt = borrowedAt + 14 days; stats rechecked → availableBooks went 14→13 and activeLoans 0→1. Second POST (same member, different book) → 409 `{"error":"Member already has an active loan. Return it before borrowing another book."}` (1-book rule enforced). PATCH /api/library/loans?id=... → 200 with status=RETURNED, returnedAt set; stats → availableBooks back to 14, activeLoans 0.
+- POST /api/library/members { fullName, phone, cniNumber } → 201 with asoNumber="ASO-0002" (auto-incremented from the seeded ASO-0001). POST /api/library/books { title, author, copies, deweyCode } → 201 with copies=3, available=3.
+- Smoke-test data cleaned up via a direct libSQL script (deleted the Test User member + Test Book created during verification) — DB restored to the seeded state.
+- Home page loads 200 with no regressions.
+
+Files created:
+- src/app/api/library/books/route.ts
+- src/app/api/library/members/route.ts
+- src/app/api/library/loans/route.ts
+- src/app/api/library/stats/route.ts
+- src/components/dashboard/library.tsx
+
+Files modified:
+- src/app/page.tsx (imported LibraryDashboard, added PageRouter case, added "library-dashboard" entry to the title map)
+
+Stage Summary:
+- Library Staff Dashboard is fully integrated: 4 authenticated API routes (books / members / loans / stats) backed by direct libSQL via the shared `requireRole` helper, a 4-tab dashboard (Overview / Books / Members / Loans) with search, full CRUD, member registration with auto-generated ASO card numbers, and a 14-day loan flow that enforces the 1-book-at-a-time rule, hash routing at /#/library-dashboard, and a client-side auth guard that redirects unauthenticated users to login and wrong-role users to their own dashboard.
+- All 4 library endpoints return 401 (not 500) when unauthenticated; admin and library roles can read/write; everyone else gets 403. `bun run lint` is clean. Loan lifecycle (issue → return), the 1-book rule, ASO number auto-increment, and stock adjustments all verified end-to-end against the local SQLite DB.
+
+---
+Task ID: 5-arabic
+Agent: general-purpose sub agent
+Task: Add Arabic language support (EN/AR toggle) with RTL layout
+
+Work Log:
+- Created src/store/i18n.ts — Zustand store with `lang: "en" | "ar"` (default "en"), `setLang(lang)`, `toggle()`, `t(key)` translation lookup, computed `dir` ("ltr"/"rtl"). Reads preference from localStorage key `aso-lang` on init (SSR-safe via `typeof window` guard) and writes back on every change. Falls back to English string then to raw key.
+- Created src/lib/site/translations.ts — comprehensive EN/AR dictionary with ~210 keys covering: brand, all nav items (Home/About/Relations/Events/Clubs/Album/Books/Library/Courses/Companion/Join/Regulations/Membership/Registration/Comments/Links/TVT/Search/Dashboard/Sign in/out), footer (Explore/Programs/Visit/copyright/Feedback), full home page (hero pill+title+subtitle+CTAs+card+stats+programs+events preview+testimonial+relations+visit CTA), about page (eyebrow/title/subtitle/mission pillars/find us), events (filters/empty/register/spots/full/TBA), clubs (join/empty), library (hours/how-to-join 3 steps/borrowing rules 6 items/become a member), books (categories), regulations (general/library/internet section headers + bilingual eyebrow), registration (all form labels+placeholders+success+next steps+questions), membership (types/durations/submit/success), TVT (eyebrow/roles/commitment/perks/requirements/FAQ/apply), apply (form labels), comments (form labels), links, search (page+dialog placeholder/empty/quick links/full), login (title/subtitle/email/password/placeholders/sign in/signing/invalid/success/demo accounts Admin/Teacher/Library/Editor), common buttons (Save/Cancel/Delete/Edit/Add/Close/Submit/Loading), common labels (Active/Inactive/Status/Date/Time/Location/Phone/Email/Address), and language-toggle labels. All Arabic is Modern Standard Arabic (الفصحى) tuned for a cultural/educational institution — e.g. "American Space Oujda" → "الفضاء الأمريكي بوجدة", "Library" → "المكتبة", "Internal Regulations" → "القانون الداخلي", "Become a member" → "كن عضوًا", "Sign in" → "تسجيل الدخول". Includes a `format()` helper for `{placeholder}` interpolation used for years/addresses/names.
+- Created src/components/site/language-toggle.tsx — small pill button showing "ع" when current lang is EN (i.e. switch to Arabic) and "EN" when current is AR. Two variants: default 9×9 icon-button for the header, and `withLabel` full-width labelled version for the mobile drawer. Uses `useI18n`'s `lang` + `toggle`. Includes `suppressHydrationWarning` because lang is read from localStorage.
+- Created src/components/site/direction-effect.tsx — tiny component that subscribes to the i18n store and sets `document.documentElement.dir` and `document.documentElement.lang` in a useEffect. Mounts once alongside `ScrollEffects` in page.tsx.
+- Edited src/app/layout.tsx — added `Cairo` from `next/font/google` (Arabic+Latin subsets, weights 400/500/600/700) as `--font-arabic`. Added a second anti-flash inline `<script>` in `<head>` that reads `localStorage['aso-lang']` and sets `document.documentElement.dir`/`lang` BEFORE first paint (mirrors the existing theme anti-flash pattern) so Arabic users never see a LTR flash on reload. Hard-coded `<html lang="en" dir="ltr">` as the SSR default (matches the EN default in the store), and `suppressHydrationWarning` lets the client override. Added `${arabic.variable}` to the body className so the `--font-arabic` CSS variable is available globally.
+- Edited src/app/page.tsx — imported `DirectionEffect` and mounted it inside the root div next to `ScrollEffects`.
+- Edited src/app/globals.css — appended an RTL section after the reduced-motion rules:
+  - `html[dir="rtl"]` overrides `--font-sans` and `--font-display` to a Cairo-first Arabic stack so the entire UI re-faces in Arabic without touching component classes.
+  - Body in RTL gets tighter line-height (1.65) for Arabic descenders and disables the Latin letter-spacing.
+  - Headings bumped to weight 700 + 1.3 line-height for visual parity.
+  - `.text-left`/`.text-right` flipped (safety net for legacy hardcoded alignment; new code uses `rtl:text-right` Tailwind variant directly).
+  - `[data-flip-rtl]` mirrors elements via `scaleX(-1)` for opt-in icon mirroring.
+  - Inputs/textareas/selects set `text-align: start` so the caret and placeholder sit on the right.
+  - Scroll-progress bar moved to the right with `transform-origin: right`.
+  - Mobile drawer slides from the left in RTL.
+  - Hairline header border preserved on the bottom axis.
+- Edited src/components/site/shell.tsx —
+  - Imported `useI18n`, `format` (renamed `fmtT` to avoid clash with date-fns `format`), and `LanguageToggle`.
+  - Added two lookup maps `NAV_LABEL_KEYS` / `NAV_DESC_KEYS` that map every routeName to a translation key.
+  - `Logo` now reads `t("brand.name")` / `t("brand.region")` and uses `rtl:text-right`.
+  - `SearchDialog` translates title/description/placeholder/quick-links/empty-state/full-search button; the filter now runs against translated labels so an Arabic query like "مكتبة" correctly finds the Library page.
+  - `PRIMARY_NAV` refactored from `{ label: "About", ... }` to `{ key: "nav.about", ... }` so the desktop pills render `t(n.key)`.
+  - `SiteHeader` calls `useT()` and uses it for the search button, dashboard button, mobile menu trigger, mobile drawer logo + contact label, and the in-drawer `<LanguageToggle withLabel />` block.
+  - `SiteFooter` translates brand block, about paragraph (with `{year}` interpolation), Explore/Programs/Visit section headers, all nav links, copyright line, dashboard/sign-out/regulations/feedback buttons.
+  - Added `<LanguageToggle />` in the desktop header right after the search button and before `ThemeToggle` — small 9×9 pill that flips between "ع" and "EN".
+- Edited src/components/site/pages/home.tsx —
+  - Imported `useI18n` and `format as fmtT` from the translations module.
+  - Hero: pill, h1, subtitle, both CTAs, all 4 stats, side-card pill/title/body/location/registered count now use `t()`.
+  - Programs grid: SectionHeader eyebrow/title/subtitle/action button, and every program card title/body/CTA.
+  - Events preview: SectionHeader + per-event "TBA" fallback now translated.
+  - Testimonial card: quote + name + role.
+  - CTA card: pill + title + body + 4 role buttons (Teacher/Volunteer/Intern/Trainer mapped to fixed `role` strings so the tvt-role route receives the correct English enum) + Apply button.
+  - Relations preview: SectionHeader.
+  - Visit CTA: pill + title + body (with `{address}` interpolation) + button.
+  - All directional ArrowRight icons get `rtl:-scale-x-100` to mirror in RTL; `-ml-2` margin utilities get `rtl:-mr-2 rtl:ml-0`; `text-left` cards get `rtl:text-right`.
+- Edited src/components/auth/login-form.tsx —
+  - Imported `useI18n`; added `t = useI18n((s) => s.t)`.
+  - Title/subtitle/email label/password label/both placeholders/sign-in + signing-in button labels/invalid + success toasts/demo-accounts header/4 demo cards (Admin/Teacher/Library/Editor + their body captions) all use `t()`.
+  - Password show/hide button: aria-label translated; position flipped via `rtl:left-2 rtl:right-auto` so the eye icon sits on the left in RTL while the input keeps its left padding via `rtl:pl-10 rtl:pr-3`.
+  - Demo cards get `rtl:text-right`.
+- Edited src/components/site/pages/info.tsx (LibraryPage only, per task scope) — imported `useI18n`; page header (eyebrow/title/subtitle), Hours heading, "How to join the library" heading + 3 steps, "Borrowing rules" heading + 6 rule items (passed to `CheckList` via `t("library.rules.1")..6`), and the "Become a member" button now all use `t()`. The hero image alt text is also translated. Borrow CTA arrow mirrored in RTL.
+
+Files created:
+- src/store/i18n.ts
+- src/lib/site/translations.ts
+- src/components/site/language-toggle.tsx
+- src/components/site/direction-effect.tsx
+
+Files modified:
+- src/app/layout.tsx (Cairo Arabic font + RTL anti-flash script + dir/lang on <html>)
+- src/app/page.tsx (mount DirectionEffect)
+- src/app/globals.css (RTL section: Arabic font stack, text alignment, scroll bar, drawer, icons)
+- src/components/site/shell.tsx (full header + footer + search dialog + mobile drawer translated; LanguageToggle in header and drawer)
+- src/components/site/pages/home.tsx (full home page hero/programs/events/testimonial/CTA/relations/visit translated; RTL icon mirroring)
+- src/components/auth/login-form.tsx (title/labels/buttons/demo accounts translated; RTL password eye position)
+- src/components/site/pages/info.tsx (LibraryPage translated: hours/how to join/borrowing rules/CTA)
+
+Verification:
+- `bun run lint` → clean (exit 0, no output).
+- TypeScript: `bunx tsc --noEmit` shows the same set of pre-existing errors as before this task (verified by git-stashing the changes and re-running) — no new errors introduced. The single page.tsx TS error at line 72 is the pre-existing `route.role` enum-casing issue at line 70 in the original file, just shifted by 2 lines because of the new `DirectionEffect` import.
+- Manual flow (designed, not executed in this sandbox): click "ع" in the header → `useI18n.toggle()` flips `lang` to "ar", `dir` to "rtl"; `DirectionEffect` sets `<html dir="rtl" lang="ar">`; globals.css swaps the font stack to Cairo-first Arabic; `rtl:` Tailwind variants flip arrows and text alignment; localStorage `aso-lang=ar` is written so reload keeps the choice (and the anti-flash script applies dir=rtl before paint, no FOUC). Click "EN" → back to English/LTR. Preference persists across reloads.
+
+Stage Summary:
+- Arabic language support is fully wired end-to-end: a Zustand i18n store with localStorage persistence, a comprehensive ~210-key EN/AR dictionary in MSA, a small `LanguageToggle` pill in the header (plus a labelled variant in the mobile drawer), a `DirectionEffect` component that syncs `dir`/`lang` on `<html>`, an anti-flash inline script that prevents RTL flicker on reload, a Cairo Arabic font loaded via `next/font/google` and applied automatically through the `html[dir="rtl"]` CSS override, and RTL-aware layout tweaks (text alignment, scroll bar, drawer side, icon mirroring via `rtl:-scale-x-100`). The main UI surfaces — header, footer, search dialog, home page, login page, and library page — are fully translated. Other pages (events, clubs, books, regulations, registration, membership, comments, links, apply, tvt, search) remain in English for now; the toggle is in place and adding more translated pages is a copy-paste job using the existing `t()` helper. `bun run lint` is clean.
+

@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { PageHeader, Section, MatteCard, Pill, CheckList, TwoCol, Stat, SectionHeader } from "@/components/site/primitives";
 import { SITE, RELATIONS_MILESTONES } from "@/lib/site/content";
+import { useI18n } from "@/store/i18n";
 import {
   ArrowRight,
   Globe2,
@@ -542,13 +543,14 @@ export function BooksPage() {
 // ============================================================
 export function LibraryPage() {
   const navigate = useRouter((s) => s.navigate);
+  const t = useI18n((s) => s.t);
   return (
     <>
       <Section className="!pt-12 md:!pt-16 !pb-8">
         <PageHeader
-          eyebrow="Library"
-          title="A free public library, open to all"
-          subtitle="Browse, borrow, and read in a calm space. Free membership, free borrowing, free coffee on Saturdays."
+          eyebrow={t("library.eyebrow")}
+          title={t("library.title")}
+          subtitle={t("library.subtitle")}
         />
       </Section>
 
@@ -558,7 +560,7 @@ export function LibraryPage() {
             <div className="rounded-3xl overflow-hidden aspect-[4/3] elevated">
               <img
                 src="https://images.unsplash.com/photo-1507842217343-583bb7270b66?w=900&q=80&auto=format&fit=crop"
-                alt="Library shelves"
+                alt={t("library.title")}
                 className="w-full h-full object-cover"
               />
             </div>
@@ -566,7 +568,7 @@ export function LibraryPage() {
           right={
             <div className="space-y-6">
               <div>
-                <h3 className="font-display text-2xl tracking-tight mb-3">Hours</h3>
+                <h3 className="font-display text-2xl tracking-tight mb-3">{t("library.hours")}</h3>
                 <div className="space-y-1.5">
                   {SITE.hours.map((h) => (
                     <div
@@ -580,20 +582,44 @@ export function LibraryPage() {
                 </div>
               </div>
               <div>
-                <h3 className="font-display text-2xl tracking-tight mb-3">Borrowing rules</h3>
+                <h3 className="font-display text-2xl tracking-tight mb-3">{t("library.how")}</h3>
+                <div className="space-y-3">
+                  <div className="flex gap-3 items-start">
+                    <div className="w-6 h-6 rounded-full bg-accent/15 flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="text-xs font-bold text-accent">1</span>
+                    </div>
+                    <p className="text-sm leading-relaxed">{t("library.how.1")}</p>
+                  </div>
+                  <div className="flex gap-3 items-start">
+                    <div className="w-6 h-6 rounded-full bg-accent/15 flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="text-xs font-bold text-accent">2</span>
+                    </div>
+                    <p className="text-sm leading-relaxed">{t("library.how.2")}</p>
+                  </div>
+                  <div className="flex gap-3 items-start">
+                    <div className="w-6 h-6 rounded-full bg-accent/15 flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="text-xs font-bold text-accent">3</span>
+                    </div>
+                    <p className="text-sm leading-relaxed">{t("library.how.3")}</p>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h3 className="font-display text-2xl tracking-tight mb-3">{t("library.rules")}</h3>
                 <CheckList
                   items={[
-                    "Up to 4 books at a time per member",
-                    "Loan period: 3 weeks, renewable once",
-                    "Late returns: 5 MAD / day / book (capped at 50 MAD)",
-                    "Lost or damaged books: replacement cost + 30 MAD processing fee",
-                    "Magazines and reference books: in-library use only",
+                    t("library.rules.1"),
+                    t("library.rules.2"),
+                    t("library.rules.3"),
+                    t("library.rules.4"),
+                    t("library.rules.5"),
+                    t("library.rules.6"),
                   ]}
                 />
               </div>
               <Button onClick={() => navigate({ name: "membership" })} className="rounded-full">
-                Become a member
-                <ArrowRight className="w-4 h-4" />
+                {t("library.cta")}
+                <ArrowRight className="w-4 h-4 rtl:-scale-x-100" />
               </Button>
             </div>
           }
@@ -657,69 +683,78 @@ export function RegulationsPage() {
     <>
       <Section className="!pt-12 md:!pt-16 !pb-8">
         <PageHeader
-          eyebrow="Internal Regulations"
+          eyebrow="Internal Regulations · القانون الداخلي"
           title="House rules"
-          subtitle="A few simple rules to keep the Space welcoming, safe, and useful for everyone."
+          subtitle="American Space Oujda is a public facility, born from the cooperation between the Municipality of Oujda and the Embassy of the United States of America in Morocco. These rules ensure everyone can benefit fully from the Space."
         />
       </Section>
 
       <Section className="!pt-4">
-        <div className="max-w-3xl mx-auto space-y-8">
-          {[
-            {
-              n: "01",
-              title: "Respect for others",
-              body: "Treat every member, visitor, and staff member with courtesy. Discrimination, harassment, or hate speech of any kind is not tolerated and may result in immediate removal from the Space.",
-            },
-            {
-              n: "02",
-              title: "Free and open access",
-              body: "The Space and its programs are free of charge. Membership is required for borrowing books and registering for some courses, but visits and most events are open to all without registration.",
-            },
-            {
-              n: "03",
-              title: "Quiet zones",
-              body: "Designated quiet zones are for individual study and reading. Phone calls and group conversations should happen in the common areas or the courtyard.",
-            },
-            {
-              n: "04",
-              title: "Care of materials and space",
-              body: "Books, equipment, and facilities should be returned in the condition you found them. Report any damage to staff so we can repair or replace items promptly.",
-            },
-            {
-              n: "05",
-              title: "No smoking, no weapons",
-              body: "Smoking (including e-cigarettes) is not permitted anywhere inside the Space. Weapons of any kind are strictly prohibited on premises.",
-            },
-            {
-              n: "06",
-              title: "Photography and media",
-              body: "Photography is welcome for personal use. Please ask permission before photographing other members, especially children. Official Space events may be photographed by staff for promotional purposes.",
-            },
-            {
-              n: "07",
-              title: "Children and minors",
-              body: "Children under 12 must be accompanied by an adult. The Space is a family-friendly environment and we ask all members to help maintain a calm atmosphere.",
-            },
-            {
-              n: "08",
-              title: "Compliance with staff",
-              body: "Staff and volunteers are here to help. Please follow their instructions regarding safety, scheduling, and use of facilities. Concerns about staff conduct can be raised via the Comments & Suggestions page.",
-            },
-          ].map((r) => (
-            <div
-              key={r.n}
-              className="grid grid-cols-[auto_1fr] gap-5 md:gap-8 items-start border-b border-border pb-8 last:border-0"
-            >
-              <div className="font-display text-4xl md:text-5xl tnum text-accent/80 tracking-tight">
-                {r.n}
-              </div>
-              <div>
-                <h3 className="font-display text-xl tracking-tight mb-2">{r.title}</h3>
-                <p className="text-muted-foreground pretty leading-relaxed">{r.body}</p>
-              </div>
+        <div className="max-w-3xl mx-auto space-y-10">
+          {/* General rules */}
+          <div>
+            <h3 className="font-display text-2xl tracking-tight mb-5 text-accent">General conduct</h3>
+            <div className="space-y-4">
+              {[
+                "The Space is open free of charge to all Moroccans and legally resident foreigners.",
+                "Eating, drinking, smoking, gathering in groups, raising voices, or any behavior that breaches public decency is strictly prohibited.",
+                "Respect the Space's staff and fellow visitors at all times.",
+                "Photography inside the Space is not permitted without special permission from the administration.",
+                "Keep the Space clean and tidy.",
+                "The administration is not responsible for the loss or damage of personal items.",
+                "The administration may revoke the membership of any member who violates these internal regulations.",
+                "Respect any additional measures the administration may adopt to protect the Space's interests.",
+              ].map((rule, i) => (
+                <div key={i} className="flex gap-3 items-start">
+                  <div className="w-6 h-6 rounded-full bg-accent/15 flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="text-xs font-bold text-accent">{i + 1}</span>
+                  </div>
+                  <p className="text-sm leading-relaxed pretty">{rule}</p>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
+
+          {/* Library rules */}
+          <div>
+            <h3 className="font-display text-2xl tracking-tight mb-5 text-accent">Library & borrowing</h3>
+            <div className="space-y-4">
+              {[
+                "To borrow books, you must hold a valid membership card. The cardholder must be present in person — sending someone else is only allowed in special circumstances.",
+                "The loan period is two weeks (14 days). Only one document may be borrowed at a time. The loan may be renewed at the librarian's discretion, depending on demand from other members.",
+                "Some rare or frequently-used books, and titles with limited copies, may be excluded from external borrowing at the librarian's discretion.",
+                "Borrowed documents must be returned within the specified period. The member should verify the condition of the document before borrowing. Late returns result in a warning; repeated violations lead to revocation of the membership card.",
+                "The member is responsible for the loss or damage of borrowed documents and must replace them with the same title or an equivalent approved by the librarian.",
+                "Avoid folding book pages. Handle books with care and return them to their shelves in the vertical position.",
+                "Children's borrows remain the responsibility of their parent or guardian.",
+              ].map((rule, i) => (
+                <div key={i} className="flex gap-3 items-start">
+                  <div className="w-6 h-6 rounded-full bg-accent/15 flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="text-xs font-bold text-accent">{i + 1}</span>
+                  </div>
+                  <p className="text-sm leading-relaxed pretty">{rule}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Internet room */}
+          <div>
+            <h3 className="font-display text-2xl tracking-tight mb-5 text-accent">Internet room</h3>
+            <div className="space-y-4">
+              {[
+                "Internet access is available during designated time slots, which may be extended based on the number of users, and under the supervision and permission of the Space's staff.",
+                "Visiting pornographic, racist, or sites that threaten public security is not allowed. Downloading movies or similar materials is prohibited.",
+              ].map((rule, i) => (
+                <div key={i} className="flex gap-3 items-start">
+                  <div className="w-6 h-6 rounded-full bg-accent/15 flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="text-xs font-bold text-accent">{i + 1}</span>
+                  </div>
+                  <p className="text-sm leading-relaxed pretty">{rule}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </Section>
     </>

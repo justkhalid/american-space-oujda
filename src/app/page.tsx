@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter, type Route } from "@/store/router";
 import { SiteHeader, SiteFooter } from "@/components/site/shell";
 import { ScrollEffects } from "@/components/site/scroll-effects";
+import { DirectionEffect } from "@/components/site/direction-effect";
 import { HomePage } from "@/components/site/pages/home";
 import { TVTHubPage, TVTRolePage } from "@/components/site/pages/tvt";
 import { ApplyPage } from "@/components/site/pages/apply";
@@ -15,6 +16,7 @@ import { AdminDashboard } from "@/components/dashboard/admin";
 import { TeacherDashboard } from "@/components/dashboard/teacher";
 import { EditorDashboard } from "@/components/dashboard/editor";
 import { CompanionDashboard } from "@/components/dashboard/companion";
+import { LibraryDashboard } from "@/components/dashboard/library";
 import {
   AboutPage,
   RelationsPage,
@@ -82,6 +84,8 @@ function PageRouter({ route }: { route: Route }) {
     case "companion":
     case "companion-tab":
       return <CompanionDashboard initialTab={route.name === "companion-tab" ? route.tab : "overview"} />;
+    case "library-dashboard":
+      return <LibraryDashboard />;
     case "search":
       return <SearchPage initialQuery={route.q} />;
     default:
@@ -117,6 +121,7 @@ export default function Home() {
       teacher: "Teacher · American Space Oujda",
       editor: "Editor · American Space Oujda",
       companion: "ELTASO Companion · American Space Oujda",
+      "library-dashboard": "Library · American Space Oujda",
       search: "Search · American Space Oujda",
     };
     document.title = titles[route.name] || "American Space Oujda";
@@ -125,6 +130,7 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col">
       <ScrollEffects />
+      <DirectionEffect />
       <SiteHeader />
       <main className="flex-1">
         {/* key forces remount + page-enter animation on route change */}

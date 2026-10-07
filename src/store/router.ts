@@ -31,6 +31,7 @@ export type Route =
   | { name: "teacher-tab"; tab: TeacherTab }
   | { name: "editor" }
   | { name: "editor-tab"; tab: EditorTab }
+  | { name: "library-dashboard" }
   | { name: "login" }
   | { name: "companion" }
   | { name: "companion-tab"; tab: CompanionTab }
@@ -123,6 +124,8 @@ function parseHash(): Route {
       return { name: "editor" };
     case "login":
       return { name: "login" };
+    case "library-dashboard":
+      return { name: "library-dashboard" };
     case "companion":
       if (second && ["overview", "levels", "classes", "team", "library"].includes(second)) {
         return { name: "companion-tab", tab: second as CompanionTab };

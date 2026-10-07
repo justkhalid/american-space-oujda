@@ -12,27 +12,35 @@ export function ScrollEffects() {
     bar.id = "scroll-progress";
     document.body.appendChild(bar);
 
+    let ticking = false;
     const updateBar = () => {
-      const scrollTop = window.scrollY;
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-      const pct = docHeight > 0 ? scrollTop / docHeight : 0;
-      bar.style.transform = `scaleX(${pct})`;
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const scrollTop = window.scrollY;
+        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const pct = docHeight > 0 ? scrollTop / docHeight : 0;
+        bar.style.transform = `scaleX(${pct})`;
+        ticking = false;
+      });
     };
     updateBar();
     window.addEventListener("scroll", updateBar, { passive: true });
     window.addEventListener("resize", updateBar);
 
     // 2. Scroll reveal — observe elements with .reveal and .stagger
+    //    Elements stay visible once revealed (we unobserve after triggering).
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
           if (entry.isIntersecting) {
+            // Small delay so the animation feels weighted, not instant
             entry.target.classList.add("is-visible");
             observer.unobserve(entry.target);
           }
         }
       },
-      { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
+      { threshold: 0.08, rootMargin: "0px 0px -60px 0px" }
     );
 
     const observeAll = () => {
@@ -43,7 +51,10 @@ export function ScrollEffects() {
     observeAll();
 
     // Re-observe when DOM changes (route changes add new elements)
-    const mo = new MutationObserver(() => observeAll());
+    const mo = new MutationObserver(() => {
+      // Debounce — only re-observe once per batch of DOM changes
+      requestAnimationFrame(observeAll);
+    });
     mo.observe(document.body, { childList: true, subtree: true });
 
     return () => {
