@@ -17,6 +17,7 @@ import { TeacherDashboard } from "@/components/dashboard/teacher";
 import { EditorDashboard } from "@/components/dashboard/editor";
 import { CompanionDashboard } from "@/components/dashboard/companion";
 import { LibraryDashboard } from "@/components/dashboard/library";
+import { InternDashboard } from "@/components/dashboard/intern";
 import {
   AboutPage,
   RelationsPage,
@@ -86,6 +87,9 @@ function PageRouter({ route }: { route: Route }) {
       return <CompanionDashboard initialTab={route.name === "companion-tab" ? route.tab : "overview"} />;
     case "library-dashboard":
       return <LibraryDashboard />;
+    case "intern":
+    case "intern-tab":
+      return <InternDashboard initialTab={route.name === "intern-tab" ? route.tab : "events"} />;
     case "search":
       return <SearchPage initialQuery={route.q} />;
     default:

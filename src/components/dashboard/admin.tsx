@@ -4,6 +4,7 @@ import * as React from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, type AdminTab } from "@/store/router";
 import { DashboardLayout, type DashTab } from "@/components/dashboard/layout";
+import { InternsTab, AdminLibraryTab, ExportsTab } from "@/components/dashboard/admin-sections";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,6 +19,9 @@ import {
 import { MatteCard, Pill } from "@/components/site/primitives";
 import {
   ShieldCheck,
+  FileBarChart,
+  Library,
+  Download,
   LayoutGrid,
   FileText,
   CalendarDays,
@@ -61,6 +65,9 @@ const TABS: DashTab[] = [
   { key: "comments", label: "Comments", icon: MessageSquare },
   { key: "settings", label: "Site Settings", icon: Settings },
   { key: "users", label: "Users", icon: UserCog },
+  { key: "interns", label: "Interns", icon: FileBarChart },
+  { key: "library", label: "Library", icon: Library },
+  { key: "exports", label: "Exports", icon: Download },
   { key: "companion", label: "Companion", icon: BookOpen },
 ];
 
@@ -83,6 +90,8 @@ export function AdminDashboard({ initialTab = "overview" }: { initialTab?: Admin
       navigate({ name: "teacher" });
     } else if (role === "EDITOR") {
       navigate({ name: "editor" });
+    } else if (role === "INTERN") {
+      navigate({ name: "intern" });
     }
   }, [session, status, navigate]);
 
@@ -124,6 +133,9 @@ export function AdminDashboard({ initialTab = "overview" }: { initialTab?: Admin
       {tab === "comments" && <CommentsTab />}
       {tab === "settings" && <SettingsTab />}
       {tab === "users" && <UsersTab />}
+      {tab === "interns" && <InternsTab />}
+      {tab === "library" && <AdminLibraryTab />}
+      {tab === "exports" && <ExportsTab />}
       {tab === "companion" && <CompanionLinkTab onOpen={() => navigate({ name: "companion" })} />}
     </DashboardLayout>
   );
@@ -1715,6 +1727,7 @@ function UsersTab() {
                   <SelectItem value="TEACHER">Teacher</SelectItem>
                   <SelectItem value="LIBRARY">Library</SelectItem>
                   <SelectItem value="EDITOR">Editor</SelectItem>
+                  <SelectItem value="INTERN">Intern</SelectItem>
                 </SelectContent>
               </Select>
               <button

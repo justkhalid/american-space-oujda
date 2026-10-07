@@ -33,9 +33,13 @@ export type Route =
   | { name: "editor-tab"; tab: EditorTab }
   | { name: "library-dashboard" }
   | { name: "login" }
+  | { name: "intern" }
+  | { name: "intern-tab"; tab: InternTab }
   | { name: "companion" }
   | { name: "companion-tab"; tab: CompanionTab }
   | { name: "search"; q?: string };
+
+export type InternTab = "events" | "reports" | "requests";
 
 export type CompanionTab = "overview" | "levels" | "classes" | "team" | "library";
 
@@ -51,7 +55,10 @@ export type AdminTab =
   | "registrations"
   | "settings"
   | "users"
-  | "comments";
+  | "comments"
+  | "interns"
+  | "library"
+  | "exports";
 
 export type TeacherTab =
   | "courses"
@@ -108,10 +115,15 @@ function parseHash(): Route {
     case "comments":
       return { name: "comments" };
     case "admin":
-      if (second && ["overview","applications","events","gallery","courses","clubs","links","members","registrations","settings","users","comments"].includes(second)) {
+      if (second && ["overview","applications","events","gallery","courses","clubs","links","members","registrations","settings","users","comments","interns","library","exports"].includes(second)) {
         return { name: "admin-tab", tab: second as AdminTab };
       }
       return { name: "admin" };
+    case "intern":
+      if (second && ["events", "reports", "requests"].includes(second)) {
+        return { name: "intern-tab", tab: second as InternTab };
+      }
+      return { name: "intern" };
     case "teacher":
       if (second && ["courses","attendance","grades","reports"].includes(second)) {
         return { name: "teacher-tab", tab: second as TeacherTab };
@@ -162,6 +174,8 @@ export function routeToHash(route: Route): string {
       return route.role ? `#/tvt/apply/${route.role}` : "#/tvt/apply";
     case "admin-tab":
       return `#/admin/${route.tab}`;
+    case "intern-tab":
+      return `#/intern/${route.tab}`;
     case "teacher-tab":
       return `#/teacher/${route.tab}`;
     case "editor-tab":

@@ -15,7 +15,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Menu, Search, Sparkles, Moon, Sun, ChevronRight, LogIn, LayoutDashboard, LogOut, Facebook, Instagram, Youtube, BookOpen } from "lucide-react";
+import { Menu, Search, Sparkles, Moon, Sun, ChevronRight, ChevronDown, LogIn, LayoutDashboard, LogOut, Facebook, Instagram, Youtube, BookOpen } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useSession, signOut } from "next-auth/react";
 import {
@@ -236,19 +236,78 @@ function SearchDialog({
   );
 }
 
-// Desktop nav: top-level groups. Labels are translated at render time.
-// Companion is intentionally absent: it lives inside the admin/teacher
-// dashboards (tab) and at /#/companion, guarded by login.
-// Each item carries its own hover accent (per-item color theming).
-const PRIMARY_NAV = [
-  { key: "nav.about", route: { name: "about" as const }, hover: "hover:text-sky-600 dark:hover:text-sky-400 hover:bg-sky-500/10" },
-  { key: "nav.events", route: { name: "events" as const }, hover: "hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-500/10" },
-  { key: "nav.clubs", route: { name: "clubs" as const }, hover: "hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-500/10" },
-  { key: "nav.album", route: { name: "album" as const }, hover: "hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-500/10" },
-  { key: "nav.library", route: { name: "library" as const }, hover: "hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10" },
-  { key: "nav.books", route: { name: "books" as const }, hover: "hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-500/10" },
-  { key: "nav.courses", route: { name: "registration" as const }, hover: "hover:text-teal-600 dark:hover:text-teal-400 hover:bg-teal-500/10" },
-  { key: "nav.join", route: { name: "tvt" as const }, highlight: true, hover: "" },
+// Desktop nav model: top-level groups; some carry a dropdown of sub-pages.
+// Labels are translated at render time. Companion lives only inside the
+// admin/teacher dashboards (tab) and at /#/companion, guarded by login.
+type NavChild = { key: string; route: { name: string }; descKey: string };
+type NavEntry = {
+  key: string;
+  route: { name: string };
+  hover: string;
+  highlight?: boolean;
+  children?: NavChild[];
+};
+
+const PRIMARY_NAV: NavEntry[] = [
+  { key: "nav.about", route: { name: "about" }, hover: "hover:text-sky-600 dark:hover:text-sky-400 hover:bg-sky-500/10" },
+  {
+    key: "nav.activities",
+    route: { name: "events" },
+    hover: "hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-500/10",
+    children: [
+      { key: "nav.events", route: { name: "events" }, descKey: "events.subtitle" },
+      { key: "nav.clubs", route: { name: "clubs" }, descKey: "clubs.subtitle" },
+    ],
+  },
+  {
+    key: "nav.library",
+    route: { name: "library" },
+    hover: "hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10",
+    children: [
+      { key: "nav.library", route: { name: "library" }, descKey: "library.subtitle" },
+      { key: "nav.books", route: { name: "books" }, descKey: "books.subtitle" },
+    ],
+  },
+  { key: "nav.album", route: { name: "album" }, hover: "hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-500/10" },
+  { key: "nav.courses", route: { name: "registration" }, hover: "hover:text-teal-600 dark:hover:text-teal-400 hover:bg-teal-500/10" },
+  { key: "nav.join", route: { name: "tvt" }, highlight: true, hover: "" },
+];
+
+// Mobile drawer groups (sub-items draw an underline on hover, LSCS-style).
+const MOBILE_NAV_GROUPS: { labelKey: string | null; items: { key: string; routeName: string; icon: React.ElementType }[] }[] = [
+  { labelKey: null, items: [{ key: "nav.home", routeName: "home", icon: NAV_ITEMS[0].icon }] },
+  {
+    labelKey: null,
+    items: [
+      { key: "nav.about", routeName: "about", icon: NAV_ITEMS[1].icon },
+      { key: "nav.relations", routeName: "relations", icon: NAV_ITEMS[2].icon },
+    ],
+  },
+  {
+    labelKey: "nav.activities",
+    items: [
+      { key: "nav.events", routeName: "events", icon: NAV_ITEMS[3].icon },
+      { key: "nav.clubs", routeName: "clubs", icon: NAV_ITEMS[4].icon },
+    ],
+  },
+  {
+    labelKey: "nav.library",
+    items: [
+      { key: "nav.library", routeName: "library", icon: NAV_ITEMS[7].icon },
+      { key: "nav.books", routeName: "books", icon: NAV_ITEMS[6].icon },
+    ],
+  },
+  {
+    labelKey: null,
+    items: [
+      { key: "nav.album", routeName: "album", icon: NAV_ITEMS[5].icon },
+      { key: "nav.courses", routeName: "registration", icon: NAV_ITEMS[9].icon },
+      { key: "nav.membership", routeName: "membership", icon: NAV_ITEMS[10].icon },
+      { key: "nav.tvt", routeName: "tvt", icon: NAV_ITEMS[11].icon },
+      { key: "nav.comments", routeName: "comments", icon: NAV_ITEMS[12].icon },
+      { key: "nav.links", routeName: "links", icon: NAV_ITEMS[13].icon },
+    ],
+  },
 ];
 
 export function SiteHeader() {
@@ -302,13 +361,14 @@ export function SiteHeader() {
 
             <nav className="hidden lg:flex items-center gap-0.5">
               {PRIMARY_NAV.map((n) => {
-                const active = isActive(typeof n.route.name === "string" ? n.route.name : "");
-                return (
+                const active = n.children
+                  ? n.children.some((c) => isActive(c.route.name))
+                  : isActive(n.route.name);
+                const btn = (
                   <button
-                    key={n.key}
-                    onClick={() => navigate(n.route)}
+                    onClick={() => navigate(n.route as never)}
                     className={cn(
-                      "tap relative px-3 py-1.5 rounded-full text-[13.5px] font-medium transition-[color,background-color] duration-500 [transition-timing-function:cubic-bezier(0.22,0.61,0.36,1)]",
+                      "tap relative flex items-center gap-1 px-3 py-1.5 rounded-full text-[13.5px] font-medium transition-[color,background-color] duration-500 [transition-timing-function:cubic-bezier(0.22,0.61,0.36,1)]",
                       n.highlight
                         ? "bg-primary text-primary-foreground hover:bg-primary/90"
                         : active
@@ -323,7 +383,46 @@ export function SiteHeader() {
                       />
                     )}
                     {t(n.key)}
+                    {n.children && (
+                      <ChevronDown className="nav-chevron w-3 h-3 opacity-60" />
+                    )}
                   </button>
+                );
+                if (!n.children) return <div key={n.key} className="relative">{btn}</div>;
+                return (
+                  <div key={n.key} className="relative group">
+                    {btn}
+                    {/* Dropdown panel - LSCS glass card, draw-in underline items */}
+                    <div
+                      className={cn(
+                        "absolute top-full start-0 rtl:start-auto rtl:end-0 pt-2 z-50 opacity-0 -translate-y-1 pointer-events-none transition-[opacity,transform] duration-300 [transition-timing-function:cubic-bezier(0.22,0.61,0.36,1)]",
+                        "group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:translate-y-0 group-focus-within:pointer-events-auto"
+                      )}
+                    >
+                      <div className="min-w-[270px] rounded-2xl frosted border border-border/70 elevated-lg p-1.5 shadow-xl shadow-black/5">
+                        {n.children.map((c) => (
+                          <button
+                            key={c.key}
+                            onClick={() => navigate(c.route as never)}
+                            className="tap group/sub flex w-full items-start gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary text-start"
+                          >
+                            <span
+                              aria-hidden
+                              className="mt-1 h-4 w-0.5 rounded-full bg-accent opacity-0 group-hover/sub:opacity-100 transition-opacity duration-300"
+                            />
+                            <span className="min-w-0">
+                              <span className="draw-underline block w-fit text-sm font-medium leading-snug">
+                                {t(c.key)}
+                              </span>
+                              <span className="block text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                                {t(c.descKey)}
+                              </span>
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 );
               })}
             </nav>
@@ -354,6 +453,7 @@ export function SiteHeader() {
                     else if (userRole === "TEACHER") navigate({ name: "teacher" });
                     else if (userRole === "EDITOR") navigate({ name: "editor" });
                     else if (userRole === "LIBRARY") navigate({ name: "library-dashboard" });
+                    else if (userRole === "INTERN") navigate({ name: "intern" });
                     else navigate({ name: "home" });
                   }}
                   className="tap h-9 px-3 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-1.5 text-[13px] font-medium"
@@ -393,24 +493,36 @@ export function SiteHeader() {
                     </SheetTitle>
                   </SheetHeader>
                   <div className="overflow-y-auto p-3" style={{ maxHeight: "calc(100vh - 80px)" }}>
-                    <div className="space-y-0.5">
-                      {NAV_ITEMS.map((item) => (
-                        <SheetClose asChild key={item.routeName}>
-                          <button
-                            onClick={() => navigate({ name: item.routeName } as never)}
-                            className="tap w-full flex items-start gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary text-left rtl:text-right"
-                          >
-                            <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center shrink-0">
-                              <item.icon className="w-4 h-4" />
+                    <div className="space-y-3">
+                      {MOBILE_NAV_GROUPS.map((g, gi) => (
+                        <div key={gi}>
+                          {g.labelKey && (
+                            <div className="px-3 mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-accent flex items-center gap-2">
+                              <span className="w-4 h-0.5 rounded-full bg-accent" />
+                              {t(g.labelKey)}
                             </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="text-sm font-medium">{t(NAV_LABEL_KEYS[item.routeName] ?? "nav." + item.routeName) || item.label}</div>
-                              <div className="text-xs text-muted-foreground truncate">
-                                {t(NAV_DESC_KEYS[item.routeName] ?? "") || item.description}
-                              </div>
-                            </div>
-                          </button>
-                        </SheetClose>
+                          )}
+                          <div className="space-y-0.5">
+                            {g.items.map((item) => (
+                              <SheetClose asChild key={item.key}>
+                                <button
+                                  onClick={() => navigate({ name: item.routeName } as never)}
+                                  className="tap group/m w-full flex items-start gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary text-left rtl:text-right"
+                                >
+                                  <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center shrink-0">
+                                    <item.icon className="w-4 h-4" />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="draw-underline w-fit text-sm font-medium">{t(item.key)}</div>
+                                    <div className="text-xs text-muted-foreground truncate">
+                                      {t(NAV_DESC_KEYS[item.routeName] ?? "") || ""}
+                                    </div>
+                                  </div>
+                                </button>
+                              </SheetClose>
+                            ))}
+                          </div>
+                        </div>
                       ))}
                     </div>
 
@@ -567,6 +679,7 @@ export function SiteFooter() {
                     else if (userRole === "TEACHER") navigate({ name: "teacher" });
                     else if (userRole === "EDITOR") navigate({ name: "editor" });
                     else if (userRole === "LIBRARY") navigate({ name: "library-dashboard" });
+                    else if (userRole === "INTERN") navigate({ name: "intern" });
                   }}
                   className="hover:text-foreground"
                 >

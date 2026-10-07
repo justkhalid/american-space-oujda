@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { toast } from "sonner";
 import { useRouter } from "@/store/router";
 import { useI18n } from "@/store/i18n";
 import { format as fmtT } from "@/lib/site/translations";
@@ -27,6 +28,7 @@ import {
   MapPin,
   MessageSquare,
   Phone,
+  Share2,
   Sparkles,
   Users,
   Youtube,
@@ -53,6 +55,7 @@ interface ClubLite {
   description: string;
   schedule: string;
   iconName: string;
+  imageUrl: string | null;
   active: number | boolean;
 }
 
@@ -87,14 +90,87 @@ const HERO_IMG =
 const ANNOUNCE_FALLBACK_IMG =
   "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1600&q=80&auto=format&fit=crop";
 
-// Per-category accent for the announcement chip (subtle tinted pill, ASO palette).
-const CATEGORY_CHIPS: Record<string, string> = {
-  CLUB: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-400",
-  WORKSHOP: "bg-sky-500/12 text-sky-700 dark:text-sky-400",
-  CULTURAL: "bg-violet-500/12 text-violet-700 dark:text-violet-400",
-  LECTURE: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
-  OTHER: "bg-secondary text-secondary-foreground",
+// Per-category accent for the announcement category label (ASO palette).
+const CATEGORY_TEXT: Record<string, string> = {
+  CLUB: "text-emerald-600 dark:text-emerald-400",
+  WORKSHOP: "text-sky-600 dark:text-sky-400",
+  CULTURAL: "text-violet-600 dark:text-violet-400",
+  LECTURE: "text-amber-600 dark:text-amber-400",
+  OTHER: "text-accent",
 };
+
+// Social share: Facebook sharer + Instagram (copy caption, then open IG).
+function ShareRow({ title, text }: { title: string; text: string }) {
+  const t = useI18n((s) => s.t);
+  const siteUrl =
+    typeof window !== "undefined"
+      ? window.location.origin + "/#/"
+      : "https://american-space-oujda.vercel.app/#/";
+
+  const shareFb = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    window.open(
+      "https://www.facebook.com/sharer/sharer.php?u=" +
+        encodeURIComponent(siteUrl) +
+        "&quote=" +
+        encodeURIComponent(title),
+      "_blank",
+      "noopener,noreferrer,width=600,height=540"
+    );
+  };
+  const shareIg = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const caption = `${title}\n\n${text}\n\n${siteUrl}`;
+    try {
+      await navigator.clipboard.writeText(caption);
+      toast.success(t("home.share.copied"));
+    } catch {
+      toast.error(t("home.share.copyfail"));
+    }
+    window.open(SITE.social.instagram, "_blank", "noopener,noreferrer");
+  };
+  const shareNative = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, text, url: siteUrl });
+      } catch {
+        // user dismissed
+      }
+    }
+  };
+
+  return (
+    <span className="flex items-center gap-1">
+      <button
+        onClick={shareFb}
+        aria-label="Share on Facebook"
+        title="Facebook"
+        className="tap w-7 h-7 rounded-full hover:bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground"
+      >
+        <Facebook className="w-3.5 h-3.5" />
+      </button>
+      <button
+        onClick={shareIg}
+        aria-label="Share on Instagram"
+        title="Instagram"
+        className="tap w-7 h-7 rounded-full hover:bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground"
+      >
+        <Instagram className="w-3.5 h-3.5" />
+      </button>
+      {typeof navigator !== "undefined" && "share" in navigator && (
+        <button
+          onClick={shareNative}
+          aria-label={t("home.share")}
+          title={t("home.share")}
+          className="tap w-7 h-7 rounded-full hover:bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground"
+        >
+          <Share2 className="w-3.5 h-3.5" />
+        </button>
+      )}
+    </span>
+  );
+}
 
 export function HomePage() {
   const navigate = useRouter((s) => s.navigate);
@@ -193,28 +269,28 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* 2. LATEST ANNOUNCEMENT - the next upcoming event */}
+      {/* 2. LATEST ANNOUNCEMENT - LSCS-style: label rule, poster left, story body right */}
       <Section className="!py-14 md:!py-16">
-        <SectionHeader
-          eyebrow={t("home.announce.eyebrow")}
-          title={t("home.events.title")}
-          action={
-            <Button
-              variant="ghost"
-              onClick={() => navigate({ name: "events" })}
-              className="rounded-full -ml-2 rtl:-mr-2 rtl:ml-0"
-            >
-              {t("home.announce.all")}
-              <ArrowRight className="w-4 h-4 rtl:-scale-x-100" />
-            </Button>
-          }
-        />
+        <div className="flex items-center gap-3 mb-2">
+          <span className="aso-label flex-1">{t("home.announce.eyebrow")}</span>
+          <button
+            onClick={() => navigate({ name: "events" })}
+            className="draw-underline flex shrink-0 items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground hover:text-accent transition-colors"
+          >
+            {t("home.announce.all")}
+            <ArrowRight className="w-3.5 h-3.5 rtl:-scale-x-100 transition-transform duration-300 [transition-timing-function:cubic-bezier(0.22,0.61,0.36,1)] hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5" />
+          </button>
+        </div>
+        <h2 className="font-display text-3xl md:text-4xl leading-tight tracking-tight balance mb-8">
+          {t("home.events.title")}
+        </h2>
+
         {loadingEv ? (
-          <div className="rounded-3xl bg-card border border-border/70 overflow-hidden elevated animate-pulse">
-            <div className="grid md:grid-cols-2">
-              <div className="aspect-[16/10] md:aspect-auto md:min-h-[320px] bg-secondary" />
+          <div className="rounded-2xl bg-card border border-border/70 overflow-hidden elevated animate-pulse">
+            <div className="grid md:grid-cols-[320px_1fr] gap-8">
+              <div className="aspect-[4/5] md:aspect-auto bg-secondary" />
               <div className="p-8 space-y-4">
-                <div className="h-5 w-28 bg-secondary rounded" />
+                <div className="h-4 w-28 bg-secondary rounded" />
                 <div className="h-8 w-3/4 bg-secondary rounded" />
                 <div className="h-3 w-full bg-secondary/70 rounded" />
                 <div className="h-3 w-2/3 bg-secondary/70 rounded" />
@@ -222,88 +298,103 @@ export function HomePage() {
             </div>
           </div>
         ) : announcement ? (
-          <button
+          <div
             onClick={() => navigate({ name: "events" })}
-            className="tap lift group block w-full text-left rtl:text-right rounded-3xl bg-card border border-border/70 overflow-hidden elevated"
+            className="group grid md:grid-cols-[320px_1fr] gap-7 md:gap-9 items-start rounded-2xl bg-card border border-border/70 overflow-hidden elevated cursor-pointer"
           >
-            <div className="grid md:grid-cols-2">
-              <div className="relative aspect-[16/10] md:aspect-auto md:min-h-[320px] overflow-hidden">
-                <img
-                  src={announcement.imageUrl || ANNOUNCE_FALLBACK_IMG}
-                  alt={announcement.title}
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-                <div className="absolute top-4 left-4 rtl:left-auto rtl:right-4 flex items-center gap-2">
-                  <span className="px-2.5 py-1 rounded-full bg-emerald-500/90 backdrop-blur-sm text-white text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                    {t("home.announce.pill")}
-                  </span>
-                </div>
-              </div>
-              <div className="p-7 md:p-9 flex flex-col justify-center">
-                <div className="flex flex-wrap items-center gap-2 mb-4">
-                  <Pill className={CATEGORY_CHIPS[announcement.category] ?? CATEGORY_CHIPS.OTHER}>
-                    {announcement.category}
-                  </Pill>
-                  <Pill variant="muted" className="tnum">
-                    <CalendarDays className="w-3 h-3" />
-                    {format(new Date(announcement.startDate), "EEE, MMM d · HH:mm")}
-                  </Pill>
-                </div>
-                <h3 className="font-display text-2xl md:text-3xl tracking-tight leading-tight mb-3 balance">
-                  {announcement.title}
-                </h3>
-                <p className="text-sm md:text-[15px] text-muted-foreground leading-relaxed pretty line-clamp-3">
-                  {announcement.description}
-                </p>
-                <div className="mt-5 pt-5 border-t border-border/50 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5" />
-                    {announcement.location || t("events.tba")}
-                  </span>
-                  <span className="flex items-center gap-1.5 tnum">
-                    <Users className="w-3.5 h-3.5" />
-                    {announcement.registered}
-                    {announcement.capacity ? ` / ${announcement.capacity}` : ""}
-                  </span>
-                  <span className="ms-auto flex items-center gap-1.5 font-medium text-accent draw-underline">
-                    {t("home.events.all")}
-                    <ArrowRight className="w-3.5 h-3.5 rtl:-scale-x-100 transition-transform duration-300 [transition-timing-function:cubic-bezier(0.22,0.61,0.36,1)] group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5" />
-                  </span>
-                </div>
+            {/* Poster */}
+            <div className="relative aspect-[4/3] md:aspect-[4/5] overflow-hidden">
+              <img
+                src={announcement.imageUrl || ANNOUNCE_FALLBACK_IMG}
+                alt={announcement.title}
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 [transition-timing-function:cubic-bezier(0.22,0.61,0.36,1)] group-hover:scale-[1.03]"
+              />
+              <div className="absolute top-4 start-4">
+                <span className="aso-status aso-status--live bg-background/70 backdrop-blur-sm">
+                  {t("home.announce.pill")}
+                </span>
               </div>
             </div>
-          </button>
+
+            {/* Story body */}
+            <div className="p-6 md:py-9 md:pr-9 ps-6 md:ps-0 min-w-0">
+              {/* Category row: bar + colored cat + date with square dot */}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-4 text-[11px] font-extrabold uppercase tracking-[0.14em]">
+                <span className="flex items-center gap-3">
+                  <span aria-hidden className="inline-block w-[22px] h-0.5 bg-foreground/70" />
+                  <span className={CATEGORY_TEXT[announcement.category] ?? "text-accent"}>
+                    {announcement.category}
+                  </span>
+                </span>
+                <span className="flex items-center gap-2 text-muted-foreground tnum font-bold">
+                  <span aria-hidden className="inline-block w-1.5 h-1.5 bg-accent" />
+                  {format(new Date(announcement.startDate), "EEE, MMM d - HH:mm")}
+                </span>
+              </div>
+
+              <h3 className="font-display text-2xl md:text-[1.9rem] tracking-[-0.02em] leading-[1.16] mb-3 balance transition-colors duration-300 group-hover:text-accent">
+                {announcement.title}
+              </h3>
+              <p className="text-sm md:text-[15px] text-muted-foreground leading-relaxed pretty line-clamp-3 mb-6">
+                {announcement.description}
+              </p>
+
+              {/* Meta row */}
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5" />
+                  {announcement.location || t("events.tba")}
+                </span>
+                <span className="flex items-center gap-1.5 tnum">
+                  <Users className="w-3.5 h-3.5" />
+                  {announcement.registered}
+                  {announcement.capacity ? ` / ${announcement.capacity}` : ""}
+                </span>
+                <ShareRow title={announcement.title} text={announcement.description} />
+                <span className="draw-underline flex items-center gap-1.5 font-extrabold uppercase tracking-[0.14em] text-[11px] text-foreground group-hover:text-accent transition-colors">
+                  {t("home.events.all")}
+                  <ArrowRight className="w-3.5 h-3.5 rtl:-scale-x-100 transition-transform duration-300 [transition-timing-function:cubic-bezier(0.22,0.61,0.36,1)] group-hover:translate-x-1 rtl:group-hover:-translate-x-1" />
+                </span>
+              </div>
+            </div>
+          </div>
         ) : (
-          <div className="rounded-3xl bg-card border border-border/70 p-10 text-center elevated">
+          <div className="rounded-2xl bg-card border border-border/70 p-10 text-center elevated">
             <Sparkles className="w-8 h-8 text-accent/60 mx-auto mb-3" />
             <p className="text-muted-foreground">{t("home.announce.empty")}</p>
           </div>
         )}
       </Section>
 
-      {/* 3. OPEN CLUBS - live from the DB */}
+      {/* 3. OPEN CLUBS - posters + LSCS card grid hover */}
       <Section className="bg-card/40 border-y border-border !py-14 md:!py-16">
-        <SectionHeader
-          eyebrow={t("home.clubs.eyebrow")}
-          title={t("home.clubs.title")}
-          subtitle={t("home.clubs.subtitle")}
-          action={
-            <Button
-              variant="ghost"
-              onClick={() => navigate({ name: "clubs" })}
-              className="rounded-full -ml-2 rtl:-mr-2 rtl:ml-0"
-            >
-              {t("home.clubs.all")}
-              <ArrowRight className="w-4 h-4 rtl:-scale-x-100" />
-            </Button>
-          }
-        />
+        <div className="flex items-center gap-3 mb-2">
+          <span className="aso-label flex-1">{t("home.clubs.eyebrow")}</span>
+          <button
+            onClick={() => navigate({ name: "clubs" })}
+            className="draw-underline flex shrink-0 items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground hover:text-accent transition-colors"
+          >
+            {t("home.clubs.all")}
+            <ArrowRight className="w-3.5 h-3.5 rtl:-scale-x-100" />
+          </button>
+        </div>
+        <div className="flex items-center gap-3 mb-8">
+          <h2 className="font-display text-3xl md:text-4xl leading-tight tracking-tight balance">
+            {t("home.clubs.title")}
+          </h2>
+          {!loadingClubs && openClubs.length > 0 && (
+            <span className="tnum text-[10px] font-extrabold uppercase tracking-[0.12em] text-muted-foreground border border-border px-1.5 py-1 leading-none rounded-sm">
+              {openClubs.length}
+            </span>
+          )}
+        </div>
+        <p className="text-muted-foreground pretty leading-relaxed -mt-6 mb-8 max-w-2xl">{t("home.clubs.subtitle")}</p>
+
         {loadingClubs ? (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[0, 1, 2].map((i) => (
               <div key={i} className="rounded-2xl bg-card border border-border/70 p-6 elevated animate-pulse">
-                <div className="h-10 w-10 bg-secondary rounded-xl mb-4" />
+                <div className="aspect-[16/10] bg-secondary rounded-xl mb-4" />
                 <div className="h-5 w-2/3 bg-secondary rounded mb-2" />
                 <div className="h-3 w-full bg-secondary/70 rounded" />
               </div>
@@ -315,28 +406,51 @@ export function HomePage() {
             <p className="text-muted-foreground">{t("home.clubs.empty")}</p>
           </div>
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 stagger">
             {openClubs.map((club) => {
               const Icon = CLUB_ICONS[club.iconName] ?? Users;
               return (
                 <button
                   key={club.id}
                   onClick={() => navigate({ name: "clubs" })}
-                  className="lift tap group text-left rtl:text-right rounded-2xl bg-card border border-border/70 p-6 elevated"
+                  className="group text-left rtl:text-right rounded-2xl bg-card border border-border/70 p-4 elevated transition-transform duration-500 [transition-timing-function:cubic-bezier(0.22,0.61,0.36,1)] hover:-translate-y-1"
                 >
-                  <div className="w-11 h-11 rounded-xl bg-primary/8 flex items-center justify-center mb-4">
-                    <Icon className="w-5 h-5 text-primary" strokeWidth={2} />
+                  {/* Poster */}
+                  <div className="relative aspect-[16/10] rounded-xl overflow-hidden mb-4 poster-ring">
+                    {club.imageUrl ? (
+                      <img
+                        src={club.imageUrl}
+                        alt={club.name}
+                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 [transition-timing-function:cubic-bezier(0.22,0.61,0.36,1)] group-hover:scale-[1.04]"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center bg-primary/90">
+                        <span className="font-display text-4xl text-primary-foreground/70 tracking-wide">
+                          {club.name.charAt(0)}
+                        </span>
+                      </div>
+                    )}
                   </div>
-                  <h3 className="font-display text-xl tracking-tight mb-1.5">{club.name}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed pretty line-clamp-2">
-                    {club.description}
-                  </p>
-                  {club.schedule && (
-                    <div className="mt-4 flex items-center gap-1.5 text-xs text-muted-foreground tnum">
-                      <Clock className="w-3.5 h-3.5" />
-                      {club.schedule}
+                  <div className="px-1.5 pb-1.5">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-accent">
+                        <Icon className="w-3.5 h-3.5" strokeWidth={2.5} />
+                        {t("nav.clubs")}
+                      </span>
+                      {club.schedule && (
+                        <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground tnum">
+                          <Clock className="w-3 h-3" />
+                          {club.schedule}
+                        </span>
+                      )}
                     </div>
-                  )}
+                    <h3 className="font-display text-xl tracking-tight leading-tight transition-colors duration-300 group-hover:text-accent">
+                      {club.name}
+                    </h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed pretty line-clamp-2 mt-1">
+                      {club.description}
+                    </p>
+                  </div>
                 </button>
               );
             })}

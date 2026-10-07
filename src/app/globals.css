@@ -223,6 +223,119 @@ html[dir="rtl"] .draw-underline::after {
   transform: scaleX(1);
 }
 
+/* === LSCS-inspired patterns, adapted to the ASO palette === */
+
+/* Section label: leading accent bar + trailing hairline rule */
+.aso-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.aso-label::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 30px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+.aso-label::after {
+  content: "";
+  flex: 1 1 auto;
+  height: 1px;
+  background: var(--border);
+  min-width: 40px;
+}
+
+/* Status badge: squared chip with pulsing dot (live/announcement) */
+.aso-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  font-size: 0.58rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  line-height: 1;
+  border: 1px solid;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+.aso-status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+  flex-shrink: 0;
+}
+.aso-status--live {
+  color: #15803d;
+  background: rgba(21, 128, 61, 0.08);
+  border-color: rgba(21, 128, 61, 0.35);
+}
+html.dark .aso-status--live { color: #4ade80; }
+.aso-status--live::before {
+  animation: aso-status-pulse 2s ease-in-out infinite;
+}
+@keyframes aso-status-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+/* Nav dropdown panel: fade + scale in with the shared ease */
+.nav-panel {
+  animation: nav-in 0.28s var(--ease) both;
+  transform-origin: top center;
+}
+@keyframes nav-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Chevron rotation for dropdown triggers */
+.nav-chevron {
+  transition: transform 0.3s var(--ease);
+}
+.group:hover .nav-chevron,
+.group:focus-within .nav-chevron {
+  transform: rotate(180deg);
+}
+
+/* Poster treatment: 1px ring + soft drop, like a printed card */
+.poster-ring {
+  box-shadow:
+    0 0 0 1px oklch(0.24 0.04 260 / 0.08),
+    0 10px 24px -12px oklch(0.24 0.04 260 / 0.28);
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Body background: warm paper with a faint dot grid + soft color washes */
+body {
+  background:
+    radial-gradient(circle at 1px 1px, oklch(0.24 0.04 260 / 0.05) 1px, transparent 0) 0 0 / 26px 26px,
+    radial-gradient(1200px 600px at 85% -10%, oklch(0.62 0.16 38 / 0.05), transparent 60%),
+    radial-gradient(1000px 500px at -10% 30%, oklch(0.55 0.1 200 / 0.04), transparent 55%),
+    var(--background);
+}
+html.dark body {
+  background:
+    radial-gradient(circle at 1px 1px, oklch(0.96 0.005 260 / 0.05) 1px, transparent 0) 0 0 / 26px 26px,
+    radial-gradient(1200px 600px at 85% -10%, oklch(0.68 0.16 38 / 0.07), transparent 60%),
+    var(--background);
+}
+
 /* Hairline borders, Apple-style */
 .hairline {
   box-shadow: inset 0 -1px 0 0 var(--border);

@@ -17,6 +17,7 @@ export const translations: Record<Lang, Record<string, string>> = {
 
     // Header nav
     "nav.home": "Home",
+    "nav.activities": "Activities",
     "nav.about": "About",
     "nav.relations": "Moroccan-American Relations",
     "nav.events": "Events",
@@ -138,6 +139,9 @@ export const translations: Record<Lang, Record<string, string>> = {
     "home.announce.pill": "Mark your calendar",
     "home.announce.empty": "New events and announcements are posted here - check back soon.",
     "home.announce.all": "All events",
+    "home.share": "Share",
+    "home.share.copied": "Caption copied - paste it into your Instagram post.",
+    "home.share.copyfail": "Could not copy the caption.",
 
     // Home clubs
     "home.clubs.eyebrow": "Join a club",
@@ -390,6 +394,7 @@ export const translations: Record<Lang, Record<string, string>> = {
 
     // Header nav
     "nav.home": "الرئيسية",
+    "nav.activities": "الأنشطة",
     "nav.about": "حول",
     "nav.relations": "العلاقات المغربية الأمريكية",
     "nav.events": "الفعاليات",
@@ -511,6 +516,9 @@ export const translations: Record<Lang, Record<string, string>> = {
     "home.announce.pill": "دوّن في تقويمك",
     "home.announce.empty": "تُنشر الفعاليات والإعلانات الجديدة هنا - عد قريبًا.",
     "home.announce.all": "كل الفعاليات",
+    "home.share": "مشاركة",
+    "home.share.copied": "تم نسخ المنشور - الصقه في منشور إنستغرام.",
+    "home.share.copyfail": "تعذر نسخ المنشور.",
 
     // Home clubs
     "home.clubs.eyebrow": "انضم إلى نادٍ",

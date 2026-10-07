@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDb, row, requireRole, type InValue } from "@/lib/sql";
+import { getDb, row, requireRole, getCurrentUser, type InValue } from "@/lib/sql";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -7,10 +7,24 @@ export async function GET(req: Request) {
   const category = searchParams.get("category");
   const featuredOnly = searchParams.get("featured") === "1";
   const upcomingOnly = searchParams.get("upcoming") !== "0";
+  const assignedOnly = searchParams.get("assigned") === "1";
 
   const db = getDb();
   const where: string[] = ["published = 1"];
   const args: InValue[] = [];
+
+  // Interns can fetch the events they are assigned to (includes unpublished).
+  if (assignedOnly) {
+    const user = await getCurrentUser();
+    if (!user) return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
+    if (!["INTERN", "ADMIN"].includes(user.role)) {
+      return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
+    }
+    where.length = 0;
+    where.push("assignedInternId = ?");
+    args.push(user.id);
+  }
+
   if (category && category !== "ALL") {
     where.push("category = ?");
     args.push(category);
@@ -18,7 +32,8 @@ export async function GET(req: Request) {
   if (featuredOnly) {
     where.push("featured = 1");
   }
-  if (upcomingOnly) {
+  // Assigned view shows past events too, so interns can report on them.
+  if (upcomingOnly && !assignedOnly) {
     where.push("startDate >= ?");
     args.push(new Date().toISOString());
   }
