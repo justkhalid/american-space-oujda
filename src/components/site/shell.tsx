@@ -260,10 +260,9 @@ const MOBILE_NAV_ITEMS: { key: string; routeName: string; icon: React.ElementTyp
   { key: "nav.activities", routeName: "activities", icon: NAV_ITEMS[3].icon },
   { key: "nav.library", routeName: "library", icon: NAV_ITEMS[6].icon },
   { key: "nav.courses", routeName: "registration", icon: NAV_ITEMS[8].icon },
-  { key: "nav.membership", routeName: "membership", icon: NAV_ITEMS[9].icon },
-  { key: "nav.join", routeName: "tvt", icon: NAV_ITEMS[10].icon },
-  { key: "nav.comments", routeName: "comments", icon: NAV_ITEMS[11].icon },
-  { key: "nav.links", routeName: "links", icon: NAV_ITEMS[12].icon },
+  { key: "nav.join", routeName: "tvt", icon: NAV_ITEMS[9].icon },
+  { key: "nav.comments", routeName: "comments", icon: NAV_ITEMS[10].icon },
+  { key: "nav.links", routeName: "links", icon: NAV_ITEMS[11].icon },
 ];
 
 export function SiteHeader() {
@@ -361,7 +360,6 @@ export function SiteHeader() {
                   onClick={() => {
                     if (userRole === "ADMIN") navigate({ name: "admin" });
                     else if (userRole === "TEACHER") navigate({ name: "teacher" });
-                    else if (userRole === "EDITOR") navigate({ name: "editor" });
                     else if (userRole === "LIBRARY") navigate({ name: "library-dashboard" });
                     else if (userRole === "INTERN") navigate({ name: "intern" });
                     else navigate({ name: "home" });
@@ -450,8 +448,8 @@ export function SiteFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="mt-24 border-t border-border bg-card/40">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+    <footer className="mt-16 border-t border-border bg-card/40">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
           <div className="col-span-2">
             <div className="flex items-center gap-2.5 mb-3">
@@ -532,7 +530,7 @@ export function SiteFooter() {
           <div>
             <div className="text-xs uppercase tracking-wider text-muted-foreground mb-3">{t("footer.programs")}</div>
             <ul className="space-y-1.5">
-              {NAV_ITEMS.slice(7, 13).map((n) => (
+              {NAV_ITEMS.slice(7, 12).map((n) => (
                 <li key={n.routeName}>
                   <button
                     onClick={() => navigate({ name: n.routeName } as never)}
@@ -558,7 +556,7 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="mt-12 pt-6 border-t border-border flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="mt-8 pt-5 border-t border-border flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="text-xs text-muted-foreground">
             © {year} {t("brand.name")}. {t("brand.copyright")}
           </div>
@@ -569,7 +567,6 @@ export function SiteFooter() {
                   onClick={() => {
                     if (userRole === "ADMIN") navigate({ name: "admin" });
                     else if (userRole === "TEACHER") navigate({ name: "teacher" });
-                    else if (userRole === "EDITOR") navigate({ name: "editor" });
                     else if (userRole === "LIBRARY") navigate({ name: "library-dashboard" });
                     else if (userRole === "INTERN") navigate({ name: "intern" });
                   }}

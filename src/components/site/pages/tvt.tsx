@@ -59,14 +59,14 @@ const ROLES = [
   },
   {
     key: "volunteer" as const,
-    label: "Volunteer",
-    title: "Give your time. Change a life.",
+    label: "Intern / Volunteer",
+    title: "Give your time. Build your future.",
     icon: HeartHandshake,
     summary:
-      "Are you passionate about building community, cultural exchange, and developing your leadership skills? American Space Oujda opens volunteer recruitment for the 2026/2027 cohort - usually in September and October. This is an opportunity for youth and students to gain valuable hands-on experience and contribute to the Space's programs and activities.",
-    commitment: "Registration opens September-October each year",
+      "Are you passionate about community, cultural exchange, and developing your leadership? American Space Oujda opens intern and volunteer recruitment for the 2026/2027 cohort - usually in September and October. Internships run 3-6 months; volunteers join year-round. This is a chance for youth and students to gain hands-on experience and contribute to the Space's programs.",
+    commitment: "Cohorts start October, February and July",
     perks: [
-      "Volunteer certificate and reference letter",
+      "Volunteer or internship certificate",
       "Free membership and library access",
       "Skill-building workshops (free for active volunteers)",
       "Community of like-minded people from across the region",
@@ -86,7 +86,7 @@ const ROLES = [
     ],
     faq: [
       {
-        q: "When does volunteer registration open?",
+        q: "When does registration open?",
         a: "Recruitment usually opens in September and October each year for the 2026/2027 cohort. Watch our social media for the announcement.",
       },
       {
@@ -98,78 +98,8 @@ const ROLES = [
         a: "Absolutely. Student associations, companies, and civic groups are welcome - reach out via the application form.",
       },
       {
-        q: "Is there a minimum commitment?",
-        a: "We ask for at least 4 hours per month for 3 months, so you can get oriented and contribute meaningfully.",
-      },
-    ],
-  },
-  {
-    key: "intern" as const,
-    label: "Intern",
-    title: "Learn by doing. Build your career.",
-    icon: Briefcase,
-    summary:
-      "Structured 3-6 month internships in program management, communications, library science, or event planning. Open to university students and recent graduates.",
-    commitment: "3-6 months · 15-30 hours per week",
-    perks: [
-      "Formal internship certificate and detailed recommendation",
-      "Hands-on experience in a Binational Center environment",
-      "Mentorship and professional development workshops",
-      "Academic credit support (we work with your university)",
-    ],
-    requirements: [
-      "Currently enrolled in or recently graduated from a university program",
-      "Intermediate English (B2 or higher)",
-      "Strong written and verbal communication",
-      "Specific interest in cultural exchange, education, or library science",
-    ],
-    faq: [
-      {
-        q: "Are internships paid?",
-        a: "Internships are unpaid but come with transport reimbursement, free meals during shifts, and a substantial professional development package.",
-      },
-      {
         q: "Can the internship count toward my degree?",
         a: "Yes - we sign conventions with most Moroccan universities. Bring your paperwork to the interview.",
-      },
-      {
-        q: "When do internships start?",
-        a: "Cohorts begin in October, February, and July. Applications open 8 weeks before each cohort.",
-      },
-    ],
-  },
-  {
-    key: "trainer" as const,
-    label: "Trainer",
-    title: "Bring your expertise. Lead a workshop.",
-    icon: Presentation,
-    summary:
-      "Deliver specialized short workshops (1-5 sessions) in your area of expertise - coding, design, public speaking, study skills, professional development, and more.",
-    commitment: "Per workshop · typically 2-10 hours total",
-    perks: [
-      "Trainer honorarium for accepted workshops",
-      "Visibility through our marketing channels",
-      "Access to workshop space and materials",
-      "Connection to our network of 1,200+ members",
-    ],
-    requirements: [
-      "Demonstrable expertise in the workshop topic",
-      "Experience teaching or training adults",
-      "Workshop outline and learning outcomes prepared in advance",
-      "Openness to feedback and continuous improvement",
-    ],
-    faq: [
-      {
-        q: "What topics are most in demand?",
-        a: "Coding, design, academic writing, public speaking, soft skills, entrepreneurship, and U.S. studies topics always draw well.",
-      },
-      {
-        q: "How are trainers compensated?",
-        a: "Honorarium varies by workshop length and topic. We're transparent about the budget upfront.",
-      },
-      {
-        q: "Can I propose a workshop series?",
-        a: "Yes - multi-session series are welcome if they fit our calendar. Propose it in the application's motivation field.",
       },
     ],
   },
@@ -245,9 +175,9 @@ export function TVTHubPage() {
             </div>
             <Button
               className="mt-5 rounded-full w-full"
-              onClick={() => navigate({ name: "membership" })}
+              onClick={() => navigate({ name: "about" })}
             >
-              How to become a member
+              Plan your visit
               <ArrowRight className="w-4 h-4" />
             </Button>
           </div>
@@ -268,13 +198,10 @@ export function TVTHubPage() {
               cohort (recruitment usually opens in September and October). Gain hands-on
               experience, certificates, and mentorship.
             </p>
-            <div className="mt-5 rounded-xl bg-secondary/60 px-4 py-3 text-xs text-muted-foreground">
-              3-6 months - 15-30 hours/week - certificate + recommendation letter
-            </div>
             {internOpen ? (
               <Button
                 className="mt-5 rounded-full w-full"
-                onClick={() => navigate({ name: "apply" })}
+                onClick={() => navigate({ name: "apply", role: "volunteer" })}
               >
                 Apply as intern / volunteer
                 <ArrowRight className="w-4 h-4" />
@@ -302,9 +229,6 @@ export function TVTHubPage() {
               compensated arrangements. Certification, library access, and pedagogical support
               included.
             </p>
-            <div className="mt-5 rounded-xl bg-secondary/60 px-4 py-3 text-xs text-muted-foreground">
-              4-10 hours/week - minimum one semester
-            </div>
             {teacherOpen ? (
               <Button
                 className="mt-5 rounded-full w-full"
@@ -318,12 +242,6 @@ export function TVTHubPage() {
                 Registrations currently closed
               </Button>
             )}
-            <button
-              onClick={() => navigate({ name: "tvt-role", role: "trainer" })}
-              className="mt-3 text-xs text-muted-foreground hover:text-accent transition-colors"
-            >
-              Specialized in something else? Propose a workshop as a trainer.
-            </button>
           </div>
         </div>
       </Section>
@@ -350,7 +268,7 @@ export function TVTHubPage() {
                   "Free access to all Space events and workshops",
                   "Mentorship from senior staff and visiting U.S. speakers",
                   "Priority consideration for U.S. Embassy exchange programs",
-                  "Certification and detailed letters of recommendation",
+                  "Certificates for your contribution",
                   "A network of alumni now studying and working around the world",
                 ]}
               />
@@ -423,7 +341,8 @@ export function TVTHubPage() {
 
 export function TVTRolePage({ role }: { role: "teacher" | "volunteer" | "intern" | "trainer" }) {
   const navigate = useRouter((s) => s.navigate);
-  const r = ROLES.find((x) => x.key === role)!;
+  // Intern and volunteer share one path; trainer proposals go through the volunteer path too.
+  const r = ROLES.find((x) => x.key === role) ?? ROLES.find((x) => x.key === "volunteer")!;
 
   return (
     <>

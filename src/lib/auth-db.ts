@@ -13,7 +13,7 @@ export interface AuthUser {
   password: string;
 }
 
-export async function findUserByEmail(email: string): Promise<AuthUser | null> {
+export async function findUserByEmail(identifier: string): Promise<AuthUser | null> {
   const url = process.env.DATABASE_URL;
   const token = process.env.DATABASE_AUTH_TOKEN;
 
@@ -30,11 +30,20 @@ export async function findUserByEmail(email: string): Promise<AuthUser | null> {
     ? createClient({ url, authToken: token })
     : createClient({ url });
 
+  // The identifier can be an email OR an ASO number (ASO-0001 style).
+  const id = identifier.trim();
+  const looksLikeAsoNumber = /^aso[-_ ]?\d+$/i.test(id);
+  const asoNumber = looksLikeAsoNumber
+    ? "ASO-" + String(parseInt(id.replace(/[^0-9]/g, ""), 10)).padStart(4, "0")
+    : null;
+
   try {
-    console.log("[auth-db] querying for:", email.toLowerCase());
+    console.log("[auth-db] querying for:", id.toLowerCase());
     const result = await client.execute({
-      sql: "SELECT id, email, name, password, role, active FROM User WHERE email = ?",
-      args: [email.toLowerCase()],
+      sql: asoNumber
+        ? "SELECT id, email, name, password, role, active, asoNumber FROM User WHERE asoNumber = ?"
+        : "SELECT id, email, name, password, role, active, asoNumber FROM User WHERE email = ?",
+      args: [asoNumber ?? id.toLowerCase()],
     });
 
     console.log("[auth-db] rows returned:", result.rows.length);

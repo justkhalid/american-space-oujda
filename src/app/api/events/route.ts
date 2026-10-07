@@ -97,6 +97,9 @@ export async function PATCH(req: Request) {
   if (data.capacity !== undefined) { sets.push("capacity = ?"); args.push(data.capacity ? parseInt(data.capacity, 10) : null); }
   if (data.imageUrl !== undefined) { sets.push("imageUrl = ?"); args.push(data.imageUrl || null); }
   if (data.featured !== undefined) { sets.push("featured = ?"); args.push(data.featured ? 1 : 0); }
+  if (data.joinable !== undefined) { sets.push("joinable = ?"); args.push(data.joinable ? 1 : 0); }
+  if (data.status !== undefined && ["SCHEDULED", "CANCELED"].includes(data.status)) { sets.push("status = ?"); args.push(data.status); }
+  if (data.statusNote !== undefined) { sets.push("statusNote = ?"); args.push(data.statusNote || null); }
   if (data.published !== undefined) { sets.push("published = ?"); args.push(data.published ? 1 : 0); }
   if (data.registered !== undefined) { sets.push("registered = ?"); args.push(parseInt(data.registered, 10) || 0); }
 

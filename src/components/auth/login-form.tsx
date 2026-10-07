@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Section, MatteCard, Pill } from "@/components/site/primitives";
-import { LogIn, Loader2, ShieldCheck, GraduationCap, PenSquare, Eye, EyeOff, Library } from "lucide-react";
+import { LogIn, Loader2, ShieldCheck, GraduationCap, Briefcase, Eye, EyeOff, Library } from "lucide-react";
 import { toast } from "sonner";
 
 export function LoginPage() {
@@ -40,13 +40,12 @@ export function LoginPage() {
       const role = session?.user?.role;
       if (role === "ADMIN") navigate({ name: "admin" });
       else if (role === "TEACHER") navigate({ name: "teacher" });
-      else if (role === "EDITOR") navigate({ name: "editor" });
       else if (role === "LIBRARY") navigate({ name: "library-dashboard" });
       else navigate({ name: "home" });
     }, 200);
   };
 
-  const fillDemo = (role: "admin" | "teacher" | "editor" | "library") => {
+  const fillDemo = (role: "admin" | "teacher" | "intern" | "library") => {
     if (role === "admin") {
       setEmail("admin@asoujda.ma");
       setPassword("admin123");
@@ -57,8 +56,8 @@ export function LoginPage() {
       setEmail("library@asoujda.ma");
       setPassword("library123");
     } else {
-      setEmail("editor@asoujda.ma");
-      setPassword("editor123");
+      setEmail("intern@asoujda.ma");
+      setPassword("intern123");
     }
   };
 
@@ -164,12 +163,12 @@ export function LoginPage() {
               </button>
               <button
                 type="button"
-                onClick={() => fillDemo("editor")}
+                onClick={() => fillDemo("intern")}
                 className="tap rounded-xl border border-border p-2.5 text-left rtl:text-right hover:border-primary/40 transition-colors"
               >
-                <PenSquare className="w-3.5 h-3.5 text-accent mb-1" />
-                <div className="text-xs font-medium">{t("login.demo.editor")}</div>
-                <div className="text-[10px] text-muted-foreground">{t("login.demo.editor.body")}</div>
+                <Briefcase className="w-3.5 h-3.5 text-accent mb-1" />
+                <div className="text-xs font-medium">{t("login.demo.intern")}</div>
+                <div className="text-[10px] text-muted-foreground">{t("login.demo.intern.body")}</div>
               </button>
             </div>
           </div>

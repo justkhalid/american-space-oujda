@@ -8,13 +8,13 @@ import { ScrollEffects } from "@/components/site/scroll-effects";
 import { DirectionEffect } from "@/components/site/direction-effect";
 import { HomePage } from "@/components/site/pages/home";
 import { ActivitiesPage } from "@/components/site/pages/activities";
+import { EventDetailPage, ClubDetailPage } from "@/components/site/pages/activity-detail";
 import { TVTHubPage, TVTRolePage } from "@/components/site/pages/tvt";
 import { ApplyPage } from "@/components/site/pages/apply";
 import { SearchPage } from "@/components/site/pages/search";
 import { LoginPage } from "@/components/auth/login-form";
 import { AdminDashboard } from "@/components/dashboard/admin";
 import { TeacherDashboard } from "@/components/dashboard/teacher";
-import { EditorDashboard } from "@/components/dashboard/editor";
 import { CompanionDashboard } from "@/components/dashboard/companion";
 import { LibraryDashboard } from "@/components/dashboard/library";
 import { InternDashboard } from "@/components/dashboard/intern";
@@ -25,7 +25,6 @@ import {
   CertificatesPage,
   RegulationsPage,
   RegistrationPage,
-  MembershipPage,
   LinksPage,
   CommentsPage,
 } from "@/components/site/pages/info";
@@ -44,6 +43,10 @@ function PageRouter({ route }: { route: Route }) {
     case "clubs":
       // Events and clubs merged into one Activities page; old hashes land there.
       return <ActivitiesPage />;
+    case "event-detail":
+      return <EventDetailPage id={route.id} />;
+    case "club-detail":
+      return <ClubDetailPage id={route.id} />;
     case "album":
       // Album is no longer public - old links fall back to the home page.
       return <HomePage />;
@@ -57,8 +60,6 @@ function PageRouter({ route }: { route: Route }) {
       return <RegulationsPage />;
     case "registration":
       return <RegistrationPage />;
-    case "membership":
-      return <MembershipPage />;
     case "links":
       return <LinksPage />;
     case "comments":
@@ -77,9 +78,6 @@ function PageRouter({ route }: { route: Route }) {
     case "teacher":
     case "teacher-tab":
       return <TeacherDashboard initialTab={route.name === "teacher-tab" ? route.tab : "courses"} />;
-    case "editor":
-    case "editor-tab":
-      return <EditorDashboard initialTab={route.name === "editor-tab" ? route.tab : "events"} />;
     case "companion":
     case "companion-tab":
       return <CompanionDashboard initialTab={route.name === "companion-tab" ? route.tab : "overview"} />;
@@ -135,6 +133,8 @@ export default function Home() {
       about: "About · American Space Oujda",
       relations: "Moroccan-American Relations · American Space Oujda",
       activities: "Activities · American Space Oujda",
+      "event-detail": "Event · American Space Oujda",
+      "club-detail": "Club · American Space Oujda",
       events: "Activities · American Space Oujda",
       clubs: "Activities · American Space Oujda",
       album: "American Space Oujda",
@@ -143,7 +143,6 @@ export default function Home() {
       certificates: "Certificates · American Space Oujda",
       regulations: "Internal Regulations · American Space Oujda",
       registration: "Course Registration · American Space Oujda",
-      membership: "Membership · American Space Oujda",
       links: "Useful Links · American Space Oujda",
       comments: "Comments & Suggestions · American Space Oujda",
       tvt: "Join Our Team · American Space Oujda",
@@ -151,7 +150,6 @@ export default function Home() {
       login: "Sign In · American Space Oujda",
       admin: "Admin · American Space Oujda",
       teacher: "Teacher · American Space Oujda",
-      editor: "Editor · American Space Oujda",
       intern: "Intern · American Space Oujda",
       companion: "ELTASO Companion · American Space Oujda",
       "library-dashboard": "Library · American Space Oujda",

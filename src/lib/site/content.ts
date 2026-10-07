@@ -36,7 +36,6 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Library", routeName: "library", icon: Library, description: "Borrowing, hours, and rules" },
   { label: "Internal Regulations", routeName: "regulations", icon: ScrollText, description: "House rules" },
   { label: "Course Registration", routeName: "registration", icon: GraduationCap, description: "Sign up for English courses" },
-  { label: "Membership", routeName: "membership", icon: HeartHandshake, description: "Become a member" },
   { label: "Teacher · Volunteer · Intern · Trainer", routeName: "tvt", icon: Compass, description: "Join our team" },
   { label: "Comments & Suggestions", routeName: "comments", icon: MessageSquare, description: "Tell us what you think" },
   { label: "Useful Links", routeName: "links", icon: Link2, description: "Partner organizations and resources" },

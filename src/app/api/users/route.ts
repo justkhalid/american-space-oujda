@@ -39,7 +39,7 @@ export async function POST(req: Request) {
   if (!email || !password || !role) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
-  if (!["ADMIN", "TEACHER", "EDITOR", "LIBRARY", "INTERN"].includes(role)) {
+  if (!["ADMIN", "TEACHER", "LIBRARY", "INTERN"].includes(role)) {
     return NextResponse.json({ error: "Invalid role" }, { status: 400 });
   }
 
@@ -80,7 +80,7 @@ export async function PATCH(req: Request) {
   const args: InValue[] = [];
 
   if (name !== undefined) { sets.push("name = ?"); args.push(name || null); }
-  if (role && ["ADMIN", "TEACHER", "EDITOR", "LIBRARY", "INTERN"].includes(role)) { sets.push("role = ?"); args.push(role); }
+  if (role && ["ADMIN", "TEACHER", "LIBRARY", "INTERN"].includes(role)) { sets.push("role = ?"); args.push(role); }
   if (active !== undefined) { sets.push("active = ?"); args.push(active ? 1 : 0); }
   if (password) { sets.push("password = ?"); args.push(await bcrypt.hash(password, 12)); }
 

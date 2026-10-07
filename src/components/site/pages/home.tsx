@@ -12,6 +12,7 @@ import {
   ArrowRight,
   ArrowUpRight,
   BookOpen,
+  ArrowDown,
   CalendarDays,
   Camera,
   Clock,
@@ -81,8 +82,8 @@ const EXPLORE_ITEMS: {
   { key: "nav.activities", icon: CalendarDays, route: { name: "activities" } },
   { key: "nav.library", icon: Library, route: { name: "library" } },
   { key: "nav.courses", icon: GraduationCap, route: { name: "registration" } },
-  { key: "nav.membership", icon: HeartHandshake, route: { name: "membership" } },
   { key: "nav.relations", icon: Globe2, route: { name: "relations" } },
+  { key: "nav.join", icon: Compass, route: { name: "tvt" } },
 ];
 
 const HERO_IMG =
@@ -237,20 +238,13 @@ export function HomePage() {
           <div className="fade-up mt-9 flex flex-wrap justify-center gap-3" style={{ animationDelay: "180ms" }}>
             <Button
               size="lg"
-              onClick={() => navigate({ name: "registration" })}
+              onClick={() =>
+                document.getElementById("announcement")?.scrollIntoView({ behavior: "smooth", block: "start" })
+              }
               className="rounded-full px-7 h-12 text-[15px] shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all"
             >
-              {t("home.hero.cta1")}
-              <ArrowRight className="w-4 h-4 rtl:-scale-x-100" />
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => navigate({ name: "tvt" })}
-              className="rounded-full px-7 h-12 text-[15px] bg-transparent backdrop-blur-sm"
-            >
-              {t("home.hero.cta2")}
-              <Compass className="w-4 h-4" />
+              {t("home.hero.discover")}
+              <ArrowDown className="w-4 h-4" />
             </Button>
           </div>
 
@@ -270,7 +264,7 @@ export function HomePage() {
       </section>
 
       {/* 2. LATEST ANNOUNCEMENT - LSCS-style: label rule, poster left, story body right */}
-      <Section className="!py-14 md:!py-16">
+      <Section id="announcement" className="!py-14 md:!py-16 scroll-mt-24">
         <div className="flex items-center gap-3 mb-2">
           <span className="aso-label flex-1">{t("home.announce.eyebrow")}</span>
           <button

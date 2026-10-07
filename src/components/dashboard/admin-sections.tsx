@@ -17,8 +17,10 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { MatteCard, Pill } from "@/components/site/primitives";
 import { AdminEventReportsPanel, AdminEditRequestsPanel } from "@/components/dashboard/intern";
+import { translations } from "@/lib/site/translations";
 
 // ============================================================
 // CSV helper - BOM included so Excel opens Arabic correctly.
@@ -248,6 +250,17 @@ export function ExportsTab() {
           label: "Library members",
           run: () => exportFrom("/api/library/members", "members", "library-members.csv"),
         },
+        {
+          label: "Activity reservations",
+          run: () =>
+            exportFrom("/api/activity-join", "joins", "activity-reservations.csv", (j) => ({
+              type: j.itemType,
+              itemId: j.itemId,
+              name: j.name,
+              email: j.email,
+              createdAt: j.createdAt,
+            })),
+        },
       ],
     },
     {
@@ -348,8 +361,95 @@ export function ExportsTab() {
   );
 }
 
-// Re-export icons used by admin.tsx tab additions (keeps imports tidy there).
-export const ADMIN_SECTION_ICONS = { FileBarChart, ClipboardList, LibraryIcon, BookOpen, GraduationCap, MessageSquare, HeartHandshake };
-export function AdminSectionsHint() {
-  return <Pill variant="muted">sections</Pill>;
+
+// ============================================================
+// SITE TEXT - edit any UI string without a redeploy
+// ============================================================
+
+export function SiteTextTab() {
+  const [overrides, setOverrides] = React.useState<Record<string, string>>({});
+  const [query, setQuery] = React.useState("");
+  const [savingKey, setSavingKey] = React.useState<string | null>(null);
+  const [loaded, setLoaded] = React.useState(false);
+
+  React.useEffect(() => {
+    fetch("/api/settings")
+      .then((r) => (r.ok ? r.json() : { settings: {} }))
+      .then((d) => {
+        const map: Record<string, string> = {};
+        for (const [k, v] of Object.entries(d.settings || {})) {
+          if (k.startsWith("text.")) map[k.slice(5)] = String(v);
+        }
+        setOverrides(map);
+        setLoaded(true);
+      });
+  }, []);
+
+  const save = async (key: string, value: string) => {
+    setSavingKey(key);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "text." + key, value, category: "text" }),
+      });
+      if (!res.ok) throw new Error();
+      const next = { ...overrides };
+      if (value.trim() === "") delete next[key];
+      else next[key] = value;
+      setOverrides(next);
+      const { loadTextOverrides } = await import("@/store/i18n");
+      await loadTextOverrides();
+      toast.success("Text updated across the site.");
+    } catch {
+      toast.error("Save failed.");
+    } finally {
+      setSavingKey(null);
+    }
+  };
+
+  const q = query.trim().toLowerCase();
+  const keys = Object.entries(translations.en as Record<string, string>).filter(
+    ([k, v]) => !q || k.toLowerCase().includes(q) || v.toLowerCase().includes(q)
+  );
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="font-display text-xl tracking-tight">Site text</h2>
+        <p className="text-sm text-muted-foreground">
+          Replace any text shown on the site - English and Arabic strings alike. Clear a field to
+          go back to the default. Changes apply instantly, no deploy needed.
+        </p>
+      </div>
+      <Input placeholder="Search keys or text..." value={query} onChange={(e) => setQuery(e.target.value)} />
+      {!loaded ? (
+        <div className="text-center py-16"><Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" /></div>
+      ) : (
+        <div className="space-y-2">
+          {keys.map(([key, def]) => (
+            <MatteCard key={key} className="p-4">
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <span className="text-[11px] font-mono text-muted-foreground truncate">{key}</span>
+                {overrides[key] != null && <Pill variant="accent">edited</Pill>}
+              </div>
+              <div className="text-xs text-muted-foreground mb-2 line-clamp-1">Default: {def}</div>
+              <div className="flex gap-2">
+                <Input
+                  defaultValue={overrides[key] ?? ""}
+                  placeholder={def}
+                  onBlur={(e) => {
+                    const v = e.target.value;
+                    if ((overrides[key] ?? "") !== v) save(key, v);
+                  }}
+                />
+                {savingKey === key && <Loader2 className="w-4 h-4 animate-spin self-center text-muted-foreground" />}
+              </div>
+            </MatteCard>
+          ))}
+          {keys.length === 0 && <p className="text-sm text-muted-foreground py-8 text-center">No keys match your search.</p>}
+        </div>
+      )}
+    </div>
+  );
 }

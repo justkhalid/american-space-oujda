@@ -17,18 +17,18 @@ import { PageHeader, Section, MatteCard, Pill } from "@/components/site/primitiv
 import { ArrowRight, CheckCircle2, Loader2, GraduationCap, HeartHandshake, Briefcase, Presentation } from "lucide-react";
 import { toast } from "sonner";
 
-type Role = "TEACHER" | "VOLUNTEER" | "INTERN" | "TRAINER";
+type Role = "TEACHER" | "VOLUNTEER";
 
 const ROLE_INFO: Record<Role, { label: string; icon: React.ElementType }> = {
   TEACHER: { label: "Teacher", icon: GraduationCap },
-  VOLUNTEER: { label: "Volunteer", icon: HeartHandshake },
-  INTERN: { label: "Intern", icon: Briefcase },
-  TRAINER: { label: "Trainer", icon: Presentation },
+  VOLUNTEER: { label: "Intern / Volunteer", icon: HeartHandshake },
 };
 
-export function ApplyPage({ presetRole }: { presetRole?: Role }) {
+export function ApplyPage({ presetRole }: { presetRole?: "TEACHER" | "VOLUNTEER" | "INTERN" | "TRAINER" }) {
   const navigate = useRouter((s) => s.navigate);
-  const [role, setRole] = React.useState<Role>(presetRole || "TEACHER");
+  const [role, setRole] = React.useState<Role>(
+    presetRole === "TEACHER" ? "TEACHER" : "VOLUNTEER"
+  );
   const [submitting, setSubmitting] = React.useState(false);
   const [done, setDone] = React.useState(false);
   const [form, setForm] = React.useState({

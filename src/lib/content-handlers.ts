@@ -18,7 +18,7 @@ export async function POST_CLUB(req: Request) {
   const id = "club_" + Math.random().toString(36).slice(2, 12);
   const db = getDb();
   await db.execute({
-    sql: `INSERT INTO Club (id, name, description, schedule, iconName, colorClass, imageUrl, active, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
+    sql: `INSERT INTO Club (id, name, description, schedule, iconName, colorClass, imageUrl, joinable, capacity, registered, status, statusNote, active, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, 1, ?, ?)`,
     args: [id, body.name, body.description || "", body.schedule || "", body.iconName || "Users", body.colorClass || "bg-sky-500/10 text-sky-700 dark:text-sky-300", body.imageUrl || null, new Date().toISOString(), new Date().toISOString()],
   });
   return NextResponse.json({ id }, { status: 201 });
@@ -32,8 +32,8 @@ export async function PATCH_CLUB(req: Request) {
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
   const db = getDb();
   await db.execute({
-    sql: `UPDATE Club SET name = ?, description = ?, schedule = ?, iconName = ?, colorClass = ?, imageUrl = ?, active = ?, updatedAt = ? WHERE id = ?`,
-    args: [data.name, data.description, data.schedule, data.iconName, data.colorClass, data.imageUrl || null, data.active ? 1 : 0, new Date().toISOString(), id],
+    sql: `UPDATE Club SET name = ?, description = ?, schedule = ?, iconName = ?, colorClass = ?, imageUrl = ?, joinable = ?, capacity = ?, status = ?, statusNote = ?, active = ?, updatedAt = ? WHERE id = ?`,
+    args: [data.name, data.description, data.schedule, data.iconName, data.colorClass, data.imageUrl || null, data.joinable ? 1 : 0, data.capacity ? parseInt(data.capacity, 10) : null, data.status || 'ACTIVE', data.statusNote || null, data.active ? 1 : 0, new Date().toISOString(), id],
   });
   return NextResponse.json({ ok: true });
 }

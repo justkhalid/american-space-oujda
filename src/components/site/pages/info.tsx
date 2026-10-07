@@ -620,10 +620,6 @@ export function LibraryPage() {
                   ]}
                 />
               </div>
-              <Button onClick={() => navigate({ name: "membership" })} className="rounded-full">
-                {t("library.cta")}
-                <ArrowRight className="w-4 h-4 rtl:-scale-x-100" />
-              </Button>
             </div>
           }
         />

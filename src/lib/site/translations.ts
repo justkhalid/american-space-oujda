@@ -59,6 +59,7 @@ export const translations: Record<Lang, Record<string, string>> = {
 
     // Home - hero
     "home.hero.pill": "Bridging Morocco and the United States since {year}",
+    "home.hero.discover": "Discover more",
     "home.hero.title": "A cultural & learning space, open to all in eastern Morocco.",
     "home.hero.subtitle": "American Space Oujda offers free English courses, a public library, cultural events, and a community of curious minds - a place where Morocco and the United States meet.",
     "home.hero.cta1": "Register for English courses",
@@ -339,9 +340,9 @@ export const translations: Record<Lang, Record<string, string>> = {
     // Login
     "login.title": "Staff sign-in",
     "login.subtitle": "For administrators, teachers, and editors.",
-    "login.email": "Email",
+    "login.email": "Email or ASO number",
     "login.password": "Password",
-    "login.placeholder.email": "you@asoujda.ma",
+    "login.placeholder.email": "you@asoujda.ma or ASO-0001",
     "login.placeholder.password": "••••••••",
     "login.show": "Show password",
     "login.hide": "Hide password",
@@ -356,8 +357,8 @@ export const translations: Record<Lang, Record<string, string>> = {
     "login.demo.teacher.body": "Own courses",
     "login.demo.library": "Library",
     "login.demo.library.body": "Books & members",
-    "login.demo.editor": "Editor",
-    "login.demo.editor.body": "Content only",
+    "login.demo.intern": "Intern",
+    "login.demo.intern.body": "Events & reports",
 
     // Language toggle
     "lang.toggle": "Toggle language",
@@ -436,6 +437,7 @@ export const translations: Record<Lang, Record<string, string>> = {
 
     // Home - hero
     "home.hero.pill": "جسر بين المغرب والولايات المتحدة منذ عام {year}",
+    "home.hero.discover": "اكتشف المزيد",
     "home.hero.title": "فضاء ثقافي وتعليمي مفتوح للجميع شرق المغرب.",
     "home.hero.subtitle": "يقدّم الفضاء الأمريكي بوجدة دورات مجانية في اللغة الإنجليزية، ومكتبة عامة، وفعاليات ثقافية، ومجتمعًا من العقول الفضولية - مكان يلتقي فيه المغرب بالولايات المتحدة.",
     "home.hero.cta1": "سجّل في دورات الإنجليزية",
@@ -716,9 +718,9 @@ export const translations: Record<Lang, Record<string, string>> = {
     // Login
     "login.title": "دخول الموظفين",
     "login.subtitle": "للمدراء والأساتذة والمحررين.",
-    "login.email": "البريد الإلكتروني",
+    "login.email": "البريد أو رقم ASO",
     "login.password": "كلمة المرور",
-    "login.placeholder.email": "you@asoujda.ma",
+    "login.placeholder.email": "you@asoujda.ma or ASO-0001",
     "login.placeholder.password": "••••••••",
     "login.show": "إظهار كلمة المرور",
     "login.hide": "إخفاء كلمة المرور",
@@ -733,8 +735,8 @@ export const translations: Record<Lang, Record<string, string>> = {
     "login.demo.teacher.body": "دوراته الخاصة",
     "login.demo.library": "مكتبة",
     "login.demo.library.body": "الكتب والأعضاء",
-    "login.demo.editor": "محرر",
-    "login.demo.editor.body": "المحتوى فقط",
+    "login.demo.intern": "متدرب",
+    "login.demo.intern.body": "الفعاليات والتقارير",
 
     // Language toggle
     "lang.toggle": "تغيير اللغة",

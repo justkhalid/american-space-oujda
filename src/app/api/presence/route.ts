@@ -3,7 +3,7 @@ import { getDb, row, requireRole } from "@/lib/sql";
 
 // POST - any authenticated user: heartbeat, marks them online.
 export async function POST(req: Request) {
-  const auth = await requireRole(["ADMIN", "TEACHER", "EDITOR", "LIBRARY", "INTERN"]);
+  const auth = await requireRole(["ADMIN", "TEACHER", "LIBRARY", "INTERN"]);
   if (!auth.ok) return auth.response;
   const { user } = auth;
   const db = getDb();

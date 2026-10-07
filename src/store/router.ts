@@ -37,6 +37,8 @@ export type Route =
   | { name: "intern-tab"; tab: InternTab }
   | { name: "companion" }
   | { name: "companion-tab"; tab: CompanionTab }
+  | { name: "event-detail"; id: string }
+  | { name: "club-detail"; id: string }
   | { name: "search"; q?: string };
 
 export type InternTab = "events" | "reports" | "requests";
@@ -58,7 +60,8 @@ export type AdminTab =
   | "comments"
   | "interns"
   | "library"
-  | "exports";
+  | "exports"
+  | "text";
 
 export type TeacherTab =
   | "courses"
@@ -115,7 +118,7 @@ function parseHash(): Route {
     case "comments":
       return { name: "comments" };
     case "admin":
-      if (second && ["overview","applications","events","gallery","courses","clubs","links","members","registrations","settings","users","comments","interns","library","exports"].includes(second)) {
+      if (second && ["overview","applications","events","gallery","courses","clubs","links","members","registrations","settings","users","comments","interns","library","exports","text"].includes(second)) {
         return { name: "admin-tab", tab: second as AdminTab };
       }
       return { name: "admin" };
@@ -130,10 +133,8 @@ function parseHash(): Route {
       }
       return { name: "teacher" };
     case "editor":
-      if (second && ["events","gallery","settings"].includes(second)) {
-        return { name: "editor-tab", tab: second as EditorTab };
-      }
-      return { name: "editor" };
+      // Editor role removed - everything is managed from the admin dashboard.
+      return { name: "admin" };
     case "login":
       return { name: "login" };
     case "library-dashboard":
@@ -143,6 +144,10 @@ function parseHash(): Route {
         return { name: "companion-tab", tab: second as CompanionTab };
       }
       return { name: "companion" };
+    case "event":
+      return second ? { name: "event-detail", id: second } : { name: "activities" };
+    case "club":
+      return second ? { name: "club-detail", id: second } : { name: "activities" };
     case "search":
       return { name: "search", q: second ? decodeURIComponent(second) : undefined };
     case "tvt":
@@ -182,6 +187,10 @@ export function routeToHash(route: Route): string {
       return `#/editor/${route.tab}`;
     case "companion-tab":
       return `#/companion/${route.tab}`;
+    case "event-detail":
+      return `#/event/${route.id}`;
+    case "club-detail":
+      return `#/club/${route.id}`;
     case "search":
       return route.q ? `#/search/${encodeURIComponent(route.q)}` : "#/search";
     default:

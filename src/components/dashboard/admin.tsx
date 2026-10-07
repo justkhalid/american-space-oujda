@@ -4,7 +4,7 @@ import * as React from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, type AdminTab } from "@/store/router";
 import { DashboardLayout, type DashTab } from "@/components/dashboard/layout";
-import { InternsTab, AdminLibraryTab, ExportsTab } from "@/components/dashboard/admin-sections";
+import { InternsTab, AdminLibraryTab, ExportsTab, SiteTextTab } from "@/components/dashboard/admin-sections";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,6 +19,7 @@ import {
 import { MatteCard, Pill } from "@/components/site/primitives";
 import {
   ShieldCheck,
+  Type,
   FileBarChart,
   Library,
   Download,
@@ -54,21 +55,21 @@ import type { Role } from "@prisma/client";
 
 const TABS: DashTab[] = [
   { key: "overview", label: "Overview", icon: LayoutGrid },
+  { key: "registrations", label: "Course signups", icon: BookOpen },
   { key: "applications", label: "Applications", icon: FileText },
+  { key: "members", label: "Membership requests", icon: HeartHandshake },
   { key: "events", label: "Events", icon: CalendarDays },
-  { key: "gallery", label: "Gallery", icon: Camera },
-  { key: "courses", label: "Courses", icon: GraduationCap },
   { key: "clubs", label: "Clubs", icon: Users },
-  { key: "links", label: "Useful Links", icon: Link2 },
-  { key: "members", label: "Members", icon: HeartHandshake },
-  { key: "registrations", label: "Registrations", icon: BookOpen },
-  { key: "comments", label: "Comments", icon: MessageSquare },
-  { key: "settings", label: "Site Settings", icon: Settings },
-  { key: "users", label: "Users", icon: UserCog },
-  { key: "interns", label: "Interns", icon: FileBarChart },
+  { key: "interns", label: "Interns & reports", icon: FileBarChart },
   { key: "library", label: "Library", icon: Library },
+  { key: "gallery", label: "Photo gallery", icon: Camera },
+  { key: "courses", label: "Courses", icon: GraduationCap },
+  { key: "comments", label: "Comments", icon: MessageSquare },
+  { key: "links", label: "Useful links", icon: Link2 },
+  { key: "users", label: "Staff logins", icon: UserCog },
+  { key: "settings", label: "Site settings", icon: Settings },
+  { key: "text", label: "Site text", icon: Type },
   { key: "exports", label: "Exports", icon: Download },
-  { key: "companion", label: "Companion", icon: BookOpen },
 ];
 
 export function AdminDashboard({ initialTab = "overview" }: { initialTab?: AdminTab }) {
@@ -136,6 +137,7 @@ export function AdminDashboard({ initialTab = "overview" }: { initialTab?: Admin
       {tab === "interns" && <InternsTab />}
       {tab === "library" && <AdminLibraryTab />}
       {tab === "exports" && <ExportsTab />}
+      {tab === "text" && <SiteTextTab />}
       {tab === "companion" && <CompanionLinkTab onOpen={() => navigate({ name: "companion" })} />}
     </DashboardLayout>
   );
@@ -673,6 +675,9 @@ function EventEditor({
     location: event?.location || "",
     capacity: event?.capacity?.toString() || "",
     featured: event?.featured || false,
+    joinable: !!(event as { joinable?: number | boolean } | undefined)?.joinable,
+    status: (event as { status?: string } | undefined)?.status || "SCHEDULED",
+    statusNote: (event as { statusNote?: string } | undefined)?.statusNote || "",
   });
   const [saving, setSaving] = React.useState(false);
   const set = (k: keyof typeof form, v: string | boolean) => setForm((f) => ({ ...f, [k]: v }));
@@ -690,6 +695,9 @@ function EventEditor({
         location: form.location || null,
         capacity: form.capacity || null,
         featured: form.featured,
+        joinable: form.joinable,
+        status: form.status,
+        statusNote: form.statusNote || null,
       };
       const res = await fetch("/api/events", {
         method: event ? "PATCH" : "POST",
@@ -1418,6 +1426,10 @@ function ClubEditor({ club, onClose, onSaved }: { club: ClubItem | null; onClose
     iconName: club?.iconName || "Users",
     moderator: (club as { moderator?: string } | null)?.moderator || "",
     imageUrl: (club as { imageUrl?: string } | null)?.imageUrl || "",
+    joinable: !!(club as { joinable?: number | boolean } | undefined)?.joinable,
+    capacity: (club as { capacity?: number | null } | undefined)?.capacity?.toString() || "",
+    status: (club as { status?: string } | undefined)?.status || "ACTIVE",
+    statusNote: (club as { statusNote?: string } | undefined)?.statusNote || "",
     colorClass: club?.colorClass || COLOR_OPTIONS[0].value,
     active: club ? !!club.active : true,
   });
@@ -1473,6 +1485,32 @@ function ClubEditor({ club, onClose, onSaved }: { club: ClubItem | null; onClose
           <div>
             <Label className="text-sm font-medium mb-1.5 block">Poster URL (A4 portrait works best)</Label>
             <Input value={form.imageUrl} onChange={(e) => set("imageUrl", e.target.value)} placeholder="https://..." />
+          </div>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <label className="flex items-center gap-2 text-sm cursor-pointer rounded-xl bg-secondary/50 px-3.5 py-2.5">
+            <input type="checkbox" checked={form.joinable} onChange={(e) => set("joinable", e.target.checked)} className="accent-accent" />
+            <span>Enable reservations (limited spots)</span>
+          </label>
+          <div>
+            <Label className="text-sm font-medium mb-1.5 block">Spots</Label>
+            <Input value={form.capacity} onChange={(e) => set("capacity", e.target.value)} placeholder="e.g. 15" inputMode="numeric" />
+          </div>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <Label className="text-sm font-medium mb-1.5 block">Status</Label>
+            <Select value={form.status} onValueChange={(v) => set("status", v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ACTIVE">Active (running weekly)</SelectItem>
+                <SelectItem value="PAUSED">Paused this week</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-sm font-medium mb-1.5 block">Status note (shown on the card)</Label>
+            <Input value={form.statusNote} onChange={(e) => set("statusNote", e.target.value)} placeholder="e.g. Back next Saturday" />
           </div>
         </div>
         <div className="grid sm:grid-cols-2 gap-4">
@@ -1895,7 +1933,6 @@ function UsersTab() {
                   <SelectItem value="ADMIN">Admin</SelectItem>
                   <SelectItem value="TEACHER">Teacher</SelectItem>
                   <SelectItem value="LIBRARY">Library</SelectItem>
-                  <SelectItem value="EDITOR">Editor</SelectItem>
                   <SelectItem value="INTERN">Intern</SelectItem>
                 </SelectContent>
               </Select>
@@ -1981,7 +2018,6 @@ function UserEditor({ onClose, onSaved }: { onClose: () => void; onSaved: () => 
                 <SelectItem value="ADMIN">Admin</SelectItem>
                   <SelectItem value="TEACHER">Teacher</SelectItem>
                   <SelectItem value="LIBRARY">Library</SelectItem>
-                  <SelectItem value="EDITOR">Editor</SelectItem>
               </SelectContent>
             </Select>
           </div>

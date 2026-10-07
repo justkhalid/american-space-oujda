@@ -111,7 +111,7 @@ export function InternDashboard({ initialTab = "events" }: { initialTab?: Intern
     }
     const role = (session.user as { role?: string })?.role;
     if (role && role !== "INTERN") {
-      navigate({ name: role === "ADMIN" ? "admin" : role === "TEACHER" ? "teacher" : role === "EDITOR" ? "editor" : role === "LIBRARY" ? "library-dashboard" : "home" });
+      navigate({ name: role === "ADMIN" ? "admin" : role === "TEACHER" ? "teacher" : role === "LIBRARY" ? "library-dashboard" : "home" });
     }
   }, [session, status, navigate]);
 

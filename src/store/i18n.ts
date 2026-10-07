@@ -28,6 +28,29 @@ function dirFor(lang: Lang): "ltr" | "rtl" {
   return lang === "ar" ? "rtl" : "ltr";
 }
 
+// Admin-editable text: overrides live in SiteSetting with keys "text.<translationKey>".
+// makeT consults the override map first so any string on the site can be
+// replaced from the admin dashboard without a redeploy.
+let overrides: Record<string, string> = {};
+
+export async function loadTextOverrides() {
+  if (typeof window === "undefined") return;
+  try {
+    const r = await fetch("/api/settings");
+    if (!r.ok) return;
+    const d = await r.json();
+    const map: Record<string, string> = {};
+    for (const [k, v] of Object.entries(d.settings || {})) {
+      if (k.startsWith("text.")) map[k.slice(5)] = String(v);
+    }
+    overrides = map;
+    // Rebuild t so every subscriber re-renders with the new strings.
+    useI18n.setState({ t: makeT(useI18n.getState().lang) });
+  } catch {
+    // settings unavailable - keep current strings
+  }
+}
+
 // Build a fresh translator for a language. A NEW function reference per
 // language is the point: components subscribe via useI18n((s) => s.t), and
 // Zustand's Object.is equality only triggers re-renders when the reference
@@ -36,7 +59,8 @@ function dirFor(lang: Lang): "ltr" | "rtl" {
 function makeT(lang: Lang) {
   const dict = translations[lang] as Record<string, string>;
   const en = translations.en as Record<string, string>;
-  return (key: TranslationKey) => dict[key] ?? en[key] ?? (key as string);
+  return (key: TranslationKey) =>
+    overrides[key] ?? dict[key] ?? en[key] ?? (key as string);
 }
 
 const initialLang = readStoredLang();
